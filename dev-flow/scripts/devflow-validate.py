@@ -4388,7 +4388,7 @@ def sync_bundle(home):
 # the real tokens would reintroduce, in the selftest, the thing the arm exists to remove.
 # They are spelled only INSIDE the plant sentinels, because this paragraph is scanned too.
 # PUBLISH-VOCABULARY-BEGIN  (masked from the scan by `_publish_hits`; see its docstring)
-_PUBFILES82 = 38          # rev88: + scripts/devflow-scan-spec.py, the shipped scanner
+_PUBFILES82 = 40          # rev90: + the two fast-path scripts (rev88: + the scanner)
 
 _VAL82 = "scripts/devflow-validate.py"
 _REG82 = "scripts/devflow-mutants.json"
@@ -5920,7 +5920,10 @@ _ATLAS_NOT_READS = frozenset((
     # here: it WRITES a byte-for-byte duplicate and reads only the source it was handed, so
     # it discovers nothing and cannot widen a corpus. `BUN SELFTEST-exits-0` is what put it
     # in this file -- it lays this validator over a staged bundle's copy of it.
-    "isabs", "CompletedProcess", "strip", "commonprefix", "copyfile"))
+    # `ignore_patterns` (rev90) builds a CALLABLE out of glob strings and touches no
+    # filesystem at all; it reaches this sweep only because `copytree` is handed one, in
+    # the arm that copies a toy WITHOUT its `.git` to drive the non-git `--check` limb.
+    "isabs", "CompletedProcess", "strip", "commonprefix", "copyfile", "ignore_patterns"))
 _ATLAS_READS = {
     ("_atlas_build", "listdir", 1):
         "GATED -- the `.dev-flow` children it lists are filtered by `versioned()` on the "
@@ -6977,9 +6980,13 @@ def _v27_outcome(log, packets, newest_commit, commit_why=None, mode=None, guided
     if mode == "fast" and log is None:
         # rev84, `C-53`. THE SUBJECT IS ABSENT BY CONSTRUCTION AND THE RULE MUST NOT MANUFACTURE
         # A RED. `/fast-dev-flow` writes a minimal declaration and advances none of it: no
-        # station, no phase status, no decisions log -- and a seeded `[]` would be worse than
-        # the absence, asserting that a ledger exists and records no decision. The NOTICE this
-        # replaces obliged the author to declare a reason that the mode already declares.
+        # station, no phase status, no decisions log. ⚠ rev90 REVERSED the second half of
+        # that for the `fast` SEED: `commands/dev-flow-init.md` now seeds `[]` when `guided`
+        # is seeded true, because a batch at birth has genuinely recorded no decision and the
+        # first gate then appends to a home that exists rather than inventing one. This
+        # branch is unaffected -- it fires only where `guided` is not true -- and the
+        # sentence is corrected here rather than left arguing the opposite of the page.
+        # The NOTICE this replaces obliged the author to declare a reason the mode declares.
         return [(SKIP, _V27_WHERE, "the active batch is `mode: fast`, which maintains no "
                  "`decisions_log` unless it is guided (`/dev-flow-init` §*The `fast` "
                  "declaration*), so the ledger does not apply here (`C-53`). The batch's "
@@ -9559,6 +9566,21 @@ def _v55_recorded(log):
     return names, unnamed
 
 
+def _v55_published(mode, gate):
+    """A gate's INTERNAL family name -> the spelling the page publishes. PURE.
+
+    `_V55_FAST_GATES` carries the stems the matcher compares against (`increment` is the
+    stem of `increment-001`); `_V55_FAST_SPELLING` carries what the `Gate id` column prints,
+    and `V55 GATE-IDS-ARE-PUBLISHED` pairs the two BOTH WAYS. The accusation used the first
+    list and the sentence under it the second, so one finding named the same gate twice in
+    two spellings -- measured on the rev90 acceptance reader, which resolved it correctly
+    and recorded it as a trap for the next reader. Derived here, never typed again.
+    """
+    if mode != "fast" or gate not in _V55_FAST_GATES:
+        return "`%s`" % gate
+    return _V55_FAST_SPELLING[_V55_FAST_GATES.index(gate)]
+
+
 def _v55_spelling(mode):
     """The sentence naming the gate ids the ledger is expected to carry. PURE.
 
@@ -9685,7 +9707,7 @@ def _v55_outcome(guided, mode, owed, log, reached=None, marker=None, why=None):
                     "nobody can point to afterwards. %s What decided that they are behind this "
                     "batch: %s"
                     % (len(missing), len(reached), mode,
-                       ", ".join("`%s`" % g for g in missing), nolist,
+                       ", ".join(_v55_published(mode, g) for g in missing), nolist,
                        _v55_spelling(mode), marker or "no marker was given")))
     else:
         out.append((SKIP, _V55_WHERE, "all %d gate(s) this `%s` batch has REACHED carry a "
@@ -10797,7 +10819,7 @@ def preflight_lines(root, run=subprocess.run, stream=None, probed=None):
             _preflight_case_line(folds, why, where, root)]
 
 
-def run(root):
+def run(root, brief=False):
     print(f"devflow-validate · {root}")
     for _line in preflight_lines(root):
         print(f"  {_line}")
@@ -10811,6 +10833,36 @@ def run(root):
             findings.append(F(fn.__name__[:2].upper(), BLOCK, "-", f"check crashed: {e!r}"))
     blocks = [f for f in findings if f.sev == BLOCK]
     notices = [f for f in findings if f.sev == NOTICE]
+    if brief:
+        # ---- rev90. `--brief` IS A RENDERING OF THE SAME `findings` LIST AND NOTHING ELSE.
+        # Taken AFTER every check has run, so no rule's evaluation, severity, message or
+        # order changes and the exit code below is the same expression the full run returns.
+        # Three fresh readers of the fast path reported the same obstacle in the same words:
+        # a clean fast tree prints fifty-odd `[-]` lines -- honest "no subject here" answers
+        # -- and the output "is hard to interpret until you learn that most lines are honest
+        # `not applicable` notices rather than failures". That was a lesson the skill had to
+        # teach; this makes the tool say it instead.
+        #
+        # THE MODE IS READ FROM THE TREE, NOT TYPED. The first cut of this line said
+        # `(mode fast)` unconditionally, which is a confidently false claim on every `core`
+        # tree and on the flow's own home -- the defect class this file has a family of arms
+        # about, minted inside the repair for another one.
+        na = [f for f in findings if f.sev == SKIP]
+        _mode = str((_state_json(root)[0] or {}).get("mode") or "") or None
+        _modesaid = "mode %s" % _mode if _mode else "no mode declared on this tree"
+        print(f"{len(blocks)} block · {len(notices)} notice · "
+              f"{len(na)} not applicable")
+        # IN `findings` ORDER, NOT BLOCKS-THEN-NOTICES. The first cut printed
+        # `blocks + notices`, which tears a rule's BLOCK away from its own NOTICE and moves
+        # lines up to nine places -- a rendering flag changing the sequence of the transcript
+        # a reader reasons over. Measured at the landing review on a tree where the two
+        # severities interleave.
+        for f in findings:
+            if f.sev != SKIP:
+                print(f)
+        print(f"n/a: {len(na)} rule(s) with no subject on this tree ({_modesaid}) — "
+              f"run without --brief to list them")
+        return 1 if blocks else 0
     for f in findings:
         print(f)
     print(f"\n{len(blocks)} block · {len(notices)} notice · "
@@ -18009,7 +18061,8 @@ def selftest():
     ok &= good
     print(f"  V55 {'REACHED-gates-only':<32} expected a guided batch at its FIRST gate to "
           f"accuse NOTHING and say why, the same batch with a packet on disk to name `A` and "
-          f"`increment` and to excuse the CLOSING gate by name, a `core` batch at `P0` to "
+          f"`increment-NNN` — the spelling the `Gate id` column PUBLISHES, not the stem the "
+          f"matcher compares — and to excuse the CLOSING gate by name, a `core` batch at `P0` to "
           f"accuse nothing and at `P4` to name the four stations behind it, and a `core` "
           f"state with no `current_station` to report that it could not tell — the "
           f"accusation-at-the-first-gate the independent review measured on the seeded "
@@ -18029,7 +18082,13 @@ def selftest():
     # them from this file -- and the accusation half must still name ONLY the missing gate,
     # which a whole-message test can no longer say now that every id appears in the tail.
     _pacc55 = _pmsg55[0].split("The gate ids a")[0] if _pmsg55 else ""
-    good = bool(len(_pmsg55) == 1 and "`increment`" in _pacc55
+    # rev90: AND THE ACCUSATION SPELLS THE GATE THE WAY THE PAGE DOES. It listed the
+    # matcher's STEM (`increment`) one clause above a sentence naming `increment-NNN`, so one
+    # finding named the same gate twice in two spellings -- the rev90 acceptance reader
+    # resolved it correctly and recorded it as a trap for the next one. `_v55_published`
+    # derives the printed form from the pairing, so there is still one inventory.
+    good = bool(len(_pmsg55) == 1 and "`increment-NNN`" in _pacc55
+                and "`increment`," not in _pacc55 and "`increment` " not in _pacc55
                 and "1 of the 2 gate(s)" in _pacc55
                 and "`A`" not in _pacc55
                 and all(_sp55 in _pmsg55[0] for _sp55 in _V55_FAST_SPELLING)
@@ -18315,6 +18374,17 @@ def selftest():
                 and "The operator counts the two" in (text or "")
                 and "prints the current" not in (text or "")
                 and "`guided: true`" in (text or "")
+                # rev90: THE ENTRY'S SHAPE IS SHOWN, NOT DESCRIBED. The section named the
+                # four fields and printed no example, so a fresh reader INFERRED the JSON and
+                # `V55` accepted what they guessed -- a pass by luck, which is the same
+                # evidence a pass by construction leaves behind. The fence is required here,
+                # field by field, so deleting it reddens instead of costing the next reader
+                # the same inference.
+                and "```json" in (text or "")
+                and chr(34) + "gate" + chr(34) + ": " + chr(34) + "A" + chr(34) in (text or "")
+                and chr(34) + "guided" + chr(34) + ": true" in (text or "")
+                and re.search(r'"date": "\d{4}-\d{2}-\d{2}"', text or "")
+                and chr(34) + "decision" + chr(34) + ":" in (text or "")
                 and "No rule flips the key" in (text or ""))
 
     _fullcmd55 = _read(_live_path(_flow_home(), "commands/dev-flow.md")) or ""
@@ -18327,7 +18397,47 @@ def selftest():
                     if _rel55.endswith(".md")
                     and any(_ph55.lower() in (_read(_live_path(_flow_home(), _rel55))
                                               or "").lower() for _ph55 in _STEP55)}
-    good = bool(_sec55 and _guided55(_sec55)
+    # ⚠ THE FENCE IS PARSED AND DRIVEN, not spelled. `_guided55`'s five substring tests can
+    # be satisfied by five sentences in five paragraphs; nothing required them to be one JSON
+    # object, and nothing read the one field whose CONTENT is load-bearing. The shipped
+    # example's `decision` said *next step is Phase B, increment 1* -- and `_V27_INC` harvests
+    # `increment 1` out of a decision string, so an operator copying the fence verbatim at the
+    # `A` gate was charged a NOTICE for a packet that cannot exist yet. A one-fence example
+    # whose whole purpose is *stop inferring the shape* must not cost its copier a finding,
+    # so it goes through the two rules that read it.
+    _fence55 = "".join(re.findall(r"(?s)```json\n(.*?)```", _sec55)[:1])
+    try:
+        _entries55 = json.loads(_fence55)
+    except ValueError:
+        _entries55 = None
+    if not isinstance(_entries55, list):
+        _entries55 = []
+    _day55 = str((_entries55[0] if _entries55 else {}).get("date") or "")
+    # THE INCREMENT ENTRY IS SHOWN TOO, and it is the one the second acceptance reader had
+    # to guess: `B`, `increment`, `1` and `increment-001` are four plausible values and only
+    # the last is read. So the fence is an ARRAY and BOTH entries are driven -- including
+    # through `V27`, which is what the `A` entry's own wording was costing its copier.
+    _fenceok55 = bool(
+        len(_entries55) == 2
+        and all(isinstance(_e55, dict)
+                and set(_e55) == {"gate", "guided", "date", "decision"}
+                and _e55.get("guided") is True
+                and re.match(r"^\d{4}-\d{2}-\d{2}$", str(_e55.get("date") or ""))
+                for _e55 in _entries55)
+        and [_e55["gate"] for _e55 in _entries55] == ["A", "increment-001"]
+        # THE TWO READERS, RUN over the pair on a guided fast batch holding the packet the
+        # second entry's gate belongs to: `V27` must raise nothing above a SKIP, and `V55`
+        # must recognise both gates by the stems it matches on.
+        and not [_s55 for _s55, _w55, _m55 in
+                 _v27_outcome(_entries55, {1}, _day55, None, "fast", True)
+                 if _s55 != SKIP]
+        and _v55_recorded(_entries55)[0] == {"A", "increment-001"}
+        # AND THE MATCHER ACCEPTS THEM AS THE OWED GATES, which is the question the rule
+        # actually asks: `increment-001` is matched as `increment`'s own `<owed>-<n>` form,
+        # and reading `_v55_recorded` alone would not have said so.
+        and all(_v55_matches(_g55, _v55_recorded(_entries55)[0])
+                for _g55 in ("A", "increment")))
+    good = bool(_sec55 and _guided55(_sec55) and _fenceok55
                 and not _guided55(_sec55.replace(_AGAIN55, "continue"))
                 and not _guided55(re.sub(r"(?s)\*\*Turning it off is MEASURED.*", "", _sec55))
                 and all(not _guided55(_sec55.replace(_st55, "do something else"))
@@ -18347,8 +18457,13 @@ def selftest():
           f"{_WORD55}-batch fade-out, both shown RED when removed, and the "
           f"{len(_STEP55)} step phrases to stand in the ADAPTER ALONE across every `.md` the "
           f"manifest declares, with both commands POINTING {_points55} and the close "
-          f"sentence standing in BOTH its declared homes · got "
-          f"{_shown(_stepsites55)} · {'ok' if good else 'FAIL'}")
+          f"sentence standing in BOTH its declared homes — and step 4's ledger fence "
+          f"PARSED as JSON, its four fields the ones the rules read, and fed to `V27` and "
+          f"`V55` so the shipped examples cannot cost the reader who copies them a finding, "
+          f"the PER-INCREMENT entry — the one a reader guesses — among them "
+          f"· got {_shown(_stepsites55)}, {len(_entries55)} fence entry/entries "
+          f"{'driving clean' if _fenceok55 else 'REJECTED'} · "
+          f"{'ok' if good else 'FAIL'}")
 
     # ---- rev71. THE DOCUMENT→RULES MAP, DISCOVERED FROM THE SOURCE AND COMPARED BOTH WAYS.
     #
@@ -27756,8 +27871,14 @@ def selftest():
         """The packet's row for `label`, or "". PURE."""
         return "".join(re.findall(r"(?m)^\| \*\*" + re.escape(label) + r"\*\* \|.*$", text))
 
-    def _declempty86(line):
+    def _declempty86(line, lead_only=False):
         """A row line -> the FIRST declared empty it prints, or "". PURE.
+
+        `lead_only` narrows it to the SECOND question this grammar answers: has the row
+        ARRIVED already answered? A cell that carries its empty only in the `\u2014 or:`
+        tail still ASKS; a cell that LEADS with it does not. Eight of the nine rows print
+        one and six lead with it, so the wide reading of `pre-answered` counts two rows
+        whose rules are still asking -- measured at rev90, where it did.
 
         ONE grammar, because rev86 shipped the flow's first two-alternative cells and round 7
         found the single-alternative reader gluing both halves into a blob no author would
@@ -27778,6 +27899,8 @@ def selftest():
         _lead = re.findall(r"`+([^`]*?)`+", line)
         if _lead and _lead[0].strip(" <>").lower().startswith("none"):
             return _lead[0].strip(" <>")
+        if lead_only:
+            return ""
         _m = _EMPTYRX86.search(line)
         return _m.group(1).strip() if _m else ""
 
@@ -27851,14 +27974,24 @@ def selftest():
     # verdicts into a claim about a template would make the arm a barometer of whether the
     # manifest happens to be re-hashed yet. The subject is the rules that read this file.
     _pktrules86 = {_incfields86[_l86] for _l86 in _evalfast86} | {"V9"}
-    # \u26a0 TWO ROWS SHIP ALREADY ANSWERED, and that is deliberate: `RED counterfactual` and
-    # `Reverse census` LEAD with `none \u2014 not owed in fast`, so a fast author who never edits
-    # them has still given the truthful answer, and the rules that read them are silent on the
-    # UNFILLED page. The arm expects exactly that split rather than "all nine ask".
+    # \u26a0 SIX ROWS SHIP ALREADY ANSWERED, and rev90 is why the number is six and not two.
+    # `RED counterfactual` and `Reverse census` LEAD with `none \u2014 not owed in fast`; from
+    # rev90 the four rows a fresh reader had to INVENT an empty for -- `Mutation verdicts`,
+    # `Instrument RED-proof`, `Emitted-form assertion`, `Correction population` -- lead with
+    # their own declared fast empty too, in the shape those two already used. A fast author
+    # who never edits any of the six has still given the truthful answer, and the rules that
+    # read them are silent on the UNFILLED page. THE SPLIT IS DERIVED FROM THE PAGE and the
+    # two kinds are counted separately, because they answer different questions: one says the
+    # MODE does not owe the row, the other that THIS increment had nothing to put in it.
+    # Reading only the "not owed" spelling is what made this arm expect nine askers on a page
+    # that had stopped asking four of them.
     _preanswered86 = {_incfields86[_l86] for _l86 in _rows86
                       if _l86 in _incfields86
-                      and _declempty86(_rowline86(_fastpkt86, _l86))
-                      and "not owed in fast" in _rowline86(_fastpkt86, _l86)}
+                      and _declempty86(_rowline86(_fastpkt86, _l86), True)}
+    _notowed86 = {_incfields86[_l86] for _l86 in _rows86
+                  if _l86 in _incfields86
+                  and _declempty86(_rowline86(_fastpkt86, _l86), True)
+                  and "not owed in fast" in _rowline86(_fastpkt86, _l86)}
     _asked86 = {_r86 for _r86 in _pktrules86
                 for _s86, _m86 in _baseline86.get(_r86, ()) if _s86 == NOTICE}
     _blocked86 = {_r86 for _r86 in _pktrules86
@@ -27876,14 +28009,17 @@ def selftest():
     _selfok86 = NOTICE not in {_s86 for _s86, _m86 in _selfrev86.get("V36", ())}
     good = bool(_want86 <= set(_rows86) and _want86 and not _blocked86 and not _loud86
                 and _selfok86 and _asked86 == _pktrules86 - _preanswered86
-                and len(_preanswered86) == 2 and _nodecl86 == [_V9LAB86]
+                and len(_preanswered86) == 6 and len(_notowed86) == 2
+                and _nodecl86 == [_V9LAB86]
                 and not _mintbad86 and len(_mintwant86) == _MINTWANT86N)
     ok &= good
     print(f"  TPL  {'FAST-PACKET-reaches-the-rules':<31} expected the SHIPPED fast packet, "
           f"placed in a synthetic `mode: fast` batch, to be ASKED by all "
           f"{len(_pktrules86 - _preanswered86)} rule(s) that read it and still owe an "
           f"answer, SILENT already on the {len(_preanswered86)} row(s) it ships pre-answered "
-          f"with `none — not owed in fast`, and BLOCKED by none — a notice is what "
+          f"with a declared fast empty — of which {len(_notowed86)} say the MODE does not "
+          f"owe the row (`none — not owed in fast`) and the rest that THIS increment had "
+          f"nothing to put in it — and BLOCKED by none — a notice is what "
           f"this mode owes — and every one of them to fall SILENT when its row is answered "
           f"with THE DECLARED EMPTY THE TEMPLATE ITSELF PRINTS, plus the reserved "
           f"`SELF-REVIEW — fast mode` cell §4b recommends ({_selfok86}) · asked "
@@ -29220,8 +29356,11 @@ def selftest():
     _git30, _gcite30 = _v30_floor(_d30["git"])
     _labs30 = sorted({h[0] for h in _d30["api"]})
     _want30 = ["`from __future__ import annotations`", "`subprocess.run(capture_output=)`"]
-    # FIVE Python files from rev88, not four: rev64 added the harness and rev88 the
-    # spec scanner, which is a SHIPPED tool and therefore inside the file set's floor.
+    # SEVEN Python files from rev90, not five: rev64 added the harness, rev88 the spec
+    # scanner and rev90 the two fast-path scripts -- SHIPPED tools, therefore inside the file
+    # set's floor. That is not bookkeeping: `devflow-evidence.py` reached landing with one
+    # `:=` in it, which RAISES the derived API floor to 3.8 against a row declaring 3.7, and
+    # this arm is what said so. The walrus was rewritten; the floor did not move.
     # The citation is asserted unmoved for the scanner too -- it binds no catalogued
     # construct either. FOUR from rev64, not three: the harness
     # the canon table with the harness. The CITATION is asserted unmoved on purpose --
@@ -29236,10 +29375,14 @@ def selftest():
     # happens to be a repo) and `Q18 UNVERSIONED-enumerated` (an ignored artifact). The
     # manifest's row moves with them; the floor does not.
     good = (_api30 == (3, 7) and _git30 == (2, 28, 0) and _d30["errors"] == []
-            and len(_d30["files"]) == 5 and len(_d30["git"]) == 8 and _labs30 == _want30
-            and _cite30[0].endswith("devflow-validate.py:41"))
+            and len(_d30["files"]) == 7 and len(_d30["git"]) == 8 and _labs30 == _want30
+            # THE CITATION MOVED AT rev90 AND THAT IS THE POINT OF PINNING IT: the file
+            # set gained two shipped scripts, one of which sorts first and binds the same
+            # construct, so the floor is now measured somewhere else while staying 3.7. A
+            # citation that drifts without anyone noticing is a floor nobody can re-check.
+            and _cite30[0].endswith("devflow-evidence.py:18"))
     ok &= good
-    print(f"  V30 {'LIVE-derived':<24} expected the real canon's 5 Python file(s) to bind API "
+    print(f"  V30 {'LIVE-derived':<24} expected the real canon's 7 Python file(s) to bind API "
           f"3.7 by exactly 2 construct kinds and git 2.28.0 at 8 sites · got API "
           f"{_vs(_api30) if _api30 else 'undetermined'} at {_cite30[0] if _cite30 else '-'}, "
           f"git {_vs(_git30) if _git30 else 'undetermined'} at "
@@ -29277,10 +29420,10 @@ def selftest():
     for _lab30, _cell30, _val30, _want in (
             ("ROW-api-below-BLOCKS", "python-api", "3.6",
              "declares a `python-api` floor of `3.6` but the source binds `3.7` -- "
-             "`from __future__ import annotations` at docs/tools/devflow-validate.py:41"),
+             "`from __future__ import annotations` at docs/tools/devflow-evidence.py:18"),
             ("ROW-api-above-BLOCKS", "python-api", "3.11",
              "declares a `python-api` floor of `3.11` but the source binds `3.7` -- "
-             "`from __future__ import annotations` at docs/tools/devflow-validate.py:41"),
+             "`from __future__ import annotations` at docs/tools/devflow-evidence.py:18"),
             ("ROW-git-BLOCKS", "git", "2.20.0",
              "declares a `git` floor of `2.20.0` but the source binds `2.28.0` -- "
              "`git init -b` at " + (_gcite30[0] if _gcite30 else "?")),
@@ -31628,6 +31771,581 @@ def selftest():
           f"offset {_step388.index('THE SCHEMA BELOW IS') if 'THE SCHEMA BELOW IS' in _step388 else -1} "
           f"· {'ok' if good else 'FAIL'}")
 
+    class _Cap90:
+        """A stdout stand-in for an IN-PROCESS `run()`. No new import for an arm's sake.
+
+        `run()` prints; these two arms need what it printed. Swapping `sys.stdout` for
+        this is the whole mechanism, and it is restored in a `finally` so a crashing
+        check cannot leave the selftest writing into a list.
+        """
+
+        def __init__(self):
+            self.parts = []
+
+        def write(self, text):
+            self.parts.append(text)
+            return len(text)
+
+        def flush(self):
+            pass
+
+        def getvalue(self):
+            return "".join(self.parts)
+
+    def _capture90(*args, **kw):
+        """`run(*args, **kw)` -> (its stdout, its return code)."""
+        _cap90, _save90 = _Cap90(), sys.stdout
+        try:
+            sys.stdout = _cap90
+            _rcx90 = run(*args, **kw)
+        finally:
+            sys.stdout = _save90
+        return _cap90.getvalue(), _rcx90
+
+    # ---- rev90 (1-3). THE TWO FAST-PATH SCRIPTS SHIP, AND THEIR TESTS ARE ARMS.
+    #
+    # The flow ships no separate test runner, so a script's suite lives HERE or it lives
+    # nowhere -- the proposal that brought these two carried 17 pytest cases and pytest is
+    # not a dependency this flow has. Their assertions are re-expressed as three arms driven
+    # END TO END in child processes, because what a reader gets is an exit code and a
+    # transcript, and a pure check of the pure functions says nothing about `__main__`.
+    #
+    # THE ROOT IS THE DEFECT THESE ARMS EXIST FOR. A fresh reader ran the init script with
+    # `$(pwd)` typed from the FLOW ROOT and scaffolded the flow's own installation, which the
+    # script accepted silently. A script that accepts a wrong root silently is the same defect
+    # as prose that never says which path to type, so BOTH halves of the repair are armed: the
+    # resolved ABSOLUTE root is the first line of output, and a flow installation is REFUSED.
+    _INIT90 = "docs/tools/devflow-init-fast.py"
+    _EVID90 = "docs/tools/devflow-evidence.py"
+    _initp90 = _live_path(_flow_home(), _INIT90)
+    _evidp90 = _live_path(_flow_home(), _EVID90)
+    _SCRLAB90 = ("INIT-declares-and-refuses", "EVIDENCE-rows-and-check",
+                 "GATE-reads-what-init-writes")
+    if not (os.path.isfile(_initp90) and os.path.isfile(_evidp90)):
+        for _l90 in _SCRLAB90:
+            ok &= _nosubject85("SCR", _l90,
+                               "no `%s` / `%s` on this tree" % (_INIT90, _EVID90), 28)
+    else:
+        _env90 = dict(os.environ, PYTHONIOENCODING="utf-8", PYTHONDONTWRITEBYTECODE="1")
+
+        def _sh90(args, cwd):
+            """A child process -> (rc, stdout). The reader's own two observables."""
+            _cp90 = subprocess.run([sys.executable] + [str(a) for a in args], cwd=cwd,
+                                   capture_output=True, timeout=600, env=_env90)
+            return _cp90.returncode, _cp90.stdout.decode("utf-8", "replace")
+
+        def _git90(root, *args):
+            return subprocess.run(["git", "-C", root, "-c", "user.name=t",
+                                   "-c", "user.email=t@t"] + list(args),
+                                  capture_output=True, timeout=600)
+
+        def _toy90(parent, name="toy"):
+            """A minimal git project: one file, one commit. The reader's starting point."""
+            _r90 = os.path.join(parent, name)
+            os.makedirs(_r90)
+            with open(os.path.join(_r90, "README.md"), "w", encoding="utf-8") as _fh90:
+                _fh90.write("# toy\n")
+            _git90(_r90, "init", "-q")      # NOT `-b`: see `V30 LIVE-derived`
+            _git90(_r90, "add", "README.md")
+            _git90(_r90, "commit", "-qm", "init")
+            return _r90
+
+        _today90 = time.strftime("%Y-%m-%d")
+        with tempfile.TemporaryDirectory() as _d90:
+            _toy = _toy90(_d90)
+            # (a) NO ARGUMENT AT ALL: the root is the current working directory, and the
+            # FIRST line of output names it, absolute. `cwd=` is the reader's `cd`.
+            _rc_a, _out_a = _sh90([_initp90], _toy)
+            _first90 = (_out_a.splitlines() or [""])[0]
+            _sp90 = os.path.join(_toy, ".dev-flow", "state.json")
+            _state90 = json.loads(_read(_sp90) or "{}") if os.path.isfile(_sp90) else {}
+            _SIX90 = {"mode", "batch_id", "flow_version", "stations_active", "guided",
+                      "artifact_homes"}
+            _homes90 = _state90.get("artifact_homes") or {}
+            _bid90 = _state90.get("batch_id") or ""
+            _made90 = [os.path.isdir(os.path.join(_toy, ".dev-flow", _bid90, _sub90))
+                       for _sub90 in ("03-increments", "evidence")]
+            _ga90 = _read(os.path.join(_toy, ".gitattributes")) or ""
+            _spec90 = _read(os.path.join(_toy, ".fast-dev-flow", "spec.md")) or ""
+            # (b) A SECOND RUN REFUSES, exit 1, and `--force` takes the NEXT id -- the
+            # auto-increment measured rather than asserted.
+            _rc_b, _out_b = _sh90([_initp90], _toy)
+            # A LEDGER ENTRY IS PLANTED BEFORE `--force`, because `--force` used to
+            # archive the spec and DELETE the declaration beside it -- and the declaration
+            # is the single slot holding `decisions_log`. The arm reads the archived copy
+            # back and requires the entry to still be there.
+            _pre90 = json.loads(_read(_sp90) or "{}")
+            _pre90["decisions_log"] = [{"gate": "A", "guided": True,
+                                        "date": "2026-01-01", "decision": "kept"}]
+            with open(_sp90, "w", encoding="utf-8") as _fh90:
+                json.dump(_pre90, _fh90)
+            _rc_c, _out_c = _sh90([_initp90, "--force"], _toy)
+            _arch90 = [os.path.join(_toy, ".dev-flow", "archive", _n90)
+                       for _n90 in (os.listdir(os.path.join(_toy, ".dev-flow", "archive"))
+                                    if os.path.isdir(os.path.join(_toy, ".dev-flow",
+                                                                  "archive")) else [])]
+            _kept90 = any('"decision": "kept"' in (_read(_a90) or "").replace("'", '"')
+                          or "kept" in (_read(_a90) or "") for _a90 in _arch90)
+            _state2_90 = json.loads(_read(_sp90) or "{}")
+            _bid2_90 = _state2_90.get("batch_id") or ""
+            # (c) `guided` IS FIRST-BATCH-ONLY, and the second batch carries no ledger key.
+            _guided90 = (_state90.get("guided"), _state2_90.get("guided"),
+                         "decisions_log" in _state2_90)
+            # (d) THE FLOW'S OWN TREE IS REFUSED -- on a COPY, so a guard that has been
+            # broken cannot scaffold the installation these arms are running out of.
+            # THE COPY IS OTHERWISE A PERFECTLY GOOD TARGET -- a README so the root-signal
+            # check passes, a readable manifest and the spec template so the template read
+            # passes -- so the ONLY thing that can refuse it is the guard under test. Without
+            # that the arm goes green off a missing template and proves nothing.
+            _flowcopy90 = os.path.join(_d90, "flowcopy")
+            shutil.copytree(os.path.dirname(_initp90), os.path.join(_flowcopy90, "scripts"))
+            os.makedirs(os.path.join(_flowcopy90, "commands"))
+            shutil.copyfile(_live_path(_flow_home(), "commands/fast-dev-flow.md"),
+                            os.path.join(_flowcopy90, "commands", "fast-dev-flow.md"))
+            os.makedirs(os.path.join(_flowcopy90, "templates", "fast-dev-flow"))
+            shutil.copyfile(
+                _live_path(_flow_home(), "templates/fast-dev-flow/spec-template.md"),
+                os.path.join(_flowcopy90, "templates", "fast-dev-flow", "spec-template.md"))
+            for _n90, _t90 in (("FLOW-VERSION.md", "flow_version : x\n"),
+                               ("README.md", "# not a project\n")):
+                with open(os.path.join(_flowcopy90, _n90), "w", encoding="utf-8") as _fh90:
+                    _fh90.write(_t90)
+            _rc_d, _out_d = _sh90([os.path.join(_flowcopy90, "scripts",
+                                                "devflow-init-fast.py")], _flowcopy90)
+            # THE PREDICATE, ALONE. Run the CANON script from a neutral directory and name
+            # the copy as the argument: `root == flow` is false (the canon home is not the
+            # copy) and `flow in root.parents` is false (the copy is under a temp dir), so
+            # the ONLY expression left that can refuse is `_is_flow_installation`.
+            _rc_p, _out_p = _sh90([_initp90, _flowcopy90], _d90)
+            _untouched90 = not os.path.exists(os.path.join(_flowcopy90, ".dev-flow"))
+            # AND THE GUARD IS SHOWN DISCRIMINATING: the same copied script, on a tree that
+            # is NOT an installation, still declares a batch. PASS != NOOP.
+            _notflow90 = _toy90(_d90, "notflow")
+            _rc_d2, _out_d2 = _sh90([os.path.join(_flowcopy90, "scripts",
+                                                  "devflow-init-fast.py")], _notflow90)
+            # (e) AND A DIRECTORY THAT IS NOT A PROJECT ROOT AT ALL, exit 2, nothing written.
+            _bare90 = os.path.join(_d90, "bare")
+            os.makedirs(_bare90)
+            _rc_e, _out_e = _sh90([_initp90], _bare90)
+            # AND `--force` DOES NOT IMPLY IT. The two meanings rode on one flag until the
+            # landing review, so the flag pre-check 2 recommends turned the project-root
+            # guard off as a side effect -- round 3's defect through the repair for it.
+            _rc_f2, _out_f2 = _sh90([_initp90, "--force"], _bare90)
+            _barenone90 = not os.path.exists(os.path.join(_bare90, ".dev-flow"))
+            _rc_g2, _out_g2 = _sh90([_initp90, "--root-anyway"], _bare90)
+            good = bool(
+                _rc_a == 0 and _rc_b == 1 and _rc_c == 0 and _rc_d == 2 and _rc_e == 2
+                # THE FIRST LINE IS THE RESOLVED ABSOLUTE ROOT, and it says the argument was
+                # absent -- the half of the fold a transcript can show.
+                and _first90.startswith("devflow-init-fast \u00b7 project root ")
+                and _toy.replace("\\", "/") in _first90
+                and "current directory" in _first90
+                # SIX DECLARATION KEYS EXACTLY, plus the seeded empty ledger BECAUSE guided.
+                and set(_state90) == _SIX90 | {"decisions_log"}
+                and _state90.get("decisions_log") == []
+                and _state90.get("mode") == "fast" and _state90.get("guided") is True
+                and re.match(r"^\d{4}-\d{2}-\d{2}-fast-01$", _bid90)
+                and _bid90.startswith(_today90)
+                and set(_homes90) == {"spec", "increments", "evidence", "backlog"}
+                and _homes90.get("evidence") == "repo:.dev-flow/%s/evidence/" % _bid90
+                and all(_made90)
+                and not os.path.exists(os.path.join(_toy, ".dev-flow", _bid90,
+                                                    "03-increments", ".gitkeep"))
+                and ".dev-flow/%s/evidence/** -text" % _bid90 in _ga90
+                and ("| Batch | `%s` |" % _bid90) in _spec90
+                # THE REFUSAL IS ONE LINE AND IT SAYS WHY.
+                and "already declares a batch" in _out_b
+                and _bid2_90 == _bid90.replace("-fast-01", "-fast-02")
+                and _kept90 and len(_arch90) == 1
+                and _guided90[0] is True and _guided90[1] is False and not _guided90[2]
+                and "the flow's own tree" in _out_d and _untouched90
+                and _rc_p == 2 and "the flow's own tree" in _out_p
+                and _rc_d2 == 0       # the guard refuses an installation, not everything
+                and "project-root signals" in _out_e
+                and _rc_f2 == 2 and "project-root signals" in _out_f2 and _barenone90
+                and _rc_g2 == 0
+                and os.path.isdir(os.path.join(_bare90, ".dev-flow")))
+            ok &= good
+            print("  SCR %-28s expected `%s` run with NO argument from a toy to take the "
+                  "CURRENT DIRECTORY as the project root, NAME that absolute root on its "
+                  "first line, write the six declaration keys plus the seeded empty ledger "
+                  "and nothing else, create both homes with no `.gitkeep`, mark the evidence "
+                  "home `-text` and fill the spec header -- then refuse a second run (rc 1), "
+                  "take the next id under `--force`, drop `guided` and the ledger on that "
+                  "second batch, and REFUSE both a flow INSTALLATION and a directory with no "
+                  "project-root signals (rc 2, nothing written) while STILL declaring a "
+                  "batch on a non-installation tree the same copied script is pointed at "
+                  "-- and to refuse that same installation NAMED AS AN ARGUMENT from a "
+                  "neutral directory, where the two cheap disjuncts are both false and the "
+                  "two-witness predicate is the only expression that can say no "
+                  "\u00b7 got rc %s, %s, %d archived record(s) with the ledger "
+                  "%s \u00b7 %s"
+                  % ("INIT-declares-and-refuses", _INIT90,
+                     (_rc_a, _rc_b, _rc_c, _rc_d, _rc_p, _rc_d2, _rc_e, _rc_f2, _rc_g2),
+                     _shown(set(_state90)), len(_arch90),
+                     "kept" if _kept90 else "LOST",
+                     "ok" if good else "FAIL"))
+
+        with tempfile.TemporaryDirectory() as _d90b:
+            _toy = _toy90(_d90b)
+            _sh90([_initp90], _toy)
+            _bid90 = (json.loads(_read(os.path.join(_toy, ".dev-flow", "state.json"))
+                                 or "{}")).get("batch_id") or ""
+            _evhome90 = os.path.join(_toy, ".dev-flow", _bid90, "evidence")
+            _evfile90 = os.path.join(_evhome90, "transcript-001.txt")
+            _BYTES90 = b"1 passed in 0.01s\n"
+            with open(_evfile90, "wb") as _fh90:
+                _fh90.write(_BYTES90)
+            _want90 = hashlib.sha256(_BYTES90).hexdigest()
+            _rel90 = ".dev-flow/%s/evidence/transcript-001.txt" % _bid90
+            # (a) ROWS, from the project root, with no `--root`: path, digest, size.
+            _rc_a, _out_a = _sh90([_evidp90, _rel90], _toy)
+            _firstev90 = (_out_a.splitlines() or [""])[0]
+            # (b) A FILE OUTSIDE THE DECLARED HOME IS BAD INPUT, and the reason names the home.
+            _rc_b, _out_b = _sh90([_evidp90, "README.md"], _toy)
+            # (c) `--check` BEFORE the packet exists cannot claim a verdict.
+            _rc_c, _out_c = _sh90([_evidp90, _rel90, "--check"], _toy)
+            # (d) COMMITTED, and the packet records the SAME digest -> MATCH, rc 0.
+            _pk90 = os.path.join(_toy, ".dev-flow", _bid90, "03-increments",
+                                 "increment-001.md")
+            with open(_pk90, "w", encoding="utf-8") as _fh90:
+                _fh90.write("### Evidence files\n\n| a | b | c |\n|---|---|---|\n"
+                            "| transcript | `%s` | `%s` |\n" % (_rel90, _want90))
+            _git90(_toy, "add", "-A")
+            _git90(_toy, "commit", "-qm", "evidence")
+            _rc_d, _out_d = _sh90([_evidp90, _rel90, "--check"], _toy)
+            # (e) EDITED AFTER THE COMMIT -> MISMATCH, rc 1. The counterfactual that makes
+            # (d) an assertion rather than a tool that prints MATCH.
+            with open(_evfile90, "wb") as _fh90:
+                _fh90.write(_BYTES90 + b"edited\n")
+            _rc_e, _out_e = _sh90([_evidp90, _rel90, "--check"], _toy)
+            # (f) AND THE FLOW'S OWN TREE IS REFUSED HERE TOO, by the same predicate.
+            _rc_f, _out_f = _sh90([_evidp90, "--root",
+                                   os.path.dirname(os.path.dirname(_initp90)), "x"], _d90b)
+            # (g) A PROJECT THAT IS NOT A GIT CHECKOUT: the INDEX limb has no subject, and
+            # `C-53` says a rule whose subject is absent by construction must say so rather
+            # than manufacture a red. Every file used to report MISMATCH "not committed" at
+            # rc 1 on a tree that simply is not versioned -- and the repair for it shipped
+            # with nothing driving it, which is the second unarmed repair this revision
+            # found in itself. Every other case here runs inside a repository, so this one
+            # is the only place `versioned` is false.
+            _ng90 = os.path.join(_d90b, "nogit")
+            shutil.copytree(_toy, _ng90, ignore=shutil.ignore_patterns(".git"))
+            with open(os.path.join(_ng90, ".dev-flow", _bid90, "evidence",
+                                   "transcript-001.txt"), "wb") as _fh90:
+                _fh90.write(_BYTES90)
+            _rc_g, _out_g = _sh90([_evidp90, _rel90, "--check"], _ng90)
+            good = bool(
+                _rc_a == 0 and _rc_b == 2 and _rc_c == 2 and _rc_d == 0 and _rc_e == 1
+                and _rc_f == 2
+                and _firstev90.startswith("devflow-evidence \u00b7 project root ")
+                and _toy.replace("\\", "/") in _firstev90
+                and "current directory" in _firstev90
+                and _want90 in _out_a and _rel90 in _out_a
+                and ("| transcript-001.txt | %s | %s |" % (_rel90, _want90)) in _out_a
+                and str(len(_BYTES90)) + " bytes" in _out_a
+                and "does not resolve under the declared home" in _out_b
+                and "cannot check" in _out_c
+                and ("MATCH " + _rel90) in _out_d and "MISMATCH" not in _out_d
+                and ("MISMATCH " + _rel90) in _out_e
+                and "the flow's own tree" in _out_f
+                and _rc_g == 0 and "no git repository" in _out_g
+                and "MISMATCH" not in _out_g and ("MATCH " + _rel90) in _out_g)
+            ok &= good
+            print("  SCR %-28s expected `%s` run from the project root with no `--root` to "
+                  "name that absolute root first, print a packet-ready row carrying the "
+                  "repo-relative path, the SHA-256 of the bytes and the size, refuse a file "
+                  "outside the declared home (rc 2), claim NO verdict before a packet exists "
+                  "(rc 2 -- could not run, which is not a failed check), report MATCH "
+                  "(rc 0) against the index blob AND the packet's "
+                  "digest, report MISMATCH (rc 1) when the file is edited after the commit, "
+                  "refuse the flow's own tree, and on a project that is NOT a git "
+                  "checkout say so in one `n/a:` line and judge the packet digests ALONE "
+                  "(rc 0) instead of calling every file a MISMATCH against an index that "
+                  "does not exist \u00b7 got rc %s \u00b7 %s"
+                  % ("EVIDENCE-rows-and-check", _EVID90,
+                     (_rc_a, _rc_b, _rc_c, _rc_d, _rc_e, _rc_f, _rc_g),
+                     "ok" if good else "FAIL"))
+
+        # (3) THE SCRIPTS PRODUCE WHAT THE RULES READ -- the whole point of shipping them.
+        # ONE DECLARED EXCLUSION, and it is named in the line rather than dropped: `V7`,
+        # `V15`, `V16` and `V17` take the FLOW HOME as their subject, not the toy, so on an
+        # un-bumped or uncommitted authoring tree they block for reasons this arm is not
+        # about. Every OTHER rule's blocks are the toy's, and there must be none.
+        _IDFAM90 = ("V7", "V15", "V16", "V17")
+
+        with tempfile.TemporaryDirectory() as _d90c:
+            _toy = _toy90(_d90c)
+            _sh90([_initp90], _toy)
+            _gout90, _grc90 = _capture90(_toy)
+            _blk90 = [l for l in _gout90.splitlines() if l.lstrip().startswith("[x]")]
+            _toyblk90 = [l for l in _blk90 if l.split()[1] not in _IDFAM90]
+            _v5590 = [l for l in _gout90.splitlines() if re.match(r"^\s*\[[x!-]\] V55", l)]
+            good = bool(not _toyblk90 and _v5590
+                        and not any(l.lstrip().startswith("[x]") for l in _v5590)
+                        and any("NOT YET REACHED" in l for l in _v5590)
+                        and any("guided ledger is COMPLETE" in l for l in _v5590))
+            ok &= good
+            print("  SCR %-28s expected the gate over a toy this flow's own script "
+                  "initialised to raise NO block of its own -- the flow-identity family %s "
+                  "takes the flow home as its subject and is excluded BY NAME, never dropped "
+                  "-- with `V55` excusing every gate as NOT YET REACHED before Phase A and "
+                  "calling the SEEDED EMPTY ledger COMPLETE \u00b7 got %d toy block(s), %d "
+                  "identity block(s), rc %d \u00b7 %s"
+                  % ("GATE-reads-what-init-writes", ", ".join(_IDFAM90), len(_toyblk90),
+                     len(_blk90) - len(_toyblk90), _grc90, "ok" if good else "FAIL"))
+
+    # ---- rev90 (4-5). `--brief` IS A RENDERING AND NOT A SECOND VERDICT.
+    #
+    # The flag exists because three fresh readers reported the same obstacle in the same
+    # words: a clean fast tree prints fifty-odd `[-]` lines and the output "is hard to
+    # interpret until you learn that most lines are honest `not applicable` notices rather
+    # than failures". The ONE thing that must never be true of such a flag is that it changes
+    # the answer -- so both arms compare the two renderings of the SAME tree, and the second
+    # plants a BLOCK to prove the brief output can carry one.
+    with tempfile.TemporaryDirectory() as _d90d:
+        def _both90(_root90):
+            """(full text, full rc, brief text, brief rc) over one tree. Same process."""
+            _t1, _r1 = _capture90(_root90)
+            _t2, _r2 = _capture90(_root90, brief=True)
+            return _t1, _r1, _t2, _r2
+
+        def _verd90(_t90):
+            return "".join(re.findall(
+                r"(?m)^\d+ block \u00b7 \d+ notice \u00b7 \d+ not applicable$", _t90)[:1])
+
+        _toy90d = os.path.join(_d90d, "fasttoy")
+        _b90 = "2026-09-21-fast-01"
+        os.makedirs(os.path.join(_toy90d, ".dev-flow", _b90, "03-increments"))
+        os.makedirs(os.path.join(_toy90d, ".dev-flow", _b90, "evidence"))
+        with open(os.path.join(_toy90d, ".dev-flow", "state.json"), "w",
+                  encoding="utf-8") as _fh90:
+            json.dump({"mode": "fast", "batch_id": _b90, "flow_version": "x",
+                       "stations_active": ["P1", "P3"], "guided": True,
+                       "decisions_log": [],
+                       "artifact_homes": {
+                           "spec": "repo:.fast-dev-flow/spec.md",
+                           "increments": "repo:.dev-flow/%s/03-increments/" % _b90,
+                           "evidence": "repo:.dev-flow/%s/evidence/" % _b90,
+                           "backlog": "repo:.dev-flow/BACKLOG.md"}}, _fh90)
+        _subj90 = ((_toy90d, "a fast tree"), (_flow_home(), "the flow's own home"))
+        _bad90, _measured90 = [], []
+        for _root90, _name90 in _subj90:
+            _ft90, _frc90, _bt90, _brc90 = _both90(_root90)
+            _na90 = len([l for l in _ft90.splitlines() if l.lstrip().startswith("[-]")])
+            _askers90 = [l for l in _ft90.splitlines()
+                         if l.lstrip().startswith(("[x]", "[!]"))]
+            _bask90 = [l for l in _bt90.splitlines()
+                       if l.lstrip().startswith(("[x]", "[!]"))]
+            _nal90 = [l for l in _bt90.splitlines() if l.startswith("n/a: ")]
+            _hit90 = bool(
+                _frc90 == _brc90
+                and _verd90(_ft90) == _verd90(_bt90) != ""
+                # THE VERDICT COMES FIRST IN BRIEF AND LAST IN FULL.
+                and _bt90.index(_verd90(_bt90)) < (_bt90.index(_bask90[0]) if _bask90
+                                                   else len(_bt90))
+                and _ft90.index(_verd90(_ft90)) > (_ft90.index(_askers90[0]) if _askers90
+                                                   else -1)
+                # EVERY LINE THAT ASKS SOMETHING SURVIVES, IN ORDER, AND NOTHING ELSE.
+                and _bask90 == _askers90
+                and not [l for l in _bt90.splitlines() if l.lstrip().startswith("[-]")]
+                # ONE n/a LINE, CARRYING THE COUNT THE FULL RUN PRINTS AS `[-]` LINES.
+                and len(_nal90) == 1
+                and _nal90[0].startswith("n/a: %d rule(s)" % _na90)
+                and "run without --brief to list them" in _nal90[0])
+            _measured90.append((_name90, "rc %d" % _frc90, "%d n/a" % _na90,
+                                "%d asking" % len(_askers90)))
+            if not _hit90:
+                _bad90.append(_name90)
+        good = bool(not _bad90 and len(_measured90) == 2)
+        ok &= good
+        print("  BRF %-28s expected `--brief` to change the RENDERING and never the answer "
+              "-- identical verdict line and identical exit code on %d tree(s), the verdict "
+              "FIRST instead of last, every BLOCK and NOTICE line carried across IN ORDER, "
+              "no `[-]` line at all, and ONE `n/a:` line whose count equals the full run's "
+              "`[-]` line count \u00b7 got %s \u00b7 %s"
+              % ("SAME-VERDICT-and-exit", len(_subj90), _shown(_measured90),
+                 "ok" if good else "FAIL: " + ", ".join(_bad90)))
+
+        # PASS != NOOP. A brief renderer that dropped every finding would satisfy half of the
+        # arm above on a clean tree, so a BLOCK is PLANTED and required to appear -- first,
+        # and with the exit code it forces.
+        #
+        # THE PLANT IS NAMED, and that is this arm's own scar: the first cut planted a packet
+        # over the SOURCE-file cap, which `V9` reports as a NOTICE in `fast` -- so on the
+        # authoring tree the arm went green off `V16`'s uncommitted-changes BLOCK, a finding
+        # about a different subject that happens to exist while a revision is being written,
+        # and the same arm FAILED from a bundle where `V16` skips. An unnamed plant is a
+        # plant you cannot tell from the weather. `V1`'s live placeholder is the plant here
+        # because it is also the mistake this mode's own pre-check warns about -- a `<...>`
+        # left in place is a literal directory name, not a default -- and it BLOCKS.
+        _PLANT90 = "V1"
+        with open(os.path.join(_toy90d, ".dev-flow", _b90, "01-requirements.md"), "w",
+                  encoding="utf-8") as _fh90:
+            _fh90.write("# Requirements \u2014 <PROJECT> \u2014 Batch <BATCH_ID>\n")
+        _ft90, _frc90, _bt90, _brc90 = _both90(_toy90d)
+        _bblk90 = [l for l in _bt90.splitlines() if l.lstrip().startswith("[x]")]
+        _fblk90 = [l for l in _ft90.splitlines() if l.lstrip().startswith("[x]")]
+        _planted90 = [l for l in _fblk90 if l.split()[1] == _PLANT90]
+        good = bool(_planted90 and _bblk90 == _fblk90 and _frc90 == _brc90 == 1
+                    and _verd90(_ft90) == _verd90(_bt90)
+                    and _bt90.index(_bblk90[0]) < _bt90.index("n/a: "))
+        ok &= good
+        print("  BRF %-28s expected the PLANTED `%s` block (a live `<...>` placeholder, the "
+              "mistake pre-check 3 warns about) to appear in the brief output -- NAMED, so "
+              "an unrelated block cannot stand in for it -- with all %d block line(s) the "
+              "full run prints carried across ahead of the `n/a:` line, and BOTH runs "
+              "exiting 1, so the flag cannot hide the thing a gate exists to refuse \u00b7 "
+              "got %d planted / %d brief block(s), rc %s \u00b7 %s"
+              % ("PLANTED-BLOCK-survives", _PLANT90, len(_fblk90), len(_planted90),
+                 len(_bblk90), (_frc90, _brc90), "ok" if good else "FAIL"))
+
+    # ---- rev90 (6). THE PAGE POINTS AT THE TOOLS, AND THE POINTER IS WHERE THE TOOL IS.
+    #
+    # A shipped script nobody is told to run is a script nobody runs: rev88 shipped the spec
+    # scanner and the page went on saying *no scanner ships with this flow* until an arm said
+    # otherwise. The three pointers this rev adds are held the same way -- by literal, in the
+    # page that owns the step -- and so is the invocation the fold turned round. The reader
+    # who scaffolded the FLOW'S OWN TREE did it because the page said "from the flow root"
+    # and never said which absolute path to hand it; both halves of that repair are here.
+    _fast90 = _read(_live_path(_flow_home(), "commands/fast-dev-flow.md")) or ""
+    _pkt90 = _read(_live_path(_flow_home(),
+                              "templates/fast-dev-flow/increment-template.md")) or ""
+    _pre390 = "".join(re.findall(r"(?m)^3\. \*\*Declare the batch.*$", _fast90)[:1])
+    _pre690 = "".join(re.findall(r"(?m)^6\. \*\*Run the gate now.*$", _fast90)[:1])
+    _evsec90 = "".join(_md_section(_pkt90, _V41_HEADING) or [""])
+    # ONE HOME, MEASURED BOTH WAYS: the page NAMES each script exactly where its step lives,
+    # and does NOT restate the flags -- it sends the reader to `--help`, which is where a
+    # flag that changes can only change once.
+    _PAGEFLAG90 = re.compile(r"`(--[a-z][a-z-]*)`")
+    _DECL90 = r'add_argument\("(--[a-z][a-z-]*)"'
+    _initfl90 = set(re.findall(_DECL90, _read(_initp90) or "")) | {"--help"}
+    _evidfl90 = set(re.findall(_DECL90, _read(_evidp90) or "")) | {"--help"}
+    _valfl90 = set(re.findall(r'"(--[a-z][a-z-]*)" in sys\.argv',
+                              _read(os.path.abspath(__file__)) or "")) | {"--help"}
+    _ghost90 = sorted((set(_PAGEFLAG90.findall(_pre390)) - _initfl90)
+                      | (set(_PAGEFLAG90.findall(_pre690)) - _valfl90)
+                      | (set(_PAGEFLAG90.findall(_evsec90)) - _evidfl90))
+    # AND THE PACKET POINTS INSTEAD OF RESTATING. Fold (a)'s four clauses stood in two
+    # homes in paraphrase, and the first cut of this arm REQUIRED both copies -- a duplicate
+    # census cannot see a paraphrase, so nothing else would have.
+    _CLAUSE90 = ("FROM YOUR PROJECT'S ROOT", "refuses the flow's own folder",
+                 "on its FIRST line")
+    _restated90 = [_c90 for _c90 in _CLAUSE90 if _c90 in _evsec90]
+    # ⚠ THE CORPUS IS THE TABLED `.md` FILES AND THE MANIFEST IS NOT ONE OF THEM, which is
+    # LUCK rather than design and is said here so the next reader does not re-derive it: the
+    # manifest cannot table itself, and its rev90 row quotes this very phrase to describe the
+    # repair. Widen the corpus to include it and the changelog reddens its own arm. The
+    # census also catches ONE literal spelling -- a reflow of the same false claim evades it,
+    # the same bound `TPL FAST-one-home`'s line-identical scope already declares.
+    _STALE90 = "tree with no batch declared"
+    _stale90 = sorted(_r90 for _r90 in (_canon(_flow_home()) or {})
+                      if _r90.endswith(".md")
+                      and _STALE90 in (_read(_live_path(_flow_home(), _r90)) or ""))
+    good = bool(
+        # pre-check 3: the script, the working directory, and the refusal.
+        "devflow-init-fast.py" in _pre390
+        and "FROM YOUR PROJECT'S ROOT" in _pre390
+        and "refuses the flow's own folder" in _pre390
+        and "on its FIRST line" in _pre390
+        # pre-check 6: the gate's compact rendering, and its one home.
+        and "--brief" in _pre690 and "--help" in _pre690
+        and "the exit code is the same one" in _pre690
+        # the packet's evidence section: the row-printing script, and a POINTER at the
+        # invocation rule's one home rather than a second copy of its four clauses.
+        and "devflow-evidence.py" in _evsec90
+        and "\u00a7Pre-checks step 3" in _evsec90
+        and not _restated90
+        # EVERY FLAG THE PAGE NAMES IS A FLAG THAT EXISTS, derived from the scripts'
+        # own `add_argument` calls and this file's own dispatch rather than typed here. The
+        # first cut asserted the opposite direction -- that no flag is named at all -- over
+        # a hand-picked three of the six, and the three it omitted were the three the pages
+        # do name; the claim was a sample chosen to pass. A page may name the flag its step
+        # needs; what it must not do is name one the tool does not have.
+        and not _ghost90
+        # the pointer is named ONCE per step, not sprinkled: each script's name appears in
+        # exactly one of the two pre-checks, and `--brief` in exactly one.
+        and _pre390.count("devflow-init-fast.py") == 1
+        and _pre690.count("--brief") == 1
+        # AND NO PAGE STILL SAYS THE PRE-PHASE-A GATE READS AN UNDECLARED TREE. rev90 moved
+        # the declaration ahead of that run and corrected three copies of the sentence; the
+        # fourth stood in the very section the other three POINT at, because nothing read
+        # it. A census over every `.md` the manifest declares is what reads it now.
+        and not _stale90)
+    ok &= good
+    print("  CMD %-28s expected `/fast-dev-flow` to POINT at each tool where that step's rule "
+          "lives -- pre-check 3 at `devflow-init-fast.py` with the working directory (the "
+          "PROJECT'S root) and the refusal of the flow's own folder, pre-check 6 at `--brief` "
+          "with the validator's `--help` as its home and the exit code declared unchanged, "
+          "and the packet's `Evidence files` section at `devflow-evidence.py` -- which "
+          "POINTS at pre-check 3 for the invocation rule instead of paraphrasing its "
+          "clauses -- with every flag the three sections name being one of the %d the two "
+          "scripts and this file's own dispatch actually declare, and no page still saying "
+          "the pre-Phase-A run reads an undeclared tree \u00b7 pre-check 3 %s, pre-check 6 "
+          "%s \u00b7 flags naming nothing %s \u00b7 clauses restated in the packet %s "
+          "\u00b7 stale page(s) %s \u00b7 %s"
+          % ("FAST-POINTS-AT-ITS-TOOLS",
+             len(_initfl90 | _evidfl90 | _valfl90),
+             "found" if _pre390 else "NOT FOUND", "found" if _pre690 else "NOT FOUND",
+             _shown(set(_ghost90)) if _ghost90 else "{}",
+             _shown(set(_restated90)) if _restated90 else "{}",
+             _shown(set(_stale90)) if _stale90 else "{}",
+             "ok" if good else "FAIL"))
+
+    # ---- rev90 (7). THE THREE CONSTANTS THE TWO SCRIPTS SHARE ARE PAIRED, BOTH WAYS.
+    #
+    # Each of them ships with a comment DECLARING the duplication and naming the hazard --
+    # *widening one without the other is a known defect class* -- and `C-50` admits a
+    # declared duplication only when an ARM holds the copies together. There was none until
+    # the landing review looked: three constants, byte-identical, which is exactly the state
+    # in which a divergence is cheapest to introduce and most expensive to notice. The batch
+    # grammar is paired against the RULE's own (`_V28_BATCH`) as well, because that is the
+    # reader the scripts are writing for.
+    if not (os.path.isfile(_initp90) and os.path.isfile(_evidp90)):
+        ok &= _nosubject85("SCR", "CONSTANTS-agree-with-the-rule",
+                           "no `%s` / `%s` on this tree" % (_INIT90, _EVID90), 28)
+    else:
+        _isrc90 = _read(_initp90) or ""
+        _esrc90 = _read(_evidp90) or ""
+
+        def _const90(src, name):
+            """The source text of `name =`'s right-hand side, to its blank line. PURE."""
+            _m90 = re.search(r"(?ms)^%s = (.*?)(?=\n\n|\n[A-Za-z_])" % re.escape(name), src)
+            return " ".join((_m90.group(1) if _m90 else "").split())
+
+        _lay_i90 = _const90(_isrc90, "_LAYOUTS")
+        _lay_e90 = _const90(_esrc90, "_LAYOUTS")
+        _bat_i90 = _const90(_isrc90, "_BATCH")
+        _bat_r90 = " ".join(_const90(_read(os.path.abspath(__file__)) or "",
+                                     "_V28_BATCH").split())
+        # THE SIGNAL LIST IS PAIRED AGAINST THE PAGE THAT PUBLISHES IT, not against a copy:
+        # `/dev-flow-init`'s pre-check names the signals a human looks for, and the script
+        # enforces them, so the page is the home and the script is the second reader.
+        _sig90 = re.findall(r'"([^"]+)"|\'([^\']+)\'',
+                            _const90(_isrc90, "_ROOT_SIGNALS"))
+        _sig90 = [a or b for a, b in _sig90]
+        _initmd90 = _read(_live_path(_flow_home(), "commands/dev-flow-init.md")) or ""
+        _unpub90 = sorted(_s90 for _s90 in _sig90
+                          if _s90.rstrip("/") not in _initmd90.replace("`", ""))
+        good = bool(_lay_i90 and _lay_i90 == _lay_e90
+                    and _bat_i90 and _bat_r90
+                    and _bat_i90.strip("()") == _bat_r90.strip("()")
+                    and len(_sig90) >= 3 and not _unpub90
+                    # AND THE DECLARATION IS NOT LEFT TO A COMMENT ALONE: each site says the
+                    # duplication is deliberate, so a reader who finds one finds the other.
+                    and "widening one" in _isrc90 and "widening one" in _esrc90)
+        ok &= good
+        print("  SCR %-28s expected the %d constant(s) the two shipped scripts BOTH spell "
+              "-- the two-layout witness table and the batch-id grammar -- to be textually "
+              "identical, the grammar to be the one `_V28_BATCH` reads, and every one of the "
+              "%d project-root signal(s) the script enforces to be PUBLISHED by "
+              "`commands/dev-flow-init.md`, so a declared duplication is held by an arm and "
+              "not by a comment \u00b7 layouts %s \u00b7 unpublished signal(s) %s \u00b7 %s"
+              % ("CONSTANTS-agree-with-the-rule", 2, len(_sig90),
+                 "agree" if _lay_i90 == _lay_e90 else "DIFFER",
+                 _shown(set(_unpub90)) if _unpub90 else "{}",
+                 "ok" if good else "FAIL"))
+
     # ---- rev85. THE EXIT CODE A SKILL-ONLY READER ACTUALLY GETS, MEASURED ON A REAL BUNDLE.
     #
     # Operator decision, 2026-09-18: *`--selftest` run FROM THE BUNDLE exits 0*. Everything
@@ -31846,6 +32564,10 @@ def usage():
     print("  --sync-checkouts   propagate the canon to the checkouts `docs/deployment.md` lists")
     print("  --help, -h         this text")
     print()
+    print("  --brief            MODIFIER on the gate run above (not a mode of its own): the")
+    print("                     verdict first, then only BLOCK and NOTICE lines, then the")
+    print("                     n/a count; the exit code is identical")
+    print()
     print("Mutants are a separate tool: `devflow-mutate.py --help`, beside this file.")
     return 0
 
@@ -31866,4 +32588,4 @@ if __name__ == "__main__":
         sys.exit(flow_map(os.path.expanduser("~/.claude"), _root, "--fetch" in sys.argv))
     if "--atlas" in sys.argv:
         sys.exit(atlas(_root, "--write" in sys.argv))
-    sys.exit(run(_root))
+    sys.exit(run(_root, brief="--brief" in sys.argv))

@@ -42,12 +42,19 @@ the bundle that the manifest neither declares nor excludes is refused as undecla
 **exits non-zero** on either, and on a manifest whose own revision line disagrees with its
 newest changelog row.
 
-1. Before Phase 0 / Phase A, run the gate and read its verdict out loud. **It runs at least TWICE in a batch and the two runs answer different questions:** this first one proves the TOOL and the bundle — on a tree with no batch declared, most rules have no subject and say so, which is a green flow identity and not a green batch — and the one at the closing gate proves the BATCH, after `state.json` exists for the rules to read.
+1. Before Phase 0 / Phase A, run the gate and read its verdict out loud. **It runs at least TWICE in a batch and the two runs answer different questions:** this first one proves the TOOL and the bundle — over a batch just declared and nothing more, most rules have no subject yet and say so, which is a green flow identity and not a green batch — and the one at the closing gate proves the BATCH, after the packets and the evidence exist for the rules to read as well.
 
    ```
    cd <this bundle's root>              # the directory holding FLOW-VERSION.md, SKILL.md, scripts/
    python scripts/devflow-validate.py <the project root, as an absolute path>
+   python scripts/devflow-validate.py --brief <the project root>   # same verdict, same exit code, only the lines that ask something
    ```
+
+   **The second form is the same run rendered short** — the verdict first, then only the
+   BLOCK and NOTICE lines, then one line counting the rest. Its exit code is identical, so
+   step 2's refusal rule is unchanged; `python scripts/devflow-validate.py --help` is that
+   flag's home. Reach for it when the `[-]` lines are in your way, which is what they are
+   there for: each one is a rule saying it found no subject on this tree.
 
    `<this bundle's root>` is the directory this `SKILL.md` lives in; `<the project root>` is
    the repository the batch works in. **The working directory is the BUNDLE ROOT and the argument is the PROJECT ROOT — two different
@@ -166,11 +173,47 @@ per-increment gate and the Phase C final gate; in `core` and `full` each station
    gate that carries none; a gate still ahead of the batch is never accused, and the rule says
    what decided which is which.
 
+   **The shape, once — one element of the `decisions_log` array, and these four fields are
+   exactly what the rules read:**
+
+   ```json
+   [
+     {
+       "gate": "A",
+       "guided": true,
+       "date": "2026-09-21",
+       "decision": "Phase A spec approved under the batch's standing authorization; Phase B is next."
+     },
+     {
+       "gate": "increment-001",
+       "guided": true,
+       "date": "2026-09-21",
+       "decision": "Phase B implementation approved under the batch's standing authorization; Phase C is next."
+     }
+   ]
+   ```
+
+   **Both entries are shown because the per-increment gate is the one that gets guessed**:
+   its `gate` value is the packet's own id — `increment-001`, not `B`, not `increment`, not
+   `1`. The `C` entry has the same shape with `"gate": "C"`.
+
+   **The `decision` text names no increment — at EVERY gate, the increment gate included**,
+   and that is a rule and not a style: `V27` harvests `increment <n>` / `inc <n>` out of a
+   decision string and asks for the packet it names. At the `A` gate that packet cannot exist
+   yet; at the increment gate the id is already carried by the `gate` FIELD, which is where
+   the rules read it. Name the PHASE in the decision and let the field name the increment.
+
+   `gate` carries one of the three ids the `Gate id` column publishes; in `core` and `full`
+   the same field is spelled `station` and carries the station id. `V55` reads `gate`/`station`
+   and `guided`; `V27` reads `date` and `decision`. A reader who had to infer this shape got it
+   right and the rule accepted it — which is exactly the kind of luck a fence removes.
+
 **At the close step the order is record-then-run: write the `C` entry first, then run the gate
 again.** A guided batch closes its final gate in these words:
 *run the gate again now; it reads the batch this time.*
-The first run proves the TOOL and the bundle, over a tree with no batch declared; this one
-proves the BATCH, because `state.json` and the batch record now exist for the rules to read.
+The first run proves the TOOL and the bundle, over a batch just declared and nothing more;
+this one proves the BATCH, because the packets and the evidence now exist for the rules to
+read as well.
 Recording the `C` decision FIRST is what lets the closing run see a complete ledger. **This is
 the one sentence this flow writes TWICE on purpose, and the duplication is declared rather
 than left to look like drift** (`C-50`): it stands here, where the rule is, and again in

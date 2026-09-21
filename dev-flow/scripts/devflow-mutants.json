@@ -7875,8 +7875,176 @@
    "expect_arms": [
     "CMD BUDGET-one-variable"
    ]
+  },
+  {
+   "subject": "devflow-validate",
+   "id": "r90-M01-init-writes-a-seventh-declaration-key",
+   "origin": "rev90",
+   "file": "docs/tools/devflow-init-fast.py",
+   "target": "rev90 / devflow-init-fast.py, the six-key declaration",
+   "old": "        \"guided\": guided,\n    }",
+   "new": "        \"guided\": guided,\n        \"owner\": \"unset\",\n    }",
+   "why": "THE DECLARATION IS SIX KEYS AND A SEEDED LEDGER, and the reason is `C-58`: a seeded key nothing reads is a fact nobody maintains. `owner` is the most plausible seventh -- `/dev-flow-init` names it as deliberately absent, and a script author copying the core schema would add it back. The arm asserts the key SET by equality rather than a membership test, which is what makes an ADDED key a failure and not an unnoticed extra.",
+   "expect": "KILLED",
+   "expect_arms": [
+    "SCR INIT-declares-and-refuses"
+   ]
+  },
+  {
+   "subject": "devflow-validate",
+   "id": "r90-M02-init-accepts-the-flow-installation-as-root",
+   "origin": "rev90",
+   "file": "docs/tools/devflow-init-fast.py",
+   "target": "rev90 / devflow-init-fast.py, round 3's fold",
+   "old": "    if root == flow or flow in root.parents or _is_flow_installation(root):",
+   "new": "    if root == flow and flow in root.parents and _is_flow_installation(root):",
+   "why": "THE DEFECT THIS REV EXISTS FOR, restored by one operator. A fresh reader ran the script from the FLOW ROOT and scaffolded a batch into the flow's own installation, which the script accepted silently. `or` -> `and` is the exact shape a refactor makes: every clause is still there, every message still reads correctly, and the guard now fires on nothing. The arm drives it on a COPY of the flow that is otherwise a perfectly good target, so the refusal it measures can only come from this expression.",
+   "expect": "KILLED",
+   "expect_arms": [
+    "SCR INIT-declares-and-refuses"
+   ]
+  },
+  {
+   "subject": "devflow-validate",
+   "id": "r90-M03-evidence-check-calls-a-mismatch-a-match",
+   "origin": "rev90",
+   "file": "docs/tools/devflow-evidence.py",
+   "target": "rev90 / devflow-evidence.py, the --check verdict",
+   "old": "        ok = packet_digest == digest and (blob_digest == digest or not versioned)",
+   "new": "        ok = packet_digest is not None and (blob_digest is not None or not versioned)",
+   "why": "A VERIFIER THAT CANNOT SAY NO VERIFIES NOTHING. The mutation keeps both digests being LOOKED UP and drops the comparison, so a file edited after its commit -- the case the tool exists for -- prints MATCH and exits 0. It is the `C-40` vacuous check in one line, and the arm kills it because it asserts the MISMATCH direction on a file it edits itself, not only the MATCH one.",
+   "expect": "KILLED",
+   "expect_arms": [
+    "SCR EVIDENCE-rows-and-check"
+   ]
+  },
+  {
+   "subject": "devflow-validate",
+   "id": "r90-M04-brief-drops-the-block-lines",
+   "origin": "rev90",
+   "file": "docs/tools/devflow-validate.py",
+   "target": "rev90 / run(brief=True), the finding lines",
+   "old": "        for f in findings:\n            if f.sev != SKIP:\n                print(f)",
+   "new": "        for f in findings:\n            if f.sev == NOTICE:\n                print(f)",
+   "why": "THE FLAG'S WHOLE PREMISE IS THAT IT DROPS ONLY THE LINES THAT ASK NOTHING. Dropping the BLOCK lines leaves the verdict line, the notices and the exit code all correct, so on a CLEAN tree -- which is what a reader runs first -- nothing changes at all. Only a PLANTED block can see it, which is why the arm plants one, NAMED.",
+   "expect": "KILLED",
+   "expect_arms": [
+    "BRF PLANTED-BLOCK-survives"
+   ]
+  },
+  {
+   "subject": "devflow-validate",
+   "id": "r90-M05-brief-changes-the-exit-code",
+   "origin": "rev90",
+   "file": "docs/tools/devflow-validate.py",
+   "target": "rev90 / run(brief=True), the exit code",
+   "old": "        return 1 if blocks else 0\n    for f in findings:",
+   "new": "        return 0\n    for f in findings:",
+   "why": "THE EXIT CODE IS THE ONLY THING THAT REFUSES AN INVOCATION on a runtime with no hooks -- `SKILL.md` step 2 makes stopping on it imperative. A rendering flag that returns 0 over a blocking tree turns the gate off for everyone who prefers the compact output, silently, while the BLOCK line is still printed above it. Both arms compare the two runs' codes; the planted one forces the non-zero case to exist.",
+   "expect": "KILLED",
+   "expect_arms": [
+    "BRF PLANTED-BLOCK-survives"
+   ]
+  },
+  {
+   "subject": "devflow-validate",
+   "id": "r90-M06-guided-section-drops-the-entry-example",
+   "origin": "rev90",
+   "file": "skills/dev-flow/SKILL.md",
+   "target": "rev90 / SKILL.md §Guided first run, the entry's shape",
+   "old": "   ```json\n   [\n     {\n       \"gate\": \"A\",\n       \"guided\": true,\n       \"date\": \"2026-09-21\",\n       \"decision\": \"Phase A spec approved under the batch's standing authorization; Phase B is next.\"\n     },\n     {\n       \"gate\": \"increment-001\",\n       \"guided\": true,\n       \"date\": \"2026-09-21\",\n       \"decision\": \"Phase B implementation approved under the batch's standing authorization; Phase C is next.\"\n     }\n   ]\n   ```\n",
+   "new": "",
+   "why": "THE SHAPE A READER HAD TO INFER. Round 3's reader read the four field NAMES, guessed the JSON, and `V55` accepted the guess -- a pass by luck, which leaves exactly the evidence a pass by construction leaves. Deleting the fence restores that state while every sentence around it still reads correctly, so a census over the section's prose cannot see the loss; the arm requires the fence and its four fields by literal. rev90 acceptance round 2: the fence became an ARRAY of two entries because the PER-INCREMENT one is what a reader guesses -- `B`, `increment`, `1` and `increment-001` are four plausible values and only the last is read.",
+   "expect": "KILLED",
+   "expect_arms": [
+    "V55 SKILL-states-the-gate"
+   ]
+  },
+  {
+   "subject": "devflow-validate",
+   "id": "r90-M07-pre-check-3-stops-naming-the-script",
+   "origin": "rev90",
+   "file": "commands/fast-dev-flow.md",
+   "target": "rev90 / fast-dev-flow.md pre-check 3, the pointer",
+   "old": "3. **Declare the batch — run `python <the flow root>/scripts/devflow-init-fast.py` FROM YOUR PROJECT'S ROOT.**",
+   "new": "3. **Declare the batch.**",
+   "why": "A SHIPPED SCRIPT NOBODY IS TOLD TO RUN IS A SCRIPT NOBODY RUNS -- rev88 shipped the spec scanner while the page still said no scanner ships with this flow. The mutation removes the pointer and the working directory together, leaving the rest of the pre-check intact, which is the state every reader of rev89 was in: the mechanical step, done by hand, from prose.",
+   "expect": "KILLED",
+   "expect_arms": [
+    "CMD FAST-POINTS-AT-ITS-TOOLS"
+   ]
+  },
+  {
+   "subject": "devflow-validate",
+   "id": "r90-M08-init-loses-the-two-witness-flow-guard",
+   "origin": "rev90",
+   "file": "docs/tools/devflow-init-fast.py",
+   "target": "rev90 / devflow-init-fast.py, `_is_flow_installation`",
+   "old": "    return any(root.joinpath(*_man).is_file() and root.joinpath(*_tool).is_file()\n               for _man, _tool in _LAYOUTS)",
+   "new": "    return False",
+   "why": "THE HALF OF THE GUARD THE FIRST ARM COULD NOT SEE. `root == flow` and `flow in root.parents` catch the script's OWN installation; this predicate catches ANOTHER one -- the case a reader with two checkouts is in. The landing review proved by mutation that deleting it left the arm green, because the fixture satisfied the first disjunct. The arm now drives the canon script against a copied installation NAMED AS AN ARGUMENT from a neutral directory, where the first two disjuncts are both false and this expression is the only one that can refuse.",
+   "expect": "KILLED",
+   "expect_arms": [
+    "SCR INIT-declares-and-refuses"
+   ]
+  },
+  {
+   "subject": "devflow-validate",
+   "id": "r90-M09-force-deletes-the-ledger-it-should-archive",
+   "origin": "rev90",
+   "file": "docs/tools/devflow-init-fast.py",
+   "target": "rev90 / devflow-init-fast.py, the `--force` archive",
+   "old": "    if state_path.exists():\n        written.append(\"archived the previous declaration, ledger included -> \"\n                       + _archive(state_path, devflow / \"archive\", \"state.json\"))",
+   "new": "    if False:\n        pass",
+   "why": "`--force` IS THE FLAG THE PAGE RECOMMENDS FOR STARTING FRESH, and until the landing review it archived the spec and overwrote the declaration beside it -- and the declaration is the single slot holding `decisions_log`, the guided ledger `V55` and `V27` read. The prose even advertised the loss as safety. The mutation restores exactly that state while the spec is still archived, so the output still LOOKS careful.",
+   "expect": "KILLED",
+   "expect_arms": [
+    "SCR INIT-declares-and-refuses"
+   ]
+  },
+  {
+   "subject": "devflow-validate",
+   "id": "r90-M10-force-reopens-the-project-root-guard",
+   "origin": "rev90",
+   "file": "docs/tools/devflow-init-fast.py",
+   "target": "rev90 / devflow-init-fast.py, the root-signal override",
+   "old": "    if not any((root / s).exists() for s in _ROOT_SIGNALS) and not args.root_anyway:",
+   "new": "    if not any((root / s).exists() for s in _ROOT_SIGNALS) and not args.force:",
+   "why": "ONE FLAG, TWO UNRELATED MEANINGS. Riding the project-root override on `--force` -- the flag pre-check 2 recommends for archiving a previous batch -- turns the guard off as a side effect, which is round 3's defect re-opened through the repair for it. The mutation is the one-word slip that does it, and every message in the file still reads correctly afterwards.",
+   "expect": "KILLED",
+   "expect_arms": [
+    "SCR INIT-declares-and-refuses"
+   ]
+  },
+  {
+   "subject": "devflow-validate",
+   "id": "r90-M11-the-two-scripts-layout-tables-diverge",
+   "origin": "rev90",
+   "file": "docs/tools/devflow-evidence.py",
+   "target": "rev90 / devflow-evidence.py, `_LAYOUTS`",
+   "old": "_LAYOUTS = (((\"FLOW-VERSION.md\",), (\"scripts\", \"devflow-validate.py\")),\n            ((\"docs\", \"FLOW-VERSION.md\"), (\"docs\", \"tools\", \"devflow-validate.py\")))",
+   "new": "_LAYOUTS = (((\"FLOW-VERSION.md\",), (\"scripts\", \"devflow-validate.py\")),)",
+   "why": "THE DECLARED DUPLICATION, WIDENED ON ONE SIDE ONLY -- which is the failure its own comment names and which nothing held until the landing review looked. Both scripts spell this table because a script in the hand cannot import its sibling; dropping the second layout from one of them leaves every sentence in both files true and the two readers disagreeing about what a flow installation is.",
+   "expect": "KILLED",
+   "expect_arms": [
+    "SCR CONSTANTS-agree-with-the-rule"
+   ]
+  },
+  {
+   "subject": "devflow-validate",
+   "id": "r90-M12-check-manufactures-a-red-where-there-is-no-index",
+   "origin": "rev90",
+   "file": "docs/tools/devflow-evidence.py",
+   "target": "rev90 / devflow-evidence.py, the C-53 limb of --check",
+   "old": "        ok = packet_digest == digest and (blob_digest == digest or not versioned)",
+   "new": "        ok = packet_digest == digest and blob_digest == digest",
+   "why": "`C-53`: A RULE WHOSE SUBJECT IS ABSENT BY CONSTRUCTION MUST NOT MANUFACTURE A RED. On a project that is not a git checkout there is no index to compare against, and without this disjunct every cited file reports MISMATCH `not staged` at rc 1 while disk and packet agree perfectly. The repair shipped with nothing driving it -- every other case in its arm runs inside a repository -- which is the second unarmed repair this revision found in itself; the arm now carries a non-git case and this mutant is what holds it there.",
+   "expect": "KILLED",
+   "expect_arms": [
+    "SCR EVIDENCE-rows-and-check"
+   ]
   }
  ],
- "live_floor": 437,
+ "live_floor": 557,
  "live_floor_why": "The number of NON-RETIRED mutants this registry must still hold. `MUT REGISTRY-anchors-live` asserts it. It is a RATCHET: lowering it is a deliberate act that says a battery got smaller, and it belongs here -- in the diff a reviewer reads -- rather than as a constant buried in the validator."
 }
