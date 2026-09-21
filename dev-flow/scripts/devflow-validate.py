@@ -27954,6 +27954,153 @@ def selftest():
           f"{_shown(set(_evbad86)) if _evbad86 else '{}'} \u00b7 "
           f"{'ok' if good else 'FAIL'}")
 
+    # ---- rev89: ONE RULE, ONE HOME -- MEASURED, over the five files of the fast path.
+    #
+    # rev89 rewrote that path so every operative rule of a fast batch is stated ONCE, in the
+    # file the reader has open at that step, and every other file POINTS at that home. `C-50`
+    # is the control and it had no instrument: a restated rule is not a typo, it is a second
+    # home, and a second home is invisible until the two copies disagree -- at which point the
+    # reader obeys whichever they opened first. So the census is mechanical and runs here.
+    #
+    # A non-heading prose line of at least `_DUP89MIN` normalised characters may stand in AT
+    # MOST ONE of the five files. Fenced blocks are excluded: commands and JSON seeds are
+    # machine text, several of them pinned verbatim by other arms, and repeating a command is
+    # not restating a rule. Headings are addresses, not statements.
+    _DUP89MIN = 40
+    _DUP89FILES = ("commands/fast-dev-flow.md",
+                   "templates/fast-dev-flow/spec-template.md",
+                   "templates/fast-dev-flow/increment-template.md",
+                   "dev-flow/SKILL.md",
+                   "commands/dev-flow-init.md")
+    # THE ONE DECLARED EXEMPTION, and it is machine-mandated rather than editorial: `TPL
+    # MODE-owed-in-derives` requires this line VERBATIM in BOTH fast templates, so the repeat
+    # is a contract with another arm and not a second home. Adding a member is a finding.
+    # ⚠ WHAT THIS REGISTER COVERS IS LINE-IDENTICAL REPEATS, and saying so is the difference
+    # between a bound and a false claim (rev89 review, `F4`). The flow sanctions one OTHER
+    # duplication -- the close sentence `SKILL.md` §*Guided first run* declares and requires in
+    # both copies -- and it is absent here because the two copies are not line-identical: one
+    # stands alone, the other is folded into a longer sentence. Normalise either and this
+    # census reddens on a duplication the flow asked for, which is why the pair is named here
+    # rather than discovered by whoever reflows a line.
+    _DUP89ALLOW = ("> **Owed in.** `fast` ✓ · `core` — · `full` —",)
+
+    def _dup89(named):
+        """{name: text} -> the sorted prose lines standing in MORE THAN ONE of them. PURE."""
+        _seen89 = {}
+        for _name89, _txt89 in named.items():
+            _fence89 = False
+            for _raw89 in (_txt89 or "").splitlines():
+                if _raw89.lstrip().startswith("```"):
+                    _fence89 = not _fence89
+                    continue
+                if _fence89:
+                    continue
+                _n89 = re.sub(r"\s+", " ", _raw89).strip()
+                if (len(_n89) < _DUP89MIN or _n89.startswith("#")
+                        or _n89 in _DUP89ALLOW):
+                    continue
+                _seen89.setdefault(_n89, set()).add(_name89)
+        return tuple(sorted(_k89 for _k89, _v89 in _seen89.items() if len(_v89) > 1))
+
+    _dupsrc89 = {_rel89: _read(_live_path(_flow_home(), _rel89)) or ""
+                 for _rel89 in _DUP89FILES}
+    _duplive89 = _dup89(_dupsrc89)
+    # SHOWN DISCRIMINATING BEFORE ITS ZERO IS BELIEVED (`C-40`), over the four cases that
+    # decide what the zero means: a rule restated in a second file is CAUGHT; the allowlisted
+    # line in both templates is EXEMPT; a short line repeated is below the floor and ignored;
+    # and a line repeated INSIDE a fence is machine text and ignored. Without the first the
+    # zero is vacuous; without the other three it is a false alarm waiting to happen.
+    _DUPRULE89 = ("**Never close a HIGH with a recommended fix, and this sentence is long "
+                  "enough to count as a rule.**")
+    _dupplant89 = (
+        _dup89({"a": _DUPRULE89, "b": "x\n" + _DUPRULE89}) == (_DUPRULE89,),
+        _dup89({"a": _DUP89ALLOW[0], "b": _DUP89ALLOW[0]}) == (),
+        _dup89({"a": "too short to count", "b": "too short to count"}) == (),
+        _dup89({"a": "```\n" + _DUPRULE89 + "\n```", "b": "```\n" + _DUPRULE89 + "\n```"}) == ())
+    good = (len(_dupsrc89) == 5 and all(_dupsrc89.values())
+            and not _duplive89 and _dupplant89 == (True,) * 4)
+    ok &= good
+    print(f"  TPL  {'FAST-one-home':<31} expected every operative sentence of the fast path to "
+          f"stand in exactly ONE of the {len(_DUP89FILES)} files that carry it — non-heading "
+          f"prose lines of ≥{_DUP89MIN} normalised chars, fences excluded, "
+          f"{len(_DUP89ALLOW)} declared machine-mandated exemption(s) — with the census "
+          f"shown catching a restated rule, exempting the allowlisted line, and ignoring a "
+          f"short and a fenced repeat {_dupplant89} · restated "
+          f"{_shown(set(_duplive89)) if _duplive89 else '{}'} · "
+          f"{'ok' if good else 'FAIL'}")
+
+    # ---- rev89: THE THREE THINGS A NEWCOMER CANNOT RUN THE BATCH WITHOUT.
+    #
+    # Two were found by fresh readers of the published bundle and both are ABSENCES, which is
+    # the shape no presence census sees until someone is stuck. The third is this arm's own
+    # second review, and it is why the first two spellings of the `F1` repair were wrong.
+    #
+    #   `F1` (2026-09-20, a Claude Code reader): invoked as a slash command, the rendered page
+    #   never said where the flow's own files live, so every `templates/…`, `agents/…` and
+    #   `scripts/…` path in it resolved against nothing and the reader searched the filesystem
+    #   for `SKILL.md`. The repair is the opening sentence: those paths are FLOW-RELATIVE,
+    #   written in the layout the published bundle uses.
+    #
+    #   ⚠ AND THE OPENING MUST POINT RATHER THAN RULE, which is the conjunct rev89's review
+    #   added after refusing two drafts. A sentence that RESOLVES the paths itself becomes a
+    #   second home for the mapping `commands/dev-flow.md` §*Where the flow's own files live*
+    #   declares it owns, and each draft that tried was FALSE for one of the two layouts --
+    #   the first named the canon directories and the publication scan refused it
+    #   (`canon-home-path`), the second identified the root by `templates/` and `agents/` and
+    #   so pointed a canon reader at a directory where two cited templates do not exist. So
+    #   the arm requires the POINTER, and the pointer's target is resolved by `MAP
+    #   POINTERS-resolve`. ⚠ WHAT THIS ARM DOES NOT OWN, said out loud rather than implied by
+    #   its name: whether each cited path EXISTS is `CMD TEMPLATE-citations-resolve`'s
+    #   question, asked of the bundle, which is the tree those paths are written for.
+    #
+    #   `F9` (same reader): at the close the `C` entry can only be written AFTER the closing
+    #   run, so `V55` necessarily reported the gate unrecorded -- a one-run lag by
+    #   construction. The repair is an ORDER, not a fact: record, THEN run. So the arm asserts
+    #   the order and not merely the presence, because a page carrying both sentences in the
+    #   wrong sequence reproduces the finding while every literal is still there.
+    _fast89 = _read(_live_path(_flow_home(), "commands/fast-dev-flow.md")) or ""
+    _F189 = "is FLOW-RELATIVE: written from the flow's own root"
+    _F189SCOPE = "Every path this file names outside your project"
+    _F189HOME = "§*Where the flow's own files live*"
+    _F989 = "**Record the `C` decision, then run the gate.**"
+
+    def _newcomer89(text):
+        """(paths are declared flow-relative AND point at the mapping's one home,
+        close order is record-then-run) for a page. PURE."""
+        _open89 = (text or "").split(chr(10) + "## ", 1)[0]
+        _i89 = (text or "").find(_F989)
+        _j89 = (text or "").find(_AGAIN55)
+        return (_F189 in _open89 and _F189SCOPE in _open89 and _F189HOME in _open89,
+                _i89 != -1 and _j89 != -1 and _i89 < _j89)
+
+    _nc89 = _newcomer89(_fast89)
+    # SHOWN DISCRIMINATING, and two of the five plants are the ones that matter: the same page
+    # with both close sentences present but the ORDER reversed must be REFUSED, or this arm
+    # degrades into the presence test that could not see `F9`; and the same opening with the
+    # POINTER deleted must be REFUSED, or it degrades into the one that could not see `F1`.
+    _ncplant89 = (_newcomer89(_fast89.replace(_F189, "somewhere")) == (False, _nc89[1]),
+                  _newcomer89(_fast89.replace(_F989, "")) == (_nc89[0], False),
+                  _newcomer89(_fast89.replace(_F989, "")
+                              .replace(_AGAIN55, _AGAIN55 + chr(10) + _F989))
+                  == (_nc89[0], False),
+                  # and the opening is the REQUIRED home: the same sentence buried in a later
+                  # section leaves a reader who stops reading at Phase A with nothing.
+                  _newcomer89(_fast89.replace(_F189SCOPE, "x") + chr(10)
+                              + _F189SCOPE + _F189)
+                  == (False, _nc89[1]),
+                  # the page that rules instead of pointing: the layout claim with no home.
+                  _newcomer89(_fast89.replace(_F189HOME, "somewhere else"))
+                  == (False, _nc89[1]))
+    good = bool(_fast89 and _nc89 == (True, True) and _ncplant89 == (True,) * 5)
+    ok &= good
+    print(f"  TPL  {'FAST-newcomer-path':<31} expected `/fast-dev-flow`'s OPENING to declare "
+          f"its non-project paths FLOW-RELATIVE and to POINT at the mapping's one home rather "
+          f"than resolve them itself (`F1`), and its final gate to record the `C` decision "
+          f"BEFORE the closing run (`F9`) — an ORDER, asserted as one, since both sentences "
+          f"present in the wrong sequence reproduce the finding · whether each cited path "
+          f"EXISTS is `CMD TEMPLATE-citations-resolve`'s question, not this one's · got "
+          f"{_nc89} · plants {_ncplant89} · {'ok' if good else 'FAIL'}")
+
     # ---- rev86, round 6. THE MODE TABLE AND THE FAST PACKET ARE COMPARED, over the join
     # the gate checklist already carries.
     #
@@ -28148,7 +28295,11 @@ def selftest():
     # ⚠ RE-FROZEN AT rev87, 17 -> 18: the guided first run adds one row, because a gate
     # that takes four extra steps is a step with an operative rule and the map is where a
     # reader finds it. The count is re-declared rather than floored, which is why it is here.
-    _MAPROWS86 = 18
+    # ⚠ RE-FROZEN AT rev89, 18 -> 19: the gate run BEFORE Phase A became a pre-check with a
+    # row. rev89's review found it reachable only from the adapter -- the page asserted *the
+    # run at Phase A proved the TOOL* and never told anyone to make it -- and a blocking
+    # control off the reachable path is the same class as the paths that resolved nowhere.
+    _MAPROWS86 = 19
     _maprows86 = re.findall(r"(?m)^\| ([^|]+?) \| `[^`]+\.md` \u00a7", _mapsrc86)
     # AND ONE ROW PER STEP ID, so a phase cannot be represented by a single survivor.
     _mapsteps86 = {re.split(r"\s+\u2014", _r86)[0].strip() for _r86 in _maprows86}
@@ -30429,15 +30580,23 @@ def selftest():
                       # read at all, in both directions.
                       _CAPNUM67.search("- **Max 4 SOURCE files per increment**").group(1) == "4",
                       _CAPNUM67.search("- **Max 9 SOURCE files per increment**").group(1) == "9")
-    good = bool(_capvec67 == _CAPVEC67 and set(_bad67) == set(_CAPEXEMPT67)
-                and len(_p1cap67) == 1 and len(_p2cap67) == 1
-                and (len(_s3cap67), len(_p3cap67), len(_q3cap67)) == (1, 0, 1)
-                and not _p4cap67 and bool(_skill67)
-                and _prec67 == tuple(sorted(_PREC67))
-                and _precdir67 == () and _precplant67 == (True,) * 6
-                and _capnumbad67 == () and set(_capnum67) == set(_CAPNUMSET67)
-                and _capnumplant67 == (True, True, True, True))
-    ok &= good
+    # ⚠ THIS VERDICT IS NAMED, and rev89 is why. Its line is PRINTED two hundred lines below,
+    # after other arms have each rebound `good` for themselves, so the cap census folded into
+    # `ok` here while its own line published whichever verdict the LAST arm had computed.
+    # Measured by `r89-M04`: softening `/fast-dev-flow`'s cap into advice failed the run and
+    # `CMD BUDGET-one-variable` still printed `ok`, so the failure had NO arm to attribute it
+    # to -- the harness scored a real detection SURVIVED, and a reader would have read
+    # `SELFTEST FAILED` with every line saying ok. A verdict that travels to its print site
+    # through a shared name is a verdict that can be overwritten in transit.
+    _capgood67 = bool(_capvec67 == _CAPVEC67 and set(_bad67) == set(_CAPEXEMPT67)
+                      and len(_p1cap67) == 1 and len(_p2cap67) == 1
+                      and (len(_s3cap67), len(_p3cap67), len(_q3cap67)) == (1, 0, 1)
+                      and not _p4cap67 and bool(_skill67)
+                      and _prec67 == tuple(sorted(_PREC67))
+                      and _precdir67 == () and _precplant67 == (True,) * 6
+                      and _capnumbad67 == () and set(_capnum67) == set(_CAPNUMSET67)
+                      and _capnumplant67 == (True, True, True, True))
+    ok &= _capgood67
     # ---- rev84. THE SENSITIVE-PATTERN SCAN IS EXECUTED HERE, NOT RECITED.
     #
     # `/fast-dev-flow` Phase A step 6 is the one control of that flow with no reader, and it was
@@ -30589,7 +30748,7 @@ def selftest():
           f"ACCEPTED · got {len(_capvec67)} row(s), non-source "
           f"{_shown(set(_bad67)) if _bad67 else '{}'}"
           f"{'' if _capvec67 == _CAPVEC67 else ', vector delta ' + _shown({k for k in set(_capvec67) | set(_CAPVEC67) if _capvec67.get(k) != _CAPVEC67.get(k)})} · "
-          f"{'ok' if good else 'FAIL'}")
+          f"{'ok' if _capgood67 else 'FAIL'}")
 
     # ---- rev67 (d). THE DERIVATION CANNOT CONTRADICT ITSELF -- in EITHER of its two homes.
     #

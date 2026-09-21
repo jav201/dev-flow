@@ -5080,7 +5080,7 @@
    "origin": "rev73",
    "target": "rev73 / fast-dev-flow.md, hard rules",
    "file": "commands/fast-dev-flow.md",
-   "old": "- **Never close a HIGH with a recommended fix (rev73).**",
+   "old": "- **Never close a HIGH with a recommended fix.**",
    "new": "- On this flow a recommended fix closes the HIGH, which is the speed difference.",
    "why": "A LICENCE ADDED rather than a rule deleted -- the direction no presence test can see, and the one `Q21`'s census had to learn at rev72. The contradiction pattern must catch it in the permissive spelling it naturally takes.",
    "expect": "KILLED",
@@ -7818,6 +7818,62 @@
    "expect": "KILLED",
    "expect_arms": [
     "V55 LEDGER-UNION-IS-FASTS"
+   ]
+  },
+  {
+   "subject": "devflow-validate",
+   "id": "r89-M01-fast-flow-drops-the-bundle-root",
+   "origin": "rev89",
+   "file": "commands/fast-dev-flow.md",
+   "target": "rev89 / fast-dev-flow.md opening, the `F1` repair",
+   "old": "**Every path this file names outside your project — `templates/…`, `agents/…`, `scripts/…`, `SKILL.md`, `FLOW-VERSION.md` — is FLOW-RELATIVE: written from the flow's own root, in the layout the published bundle uses.**",
+   "new": "",
+   "why": "THE ABSENCE A PRESENCE CENSUS CANNOT SEE. A fresh Claude Code reader invoked the flow as a slash command on 2026-09-20 and the rendered page never said where the bundle lives, so every `templates/…`, `agents/…` and `scripts/…` path in it resolved against nothing and the reader searched the filesystem for `SKILL.md`. Deleting the sentence restores exactly that state while every rule in the file still reads correctly, which is why the arm asserts the sentence and its HOME (the opening) rather than the file merely mentioning a bundle.",
+   "expect": "KILLED",
+   "expect_arms": [
+    "TPL FAST-newcomer-path"
+   ]
+  },
+  {
+   "subject": "devflow-validate",
+   "id": "r89-M02-fast-flow-drops-the-close-order",
+   "origin": "rev89",
+   "file": "commands/fast-dev-flow.md",
+   "target": "rev89 / fast-dev-flow.md §Final gate, the `F9` repair",
+   "old": "- **Record the `C` decision, then run the gate.** If `state.json` declares",
+   "new": "- If `state.json` declares",
+   "why": "`F9`: the `C` entry can only be written AFTER the closing run, so `V55` necessarily reported the closing gate unrecorded -- a one-run lag by construction, measured on 2026-09-20. The repair is an ORDER and not a fact, and this mutant takes the order away while leaving both of the sentences it orders in place, which is the spelling a presence test cannot see.",
+   "expect": "KILLED",
+   "expect_arms": [
+    "TPL FAST-newcomer-path"
+   ]
+  },
+  {
+   "subject": "devflow-validate",
+   "id": "r89-M03-fast-path-restates-a-rule-in-a-second-file",
+   "origin": "rev89",
+   "file": "templates/fast-dev-flow/spec-template.md",
+   "target": "rev89 / one rule, one home across the five fast-path files",
+   "old": "> **Hard rule:** acceptance criteria must be **observable** (input → verifiable output). If it's not observable, it's not a criterion.",
+   "new": "> **Hard rule:** acceptance criteria must be **observable** (input → verifiable output). If it's not observable, it's not a criterion.\n\n- Never skip security-flag detection — it's part of this flow's value.",
+   "why": "A SECOND HOME, planted the way one actually appears: a rule copied out of `commands/fast-dev-flow.md` §Hard rules into the template, where it reads as helpful. Nothing contradicts anything on the day it lands; the two copies drift later and the reader obeys whichever they opened first. `C-50` had no instrument for the fast path until rev89, and this is what proves the instrument runs.",
+   "expect": "KILLED",
+   "expect_arms": [
+    "TPL FAST-one-home"
+   ]
+  },
+  {
+   "subject": "devflow-validate",
+   "id": "r89-M04-fast-flow-softens-the-source-cap",
+   "origin": "rev89",
+   "file": "commands/fast-dev-flow.md",
+   "target": "rev89 / a KEPT imperative weakened to a suggestion (`C-62`)",
+   "old": "**≤4 SOURCE files per increment. Tests are NOT capped**",
+   "new": "**Aim for about four SOURCE files per increment where practical. Tests are NOT capped**",
+   "why": "THE DIRECTION `C-62` EXISTS FOR, and the one a plain-language rewrite can take by accident: the rule is not deleted, it is softened into advice. The rewrite's enforcement ledger says 49 imperatives were KEPT and none became weaker; this mutant makes one weaker in the friendliest possible spelling and must still redden the cap census.",
+   "expect": "KILLED",
+   "expect_arms": [
+    "CMD BUDGET-one-variable"
    ]
   }
  ],

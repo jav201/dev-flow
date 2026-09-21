@@ -13,17 +13,20 @@ the canonical editing source.
 
 - Full supervised engineering work → `commands/dev-flow.md`.
 - Compressed work on an owned repository → `commands/fast-dev-flow.md`.
-- Batch scaffolding, once per repository → `commands/dev-flow-init.md`. ⚠ **Not as a separate act in `fast`:** `/fast-dev-flow`'s own pre-checks ARE that mode's init and say so; they read two blocks out of that file rather than running it, so a fast reader opens it for those blocks only. (Origin: the 2026-09-19 publication test, where this line and those pre-checks read as a contradiction until the more specific file resolved it.)
+- Batch scaffolding, once per repository → `commands/dev-flow-init.md`. ⚠ **Not as a separate act in `fast`:** `/fast-dev-flow`'s own pre-checks ARE that mode's init; they read two blocks out of that file rather than running it, so a fast reader opens it for those blocks only.
 - Export / sync of a closed batch → `commands/dev-flow-sync.md`.
 - Role behaviour for a reviewer or an implementer → the matching file in `agents/`.
 - The artifact a phase owes → the matching file in `templates/`.
 - Revision, hash, file inventory and control census → `FLOW-VERSION.md`.
 - Mirror and canonical-source notes → `README.md`.
 
+On a runtime with no slash commands, "run `/fast-dev-flow`" means: open
+`commands/fast-dev-flow.md` and execute its steps in order, top to bottom. The section below
+says what else that runtime does not have.
+
 ## What refuses an invocation here
 
-Read this before running anything from here, because the answer is now *part of it, and
-exactly which part*.
+Read this before running anything from here.
 
 **Most of what this flow enforces is a Claude Code mechanism**: the `Agent` tool that runs the
 reviewer roles, the reviewer sub-agents themselves, the hooks, and the prompt guard that
@@ -32,24 +35,22 @@ that ports with these files. A runtime without them runs the flow **UNGUARDED** 
 respect but one, and **nothing automatically refuses an invocation** there — the roles and the
 phase gates are self-imposed, and the operator stands where the guard would have stood.
 
-**One half of the gate does port, and since flow `rev79` it is real here rather than
-advisory.** Run from `scripts/`, the validator resolves THIS bundle as the flow home and
-checks it **in both directions**: every file the manifest beside it declares *and* this
-bundle ships is hashed against the per-file hash declared for it, and any file in the bundle
-that the manifest neither declares nor excludes is refused as undeclared content. It **exits
-non-zero** on either, and on a manifest whose own revision line disagrees with its newest
-changelog row. A deliberately RED manifest is refused here, by name and with a non-zero exit.
-Before `rev79` it was not: the rule looked for a Claude Code home, found none, printed
-*"NOT checked"* and exited 0.
+**One half of the gate does port.** Run from `scripts/`, the validator resolves THIS bundle as
+the flow home and checks it **in both directions**: every file the manifest beside it declares
+*and* this bundle ships is hashed against the per-file hash declared for it, and any file in
+the bundle that the manifest neither declares nor excludes is refused as undeclared content. It
+**exits non-zero** on either, and on a manifest whose own revision line disagrees with its
+newest changelog row.
 
-1. Before Phase 0 / Phase A, run the gate and read its verdict out loud. **It runs at least TWICE in a batch and the two runs answer different questions:** this first one proves the TOOL and the bundle — on a tree with no batch declared, most rules have no subject and say so, which is a green flow identity and not a green batch — and the one at the closing gate proves the BATCH, after `state.json` exists for the rules to read. (Origin: the 2026-09-20 publication test, where a reader ran it literally here, saw `0 block · 5 notice · 48 not applicable`, and had to decide for themselves that a second run was owed.)
+1. Before Phase 0 / Phase A, run the gate and read its verdict out loud. **It runs at least TWICE in a batch and the two runs answer different questions:** this first one proves the TOOL and the bundle — on a tree with no batch declared, most rules have no subject and say so, which is a green flow identity and not a green batch — and the one at the closing gate proves the BATCH, after `state.json` exists for the rules to read.
 
    ```
    cd <this bundle's root>              # the directory holding FLOW-VERSION.md, SKILL.md, scripts/
    python scripts/devflow-validate.py <the project root, as an absolute path>
    ```
 
-   **The working directory is the BUNDLE ROOT and the argument is the PROJECT ROOT — two different
+   `<this bundle's root>` is the directory this `SKILL.md` lives in; `<the project root>` is
+   the repository the batch works in. **The working directory is the BUNDLE ROOT and the argument is the PROJECT ROOT — two different
    trees, and neither is the other.** `scripts/` is written relative to this bundle, so the command
    resolves from here and from nowhere else; if you would rather not `cd`, spell the script's path in
    full (`python <this bundle>/scripts/devflow-validate.py <project root>`) — what decides that the
@@ -79,18 +80,14 @@ Before `rev79` it was not: the rule looked for a Claude Code home, found none, p
    hooks and their shebangs, which no bundle ships), `LIVE-two-checkouts` (two live checkouts of the
    canonical repository), `E2E-live` (one rule run over a real canon home), and the pair
    `SKIPS-named` + `SELFTEST-exits-0`, which stage a bundle OUT of a canon home and so have nothing to
-   stage from here. A skipped arm is counted and named, never dropped. (The 2026-09-18 report counted
-   five FAILING arms; the fifth was a CHILD selftest that failed only because it inherited the others,
-   and it passes here now. A derived failure silenced as if its subject were missing would be an
-   exemption, not a repair — and the rev85 re-run then counted SIX SKIP lines against a sentence that
-   said four, which is why the six are listed here by name and an arm compares this list against a
-   real bundle run.)
-   A skipped arm is counted and named, never dropped: the verdict line is still `SELFTEST PASSED` or
+   stage from here. A skipped arm is counted and named, never dropped, and an arm compares this list
+   against a real bundle run. The verdict line is still `SELFTEST PASSED` or
    `SELFTEST FAILED`, and anything but a zero exit means this copy of the tool is broken, not that the
-   flow is. Before rev85 those five arms FAILED here, so the one command a skill-only reader runs to
-   prove the tool honest told them the flow was broken — measured on 2026-09-18.
+   flow is.
 5. Name, in that same artifact, every mechanism in the first paragraph that was unavailable
-   here — the reviewer roles above all. **A gate with no independent reviewer is a
+   here — the reviewer roles above all. Name them ONCE: in `fast` the spec's §0
+   `Runtime absences` row is that record, and the batch's other artifacts point at it rather
+   than re-paraphrasing it. **A gate with no independent reviewer is a
    self-review**, and no exit code repairs that. Two absences have a stated form, because they
    are the two every skill-only runtime hits:
    - **No named roles.** Where a command says *delegate to `software-dev`* or *a light pass by
@@ -131,8 +128,7 @@ presents step 5's absences as covered is exactly the failure this section exists
 gate's ONE home** (`C-50`): `/fast-dev-flow` and `/dev-flow` point here at their gate paragraphs
 and restate none of it. `/dev-flow-init` seeds `guided: true` on a project's **first** batch — a
 `.dev-flow/` holding no batch directory yet — and `false` on every batch after it; the operator
-may set either by hand at any time. It is a preference about how the flow is RUN, so it lives
-where the batch's other preferences live and in no second file. `V55` reads it.
+may set either by hand at any time. `V55` reads it.
 
 **With `guided: true`, at EVERY gate the mode owes — in `fast` the Phase A gate, the
 per-increment gate and the Phase C final gate; in `core` and `full` each station gate
@@ -143,42 +139,43 @@ per-increment gate and the Phase C final gate; in `core` and `full` each station
    `commands/fast-dev-flow.md` §*The reader's map — one row per step, and where its operative
    rule lives*; in `core` and `full` quote the mode's row from `commands/dev-flow.md` §*Modes —
    one spine, three levels of rigour* together with the station's own section. **Quote it, do
-   not paraphrase it** — a paraphrase is a second home for the rule.
+   not paraphrase it** — a paraphrase is a second home for the rule. If the next step is
+   conditional and does not fire (the Phase B security pass when `security_required` is false),
+   print the next row that applies instead; at the closing gate there is no next step, so print
+   the closing step's own row.
 2. **Print the exact next command to run**, as a line the reader can paste, naming the working
    directory whenever it is not the project root. The gate command in step 1 of the section
    above is the case that has actually been got wrong, and it fails as *no such file* rather
-   than as a verdict.
+   than as a verdict. **When the next step is work and not a command** — writing the spec,
+   implementing the increment, running the validation pass — **say so in one line and name the
+   artifact it produces**; there is no command to paste, and inventing one is worse than
+   saying there is none.
 3. **Wait for explicit approval.** Where the runtime cannot ask, the batch's standing
    authorization stands in — §*What refuses an invocation here* step 5 is that rule's home —
    and the entry below records which of the two closed the gate.
 4. **Record the decision in `decisions_log`**, one entry carrying **`gate: <the gate's name>`**
    and **`guided: true`**, beside the `date` and `decision` the ledger already takes.
-   **`date` is written `YYYY-MM-DD`** — a plain calendar day, the form `/dev-flow-init` step 3
-   seeds everywhere in `state.json` and the only form `V27` reads; an ISO-8601 timestamp is
-   not it, and a ledger dated any other way is a ledger `V27` reports as carrying no date.
-   **WHAT GOES IN `gate` IS NOT INVENTED HERE EITHER:** in `fast` the three gate ids are
-   declared in `commands/fast-dev-flow.md` §*The reader's map — one row per step, and where
-   its operative rule lives*, in its **`Gate id`** column, which is that fact's one home —
-   this step points at it and does not restate the strings. In `core`
-   and `full` the gate's name is its station id and the ledger has spelled that field `station`
-   since the station schema landed; **both spellings are read**, so a batch on that schema keeps
-   writing `station` and adds the flag. `V55` compares the entries against the gates the mode
-   owes **and the batch has REACHED**, and NAMES any reached gate that carries none; a gate
-   still ahead of the batch is never accused, and the rule prints what decided which is which.
+   **`date` is written `YYYY-MM-DD`** — a plain calendar day, the operator's LOCAL one, the
+   only form `V27` reads; an ISO-8601 timestamp is not it, and a ledger dated any other way is
+   a ledger `V27` reports as carrying no date. In `fast` the three gate ids are declared in
+   `commands/fast-dev-flow.md` §*The reader's map — one row per step, and where its operative
+   rule lives*, in its **`Gate id`** column, which is that fact's one home — this step points at
+   it and does not restate the strings. In `core` and `full` the gate's name is its station id
+   and the ledger spells that field `station`; **both spellings are read**. `V55` compares the
+   entries against the gates the mode owes **and the batch has REACHED**, and NAMES any reached
+   gate that carries none; a gate still ahead of the batch is never accused, and the rule says
+   what decided which is which.
 
-**At the close step the gate is RUN AGAIN, and a guided batch says so in these words:**
+**At the close step the order is record-then-run: write the `C` entry first, then run the gate
+again.** A guided batch closes its final gate in these words:
 *run the gate again now; it reads the batch this time.*
-**This is the one sentence this revision writes TWICE on purpose, and the exception is
-declared rather than left to look like drift** (`C-50`): it stands here, where the rule is,
-and again in `commands/fast-dev-flow.md` §*Final gate*, where the reader is standing when
-they need it — the finding was that the instruction was missing AT THE GATE, and a pointer
-there would reproduce it. An arm requires both copies, so they cannot diverge.
-The first run proves the TOOL and the bundle,
-over a tree with no batch declared; this one proves the BATCH, because `state.json` and the
-batch record now exist for the rules to read. Readers of the 2026-09-18 and 2026-09-19
-publication tests ran the first one, saw `0 block` over a batch nothing had inspected, and had
-to decide for themselves that a second run was owed — *"no line says run the gate again at
-close"* is one of them quoted.
+The first run proves the TOOL and the bundle, over a tree with no batch declared; this one
+proves the BATCH, because `state.json` and the batch record now exist for the rules to read.
+Recording the `C` decision FIRST is what lets the closing run see a complete ledger. **This is
+the one sentence this flow writes TWICE on purpose, and the duplication is declared rather
+than left to look like drift** (`C-50`): it stands here, where the rule is, and again in
+`commands/fast-dev-flow.md` §*Final gate*, where the reader is standing when they need it. An
+arm requires both copies, so they cannot diverge.
 
 **Turning it off is MEASURED, and it is the operator's act rather than the flow's.** `guided`
 may be set to `false` after **three consecutive batches closed with 0 gate findings** — the
@@ -186,10 +183,8 @@ flow's three-batch convention, the same one the notice convention uses. **`V55` 
 exactly ONE of those three and it counts nothing:** it reports whether THIS batch's guided
 ledger is complete at this run, in those words. The other two are closed batches and no rule
 opens one — `state.json` is single-slot, and what a closed batch leaves behind at rollover is
-its ENTRIES and not the gate list it owed, so in `core` and `full` its coverage cannot be
-recomputed at all; in `fast` the owed set is a constant and it could be, and the rule still
-does not. **The operator counts the two.** **No rule flips the key:** a rule that edited the
-state it judges would be grading its own answer.
+its ENTRIES, not the gate list it owed. **The operator counts the two.**
+**No rule flips the key:** a rule that edited the state it judges would be grading its own answer.
 
 ## Operating rule
 

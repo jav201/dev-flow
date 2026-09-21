@@ -4,7 +4,7 @@
 > **Hard rule:** acceptance criteria must be **observable** (input → verifiable output). If it's not observable, it's not a criterion.
 
 > **Owed in.** `fast` ✓ · `core` — · `full` —
-> **Source:** `/dev-flow-init` step 4's seed-by-mode table, which is this fact's one home (flow rev72, `T05`). A mode marked `—` **does not owe this artifact, and its absence is not an omission**; `by trigger` means the station exists only when the `triggers` block fired, and `stations_active` in `state.json` is the authority for *this* batch. Where a SECTION or a gate row is owed more narrowly than the artifact, it says so on the row.
+> **Source:** `/dev-flow-init` step 4's seed-by-mode table, which is this fact's one home. A mode marked `—` **does not owe this artifact, and its absence is not an omission**; `by trigger` means the station exists only when the `triggers` block fired, and `stations_active` in `state.json` is the authority for *this* batch. Where a SECTION or a gate row is owed more narrowly than the artifact, it says so on the row.
 
 ---
 
@@ -24,14 +24,9 @@
 > is SINGLE-SLOT — one spec at a time, the previous one archived (`/fast-dev-flow` §Pre-checks 2)
 > — while `state.json` rolls over to a new `batch_id`. Between the two acts the spec on disk is
 > the PREVIOUS batch's, and `V45` reads its premise roll-up and `V55` reads its close cell. With
-> this row written, both compare it against the declared batch: `V45` reports *the spec on disk
-> names batch X … this is not a pass*, and `V55` reads the stale close cell as NO signal and
-> says whose spec it found — it raises no finding of its own, because a gate nobody reached is
-> excused and not accused. **Leave the cell as it ships and nothing is compared**: a cell that
-> is not a batch id declares no id, and the readers skip the comparison exactly as they do for
-> a spec written before this row existed. Measured 2026-09-20 by the rev88 review: without it, a batch at Phase A inherited
-> the previous batch's `closed` cell and had two gates it had never reached accused of carrying
-> no decision (`C-53`, displaced one level).
+> this row written, both compare it against the declared batch and say whose spec they found.
+> **Leave the cell as it ships and nothing is compared**: a cell that is not a batch id declares
+> no id, and the readers skip the comparison.
 >
 > **Every row is a DECLARED ANSWER or a declared absence, never blank.** `not-run — <why>` is an
 > answer; an empty cell is a question nobody asked. The evidence-state vocabulary is `/dev-flow`
@@ -54,8 +49,7 @@
 > words.** The scan skips a `<…>` span only while its contents are the ones this template ships,
 > so the scaffold you are reading cannot set its own flag. **Type your own words between the
 > brackets and they are scanned**, brackets or not — which is what stops the brackets from being
-> an off switch for the security flag, and is why §1, §3 and §4, whose whole bodies are slots,
-> are read exactly as you filled them. `/fast-dev-flow` §*Patterns that trigger
+> an off switch for the security flag. `/fast-dev-flow` §*Patterns that trigger
 > `security_required`* is that rule's one home and carries the four controls that prove it.
 
 ---
@@ -86,14 +80,10 @@
 - **Premise evaluation:** `<✅ TRUE | ❌ FALSE | ❓ UNDECIDABLE>` — `<N premise(s) evaluated, and the verdict that decides the gate>` · or `none — <why no premise applies>`
 
 > **The roll-up is written in the same grammar as the full flow's** (`templates/req-template.md`
-> §2.7), so a reader moving between the two reads one field, not two. **And `V45` READS IT HERE**
-> (flow rev88): in `mode: fast` the rule resolves `artifact_homes.spec` and reads the roll-up out
-> of THIS section, with the same four outcomes and the same verdict vocabulary it applies to the
-> full flow's §2.7. Until rev88 it read `01-requirements.md` alone — a document a `fast` batch is
-> seeded none of — so on a conforming fast batch it reported *the active batch holds no
-> `01-requirements.md`, so `**Premise evaluation**` was read nowhere*, and the reader of the
-> 2026-09-20 publication test correctly kept the table here and recorded the finding as noise.
-> The gate that reads it is the Phase A gate.
+> §2.7), so a reader moving between the two reads one field, not two. **And `V45` READS IT HERE**:
+> in `mode: fast` the rule resolves `artifact_homes.spec` and reads the roll-up out of THIS
+> section, with the same four outcomes and the same verdict vocabulary it applies to the full
+> flow's §2.7. The gate that reads it is the Phase A gate.
 
 ---
 
@@ -114,8 +104,7 @@
 > **ONE GRAMMAR, NOT TWO.** The block below is `templates/ifc-template.md` §1's Part A fence,
 > field for field — `FLOW` / `SOURCE` / `NODES` with one field per line under each `- fn :`,
 > a node beginning at `- fn :`. The ONLY substitution `fast` makes is the `owner` VALUE: an
-> `AC-<n>` where the full flow writes an LLR. Both readers of the 2026-09-18 re-run were
-> pointed at two shapes and had to pick one.
+> `AC-<n>` where the full flow writes an LLR.
 
 ```
 FLOW: <id — what moves, in one line>
@@ -175,15 +164,12 @@ FLOW: <id — what moves, in one line>
 | Gate self-approvals | `<one line per gate the standing authorization stood for: which gate, the date, and that it was self-approved under the words in §0 · or: none — every gate was asked>` |
 | Notes | `<if archived, promoted, or closed normally>` |
 
-> **`Current phase` IS THE CLOSE SIGNAL, and it is read by a rule** (flow rev88). Writing
-> `closed` in that cell at Phase C step 5 is what tells `V55` the `C` gate is BEHIND the batch;
-> while it says anything else AND the `decisions_log` records no `C` decision, `C` is a gate
-> still ahead and `V55` excuses it rather than accusing it. **It is one of TWO witnesses and
-> either one is enough** — the other is that ledger entry — and the rule prints which one it
-> used. Write the word, not a synonym: the cell is matched on `closed`. Until rev88 nothing on
-> disk marked the closing gate in `fast`, so a batch that had set this cell and recorded its
-> `C` decision was still listed as *NOT YET REACHED -- C* in the same output that called its
-> ledger COMPLETE, which is a rule contradicting itself in two adjacent lines.
+> **`Current phase` IS THE CLOSE SIGNAL, and it is read by a rule.** Writing `closed` in that
+> cell at Phase C step 5 is what tells `V55` the `C` gate is BEHIND the batch; while it says
+> anything else AND the `decisions_log` records no `C` decision, `C` is a gate still ahead and
+> `V55` excuses it rather than accusing it. **It is one of TWO witnesses and either one is
+> enough** — the other is that ledger entry — and the rule prints which one it used. Write the
+> word, not a synonym: the cell is matched on `closed`.
 
 > **The self-approval row is where an un-asked decision becomes a record.** `/dev-flow`
 > §*Batch-kickoff authorization* is that obligation's one home and says that in `fast` the
