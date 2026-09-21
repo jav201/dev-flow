@@ -236,7 +236,7 @@ A control is discovered in one project but is **not that project's property**. P
 
 ## Hard rules
 
-- Never advance a phase without explicit user approval.
+- Never advance a phase without explicit user approval — and where the runtime cannot prompt, what stands in its place is the batch's standing authorization, under which the gate records rather than waits (`SKILL.md` §*What refuses an invocation here* step 5, that rule's one home; no second wording of it stands here).
 - Never skip security-flag detection — it's part of this flow's value.
 - **Never close a HIGH with a recommended fix.** A clean verdict from `code-reviewer` or `security-reviewer` requires the fix **applied and verified**; until then the verdict is the conditional `BLOCK-UNTIL: <finding ids>`, which authorises nothing. This flow is faster, not laxer — see `/dev-flow` §Phase 3 *Independent review*, that rule's one home.
 - Never generate the spec without observable acceptance criteria. If the criteria aren't observable, mark the spec invalid and ask the user again.

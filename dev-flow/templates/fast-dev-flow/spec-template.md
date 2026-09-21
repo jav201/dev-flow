@@ -16,7 +16,7 @@
 | Flow revision | `<the revision FLOW-VERSION.md declares — the same value state.json's flow_version carries>` |
 | Base ref | `<the commit this batch starts from>` |
 | `C-45` PULL — currency | `<executed — compared against the remote manifest · or: not-run — no canon remote on this runtime>` |
-| Standing authorization | `<the operator's own words, and what they authorize · or: none — every gate is asked>` |
+| Standing authorization | `<the operator's own words, and what they authorize · or: <the commission, quoted or cited> (runtime cannot prompt) · or: none — every gate is asked>` |
 | Runtime absences (`SKILL.md` step 5) | `<named roles unavailable and therefore self-executed · prompts unavailable · or: none>` |
 | Gate record | `<the validator command, its exit code, and 0 block · date>` |
 
@@ -31,6 +31,21 @@
 > **Every row is a DECLARED ANSWER or a declared absence, never blank.** `not-run — <why>` is an
 > answer; an empty cell is a question nobody asked. The evidence-state vocabulary is `/dev-flow`
 > §*Evidence states* and is not re-minted here.
+>
+> **`Standing authorization` HAS THREE LEGAL FORMS AND THE RUNTIME DECIDES WHICH ARE OPEN TO
+> YOU.** *The operator's own words* is the form a runtime that CAN ask writes when the
+> operator gave standing authorization anyway — the pre-rev91 form, still legal.
+> `none — every gate is asked` is the other form open to a runtime that can ask.
+> `<the commission, quoted or cited> (runtime cannot prompt)` is the form a runtime that
+> cannot ask writes, because there the operator's initial commission IS the batch's standing
+> authorization — `SKILL.md` §*What refuses an invocation here* step 5 is that rule's one
+> home and this note does not restate it. A cell still carrying this template's own words
+> declares NONE of the three, exactly as the `Batch` row's placeholder declares no id; a
+> half-filled one reads as declared; a declared absence (`n/a — …`, `not-run — …`) is an
+> answer and is read as one. **`V55` reads this cell against `decisions_log`** and NOTICEs
+> one batch claiming both — a ledger closing a gate under a standing authorization beside the
+> `none —` form, or a declared commission beside a gate the ledger records as asked at the
+> gate.
 
 ---
 

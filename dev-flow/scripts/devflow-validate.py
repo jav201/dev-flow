@@ -9464,6 +9464,180 @@ _V55_CLOSED = "closed"
 # when a fact genuinely has to exist in two machineries.
 _V55_FAST_SPELLING = ("`A`", "`increment-NNN`", "`C`")
 
+# rev91: THE FOURTH OBLIGATION -- THE HEADER AND THE LEDGER CANNOT DISAGREE ABOUT WHO APPROVED
+# THE GATES. The measurement run on the published rev90 closed its batch and still named this
+# as one of two ambiguities a newcomer had to resolve alone: the spec template defaulted to
+# `none — every gate is asked` while the ledger it was writing beside recorded gate after gate
+# closed under a standing authorization, and nothing said which had happened. The ruling has ONE
+# home -- `SKILL.md` §*What refuses an invocation here* step 5, where a runtime that cannot
+# prompt is told its operator's initial COMMISSION is that authorization -- and this is the
+# reader that refuses the contradiction rather than a second wording of the rule.
+#
+# THE THREE LITERALS ARE NAMED ONCE AND THE TEMPLATE IS HELD TO THEM by
+# `TPL STANDING-authorization-one-home`, both ways. `_V55_SPECROW` is the reserved label, kept
+# byte-identical across the template row, the regex below and the findings.
+# SEVERITY IS NOTICE ON `V55`'s OWN ARGUMENT, unchanged: neither legal form exists on any spec
+# written before this revision, and a BLOCK would refuse every batch on disk (`C-53`).
+_V55_SPECROW = "Standing authorization"
+_V55_ASKFORM = "every gate is asked"        # what the `none —` HEADER cell publishes
+_V55_COMMISSION = "(runtime cannot prompt)"  # the second legal form rev91 mints
+_V55_STANDING = "standing authorization"    # what a LEDGER entry says when the commission
+                                            # closed the gate
+# rev91 REVIEW, `F1`: THE LEDGER'S OTHER ANSWER NEEDED A TOKEN OF ITS OWN, AND THE FIRST CUT
+# BORROWED THE HEADER'S. `_V55_ASKFORM` was given two jobs -- the header cell AND what a ledger
+# says when the gate was really asked -- and only the first was ever minted anywhere a reader
+# could see it. Nothing told a ledger author to type `every gate is asked` into a `decision`,
+# so the second NOTICE direction could fire on NO artifact this flow produces, and the arm that
+# claimed to drive it spliced the header string into a decision field: a fixture manufacturing
+# its own literal, which is the green-that-cannot-redden this project keeps paying for.
+# `SKILL.md` §*Guided first run* step 3 now mints the counterpart, and BOTH spellings are
+# read on the ledger side -- the new one because it is what the page teaches, the header's
+# because a reader who copied the cell into the decision meant exactly this and should be told.
+_V55_ASKED = "asked at the gate"            # and what it says when the operator answered
+# rev91 REVIEW, `F3`: A DECLARED ABSENCE IS AN ANSWER, NOT A COMMISSION. The first cut read
+# `ask` off `startswith("none")` and swept everything else into `commission`, so
+# `not-run — no operator reachable` was reported as the operator's own words and a bare
+# `None.` was reported as the ask form on four letters it happens to start with. The template's
+# own note imports `/dev-flow` §*Evidence states*, where `not-run — <why>` IS an answer.
+_V55_ABSENCES = ("none", "n/a", "not-run", "not run", "tbd", "pending", "unknown")
+_FAST_SPEC_STANDING = re.compile(r"(?mi)^\|\s*(?:\*\*)?" + _V55_SPECROW +
+                                 r"(?:\*\*)?\s*\|([^|]*)\|")
+
+
+def _v55_standing_cell(text):
+    """The fast spec §0 `Standing authorization` cell -> (state, the cell). PURE.
+
+    SIX STATES, and each one is a different question answered rather than one silence.
+    `norow` -- no such row at all (every spec written before rev91). `blank` -- the row is
+    there and the cell is empty, which the template calls *a question nobody asked* and which
+    is NOT the same artifact as a spec that predates the row (rev91 review, `F4`: one sentence
+    was serving both, and it was false about one of them). `empty` -- the cell still carries
+    this template's own words, the WHOLE cell one `<...>` span, `_fast_spec_batch`'s posture
+    for the `Batch` row. `ask` -- the `none — every gate is asked` form, keyed on the
+    RESERVED LITERAL the template mints and not on the four letters it starts with.
+    `absent` -- a declared absence from `/dev-flow` §*Evidence states*, which is an answer
+    and is read as one rather than as the operator's words. `commission` -- anything else,
+    which on a runtime that cannot prompt is the commission that opened the batch. A
+    HALF-FILLED cell reads as DECLARED, which is `V9`'s posture in this file and is said here
+    rather than left to be discovered.
+
+    ⚠ `_v41_cell` IS DELIBERATELY NOT REUSED. It strips a trailing parenthetical annotation,
+    and the second legal form ENDS in one -- `(runtime cannot prompt)` -- so a reader built on
+    it would hand back `<the commission, quoted or cited>` and classify the one cell this
+    revision exists for as the placeholder it is not.
+    """
+    m = _FAST_SPEC_STANDING.search(text or "")
+    if not m:
+        return "norow", None
+    cell = m.group(1).replace("`", "").replace("**", "").strip()
+    if not cell:
+        return "blank", ""
+    if cell.startswith("<") and cell.endswith(">"):
+        return "empty", cell
+    low = cell.casefold()
+    if _V55_ASKFORM in low:
+        return "ask", cell
+    # THE ABSENCE MUST BE THE WHOLE ANSWER, not a word the sentence happens to open with:
+    # the token is followed by the end of the cell or by punctuation/space, never by a letter.
+    for _a in _V55_ABSENCES:
+        if low.startswith(_a) and (len(low) == len(_a) or not low[len(_a)].isalnum()):
+            return "absent", cell
+    return "commission", cell
+
+
+def _v55_ledger_authority(log):
+    """(entries closed under the commission, entries recorded as ASKED). PURE.
+
+    Both counters read the SAME field -- `decision`, which is the only place the ledger says
+    HOW a gate closed -- and they are independent: an entry naming neither is neither, which
+    is the ordinary case and is why this rule's pass sentence names the counts. An entry that
+    somehow names BOTH increments both, and the caller is keyed on the HEADER, so it still
+    answers one question: a header cannot be the ask form and the commission at once.
+
+    The asked side reads TWO spellings (rev91 review, `F1`): `SKILL.md`'s own
+    `asked at the gate`, which is what the page teaches, and the header cell's
+    `every gate is asked`, because a reader who copied that cell into a decision meant this
+    and is better told than silently passed.
+    """
+    standing = asked = 0
+    for e in (log or []):
+        if not isinstance(e, dict):
+            continue
+        said = str(e.get("decision") or "").casefold()
+        standing += 1 if _V55_STANDING in said else 0
+        asked += 1 if (_V55_ASKED in said or _V55_ASKFORM in said) else 0
+    return standing, asked
+
+
+def _v55_standing(mode, code, rel, state, cell, standing, asked):
+    """`V55`'s FOURTH obligation -> exactly one (severity, where, message). PURE.
+
+    The two NOTICE directions are the two ways one batch claims both answers, and they are
+    mutually exclusive by construction: the header is `ask` or `commission`, never both.
+    Every other state is a typed SKIP, because a pass that reads like a silence is a pass
+    nobody can tell from a rule that never ran.
+    """
+    where = rel or _V55_WHERE
+    if mode != "fast":
+        return (SKIP, _V55_WHERE,
+                "the spec header's `%s` row is `fast`'s record of WHO approved the gates and "
+                "this batch is `%s`; in `core`/`full` that record lives in "
+                "`state.json.standing_authorization` and `PLAN.md` (`/dev-flow` "
+                "§Batch-kickoff authorization), which this rule does not open"
+                % (_V55_SPECROW, mode or "of no declared mode"))
+    if code != "ok":
+        return (SKIP, _V55_WHERE,
+                "no spec of THIS batch's stands at `%s` (`%s`), so its `%s` row could not be "
+                "read and nothing was compared against the ledger"
+                % (rel, code, _V55_SPECROW))
+    if state == "norow":
+        return (SKIP, where, "`%s` declares no `%s` row AT ALL, so who approved the gates is "
+                             "not recorded there and the ledger was compared against nothing "
+                             "(every spec written before rev91 is this state)"
+                             % (rel, _V55_SPECROW))
+    if state == "blank":
+        return (SKIP, where, "`%s` carries the `%s` row with an EMPTY cell -- the state its "
+                             "own template calls *a question nobody asked*, and not the same "
+                             "artifact as a spec that predates the row. Nothing was compared"
+                             % (rel, _V55_SPECROW))
+    if state == "absent":
+        return (SKIP, where, "`%s`'s `%s` declares an ABSENCE (`%s`), which `/dev-flow` "
+                             "§*Evidence states* counts as an answer and this rule reads "
+                             "as one: it claims no authorization, so the ledger contradicts "
+                             "nothing" % (rel, _V55_SPECROW, cell))
+    if state == "empty":
+        return (SKIP, where, "`%s`'s `%s` cell still carries the template's own words, so it "
+                             "declares NEITHER legal form -- the placeholder cannot set the "
+                             "flag it is a placeholder for -- and the comparison was skipped"
+                             % (rel, _V55_SPECROW))
+    if state == "ask" and standing:
+        return (NOTICE, where,
+                "`%s`'s `%s` declares the ASK form (`%s`) while %d `decisions_log` "
+                "entry/entries close a gate under a `%s`. One batch is claiming both, and a "
+                "reader cannot tell which happened -- which is exactly the ambiguity the "
+                "measurement run on rev90 reported. On a runtime that cannot prompt the "
+                "operator's initial commission IS the authorization and the header carries "
+                "it in the form `<the commission, quoted or cited> %s`; `SKILL.md` "
+                "§*What refuses an invocation here* step 5 is that rule's one home"
+                % (rel, _V55_SPECROW, _V55_ASKFORM, standing, _V55_STANDING,
+                   _V55_COMMISSION))
+    if state == "commission" and asked:
+        return (NOTICE, where,
+                "`%s`'s `%s` declares a commission (`%s`) while %d `decisions_log` "
+                "entry/entries record a gate as ASKED. This is the same contradiction the "
+                "other way round: a header saying nobody was asked beside a ledger saying "
+                "somebody was. Name in the entry which of the two closed the gate -- "
+                "`SKILL.md` §*Guided first run* step 3 mints both spellings, `%s ...` "
+                "and `%s ...`" % (rel, _V55_SPECROW, cell, asked, _V55_STANDING, _V55_ASKED))
+    return (SKIP, where,
+            "`%s`'s `%s` declares the %s form and the ledger contradicts it nowhere -- %d "
+            "entry/entries closing a gate under a `%s`, %d recording one as `%s`. ⚠ Two "
+            "zeros are agreement by SILENCE and the sentence says so: a ledger that names "
+            "neither spelling is a ledger this rule could not read an answer out of"
+            % (rel, _V55_SPECROW,
+               "ASK" if state == "ask" else "COMMISSION", standing, _V55_STANDING,
+               asked, _V55_ASKED))
+
 
 def _v55_fastgates(text):
     """The gate names `/fast-dev-flow` PUBLISHES, discovered from the text. PURE.
@@ -9839,11 +10013,23 @@ def v55_guided_gates(root, art):
     doc = doc or {}
     mode = str(doc.get("mode") or "") or None
     owed, why = _v55_owed(mode, doc.get("stations_active"))
+    log = _v27_log(root)
     reached, marker = (_v55_reached(root, mode, owed, doc)
                        if owed and doc.get("guided") is True else ([], None))
-    return [F("V55", s, w, m) for s, w, m in
-            _v55_outcome(doc.get("guided"), mode, owed, _v27_log(root),
-                         reached, marker, why)]
+    out = list(_v55_outcome(doc.get("guided"), mode, owed, log, reached, marker, why))
+    # rev91: THE FOURTH OBLIGATION, ON THE GUIDED PATH ALONE. The subject is the ledger read
+    # against the spec header, and in `fast` a ledger exists only under `guided: true`
+    # (`/dev-flow` §Batch-kickoff authorization). Gating it here is what keeps the three
+    # absences above at ONE sentence each -- a batch that declares no guidance is told the
+    # guided ledger does not apply to it, and appending a fourth line about that ledger's
+    # contents would be answering a question this rule has just said it is not asking.
+    if doc.get("guided") is True:
+        text, rel, code = (_fast_spec(root, doc) if mode == "fast"
+                           else (None, None, None))
+        state, cell = _v55_standing_cell(text) if mode == "fast" else ("norow", None)
+        standing, asked = _v55_ledger_authority(log)
+        out.append(_v55_standing(mode, code, rel, state, cell, standing, asked))
+    return [F("V55", s, w, m) for s, w, m in out]
 
 CHECKS = [("V1", v1_live_placeholder), ("V2", v2_at_without_node),
           ("V4", v4_method_without_verification), ("V5", v5_ledger),
@@ -10123,7 +10309,7 @@ _RULE_COVERS = {
     "V50": "the ACTIVE batch's `05-close.md` declares its conditional-gate discharge roll-up — a count with its per-condition verdict, or the legal empty `none — no gate closed conditionally` (rev71, `C-44`: its own rule says a conditional gate verdict is not a merge authorisation, and nothing read the table the template mints for it; the FIELD is absent from 5 of 5 close artifacts and the section heading present in 2, both measured case-sensitively as this reader is. The GATE-side half of the same question is `C-14`/`V32`'s and is not this rule)",
     "V51": "the ACTIVE batch's `05-close.md` declares how many controls it minted and their catalog ids, or the legal empty `none — <why this batch minted none>` (rev71, `C-45`: the landings TABLE has shipped since rev5 and nothing COUNTED the controls, which is how the catalog debt reached four consecutive batches at zero before anybody wrote the number down. A count alone is refused — `V45`'s fold applied at authoring time — because `3 controls remain unencoded` names a number while saying the landing did not happen. ⚠ It reads whether the batch ANSWERED and is never an approval: the control-encode sitting is the operator's)",
     "V54": "the ACTIVE batch's `05-close.md` declares its HUMAN review ledger and its HUMAN perimeter \u2014 the roll-up naming a reviewer in `V36`'s identity grammar reused, and the perimeter field declaring what the flow does NOT cover; `none \u2014 <reason>` is the legal empty on both (rev83, `C-48`'s class on the human side: the gates record every MACHINE verdict and nothing recorded the DEPTH of a human reading or a reading DECLINED. Measured before the rule was written, through this file's own grammars and case-sensitively as the reader is \u2014 the field is absent from **5 of 5** close artifacts and either string stands in **0 of 952** record files, while the same reader scores `Result` declared 10 and `Evidence checklist` declared 12 on the same corpus. \u26a0 WHO and WHEN are `V36`/`V48`/`decisions_log`'s and are NOT re-minted here; what is new is depth and the declared non-review. \u26a0 It never judges the review's QUALITY \u2014 a reviewer can write `rigorous` and have skimmed)",
-    "V55": "a batch whose `state.json` declares `guided: true` records EVERY gate its mode owes in `decisions_log`, with `guided: true` on the entry and the gate named in `gate` or `station` \u2014 the owed set derived from the mode (`stations_active` in `core`/`full`, the three gates `/fast-dev-flow` owns in `fast`), never typed; `guided: false` or absent \u2192 n/a with its reason (rev87, the guided first run: two fresh readers of the publication test could not tell what was owed NEXT at a gate \u2014 *no line says run the gate again at close*, *the operative rule for a step is split across five files*. \u26a0 It reads the RECORD of the guidance and never the guidance: an agent that printed nothing and wrote the entry passes here. \u26a0 It prints the fade-out streak over the ACTIVE batch ALONE, because `state.json` is single-slot, and it NEVER edits state)",
+    "V55": "a batch whose `state.json` declares `guided: true` records EVERY gate its mode owes in `decisions_log`, with `guided: true` on the entry and the gate named in `gate` or `station` \u2014 the owed set derived from the mode (`stations_active` in `core`/`full`, the three gates `/fast-dev-flow` owns in `fast`), never typed; `guided: false` or absent \u2192 n/a with its reason (rev87, the guided first run: two fresh readers of the publication test could not tell what was owed NEXT at a gate \u2014 *no line says run the gate again at close*, *the operative rule for a step is split across five files*. \u26a0 It reads the RECORD of the guidance and never the guidance: an agent that printed nothing and wrote the entry passes here. \u26a0 It prints the fade-out streak over the ACTIVE batch ALONE, because `state.json` is single-slot, and it NEVER edits state. rev91 adds a FOURTH obligation in `fast`: the spec header's `Standing authorization` cell and the ledger cannot give different accounts of who closed the gates — the `none — every gate is asked` form beside a ledger closing gates under a standing authorization, or a declared commission beside a gate the ledger records as asked, is one batch claiming both, which is one of the two ambiguities the measurement run on the published rev90 left a newcomer to resolve alone)",
     "V53": "every `path::symbol` anchor in the record RESOLVES against the working tree — the file exists and the symbol is BOUND in it, by an AST binding walk for Python and a word-boundary search otherwise, with every finding NAMING the resolver it used (rev78, `C-14`'s *census the claims* limb, made executable). ⚠ SEVERITY IS SPLIT BY CORPUS: a wrong anchor in the ACTIVE batch is a BLOCK, because it is a false assertion at the station that wrote it and is the same question `V14` already blocks over the IFC; the CLOSED record is a CENSUS — a count, never a block, because those batches are sealed and re-anchoring them to satisfy a later rule is editing the past. Line anchors (`file.py:NNN`) are deliberately OUT: 0 of the 1815 that resolve point past their file's end, which is the weakest possible staleness test. Ambiguous basenames and glob/ellipsis abbreviations are counted APART and never scored (`C-53`)",
     "V52": "the ACTIVE batch's staged design proposal fills `C-49`'s `## 7 · Forward-applicability table` — every row names a CONSUMER, and at least one row says WHERE that consumer will read the output (rev77, `C-49`: its first reader of any kind. The control is realised in four places — the design-proposal template §7, the design-review gate row 3, `phase-checklists.md` row 3 and `commands/dev-flow.md` §THE FORWARD-APPLICABILITY RULE — and was cited by NO rule; measured read-only before the rule was written, **0 of 949** files in the record carry the string at all, against **109** design/review artifacts subject to it. TWO LIMBS, because the shipped template PRE-FILLS the consumer column: a consumer-only reader would score the untouched template DECLARED, which is the vacuous check `C-57` is about. Scoped by the seed-by-mode table — `stations_active` naming `PDR`, OR `mode: full`, the one column that owes the artifact unconditionally; a batch that owes no design proposal is a SKIP with its reason (`C-53`). It reads the LOCAL STAGING under `design/`, because the sealed vault record is out of every rule's reach, and the two literals it keys on are RESERVED in the template's own block, because the artifact is generated in the batch's language and the flow ships no alias table)",
 }
@@ -10175,7 +10361,7 @@ _RULE_SELECTOR = {
     "V49": "S1 (the active batch's `04-validation.md` as ONE DOCUMENT — `V47`'s corpus. `C-51`'s section is minted here and nowhere else; `increment-template.md` gate row 3 NAMES the obligation but the packet is not where the roll-up lives)",
     "V50": "S1 (the active batch's `05-close.md` as ONE DOCUMENT — `V45`'s corpus shape at a THIRD document, not a fifth core. ⚠ The file exists only under `mode: core`; a `full` batch writes `05-postmortem.md` + `06-docs/` instead, and both rules then report the `nofile` SKIP, which says in its own words that it is not a pass. That is the honest reading and not a gap: a `full` batch's conditional gates are `C-14`/`V32`'s at the increment gate, and giving this rule a second document would be two subjects under one id)",
     "V54": "S1 (the active batch's `05-close.md` as ONE DOCUMENT \u2014 `V50`'s corpus and `V50`'s `mode: core` limit, stated once there and not restated as a third claim here. TWO obligations under one id, both through `_v65_outcome`: the ledger roll-up and the perimeter declaration)",
-    "V55": "S1 (`.dev-flow/state.json` \u2014 the active slot's `guided`, `mode`, `stations_active` and `decisions_log` \u2014 plus, in `fast` alone, two MARKERS of progress: the increment packets under `artifact_homes.increments` and the `Current phase` cell of the spec `artifact_homes.spec` declares (rev88). It still opens no batch document in `core`/`full`, which is why it answers there on a tree whose batch directory holds nothing yet. THREE obligations under one id: the gate coverage, the shape of a guided entry, and the streak disclosure)",
+    "V55": "S1 (`.dev-flow/state.json` \u2014 the active slot's `guided`, `mode`, `stations_active` and `decisions_log` \u2014 plus, in `fast` alone, two MARKERS of progress: the increment packets under `artifact_homes.increments` and the `Current phase` cell of the spec `artifact_homes.spec` declares (rev88). It still opens no batch document in `core`/`full`, which is why it answers there on a tree whose batch directory holds nothing yet. FOUR obligations under one id: the gate coverage, the shape of a guided entry, the streak disclosure, and -- rev91, in `fast` alone -- the spec header's `Standing authorization` cell read against the ledger's own account of how each gate closed)",
     "V53": "S3 (the WHOLE project record — every `.md` under `.dev-flow/`, resolved against the working tree outside it. The ACTIVE batch's slice of that corpus is what can BLOCK; the rest is a census, and the partition is the rule's whole design rather than a scoping detail)",
     "V52": "S1 (the active batch's staged design proposals — every `# Design proposal` document under `.dev-flow/<batch_id>/design/`, the one home a rule can reach. ⚠ The CANONICAL copy in `full` is the vault one and no rule will ever read it; this reads the staged INPUT `/dev-flow-sync` publishes from, and says so in its own sentences)",
     "V51": "S1 (the active batch's `05-close.md` as ONE DOCUMENT — `V50`'s corpus and `V50`'s `mode: core` limit, which is stated once there and not restated as a second claim here)",
@@ -17999,9 +18185,13 @@ def selftest():
                 and _owed55["nostations"][0] == []
                 and "stations_active" in _owed55["nostations"][1]
                 and _owed55["nomode"][0] == [] and "mode" in _owed55["nomode"][1]
+                # rev91: the guided path carries a FOURTH obligation, whose sentence is
+                # appended -- so the undecidable-owed states read [NOTICE, SKIP] rather than
+                # [NOTICE]. The NOTICE is still the owed set's, and it is still first.
                 and [_s55 for _s55, _m55 in _run55(guided=True, stations_active=["P1"])]
-                == [NOTICE]
-                and [_s55 for _s55, _m55 in _run55(mode="core", guided=True)] == [NOTICE])
+                == [NOTICE, SKIP]
+                and [_s55 for _s55, _m55 in _run55(mode="core", guided=True)]
+                == [NOTICE, SKIP])
     ok &= good
     print(f"  V55 {'GATES-derive':<32} expected the owed set to come from the MODE and never "
           f"from a list beside the loop — `stations_active` verbatim in `core`/`full`, "
@@ -18038,7 +18228,7 @@ def selftest():
             _f55.write("x")
         _declared55 = [(_f55.sev, _f55.msg) for _f55 in reg["V55"](_d55, _artifacts(_d55))]
     _elsewhere55 = _run55(packets=1, **_HOME55)
-    good = bool(_sev(_first55) == [SKIP, SKIP, SKIP, SKIP]
+    good = bool(_sev(_first55) == [SKIP, SKIP, SKIP, SKIP, SKIP]
                 and "no `increment-NNN.md` stands under" in _first55[0][1]
                 and "`A`, `increment`, `C`" in _first55[1][1]
                 and _sev(_midway55)[0] == NOTICE
@@ -18046,12 +18236,12 @@ def selftest():
                 and "1 increment packet(s) stand under" in _midway55[0][1]
                 and "03-increments" in _midway55[0][1]
                 and "`C`" in _midway55[1][1] and "CLOSING GATE" in _midway55[1][1]
-                and _sev(_midok55) == [SKIP, SKIP, SKIP, SKIP]
-                and _sev(_coreP0) == [SKIP, SKIP, SKIP, SKIP]
+                and _sev(_midok55) == [SKIP, SKIP, SKIP, SKIP, SKIP]
+                and _sev(_coreP0) == [SKIP, SKIP, SKIP, SKIP, SKIP]
                 and _sev(_coreP4)[0] == NOTICE
                 and "`P0`, `P1`, `P3`" in _coreP4[0][1]
                 and "current_station: P4" in _coreP4[0][1]
-                and _sev(_corenone) == [SKIP, SKIP, SKIP]
+                and _sev(_corenone) == [SKIP, SKIP, SKIP, SKIP]
                 and "no `current_station`" in _corenone[0][1]
                 and "NO GATE WAS JUDGED" in _corenone[0][1]
                 and "This is not a pass" in _corenone[0][1]
@@ -18098,7 +18288,7 @@ def selftest():
                 # entry, so the whole-ledger run reaches all THREE gates and the not-yet-
                 # reached line is gone -- where until rev88 it printed `NOT YET REACHED -- C`
                 # one line under a ledger it had just called COMPLETE.
-                and _sev(_whole55) == [SKIP, SKIP, SKIP, SKIP]
+                and _sev(_whole55) == [SKIP, SKIP, SKIP, SKIP, SKIP]
                 and "all 3 gate(s)" in _whole55[0][1]
                 and "carries a `decisions_log` entry naming it" in _whole55[0][1]
                 and "every one of the 3 gate(s)" in _whole55[1][1]
@@ -18296,14 +18486,20 @@ def selftest():
     for _mode55 in ("fast", "core"):
         _v27msgs55 |= set(_m55 for _s55, _w55, _m55
                           in _v27_outcome(None, set(), None, "no commit", mode=_mode55))
-    good = bool(len(set(_all55)) == 23 and not (set(_all55) & _v27msgs55)
+    # rev91 re-freezes this: 23 -> 26, the three new sentences being the `fast`
+    # comparison's own pass, the `core`/`full` scope sentence, and the state where no
+    # spec of this batch's could be read. The number is a MEASUREMENT of the states
+    # these twelve fixtures reach, and it moves when an obligation is added -- which is
+    # exactly what freezing it is for.
+    good = bool(len(set(_all55)) == 26 and not (set(_all55) & _v27msgs55)
                 and all(_w55 == _V55_WHERE for _s55, _w55, _m55
                         in _v55_outcome(True, "fast", list(_V55_FAST_GATES), _FULL55,
                                         ["A", "increment"], "a marker")))
     ok &= good
     print(f"  V55 {'PASS!=NOOP':<32} expected every reachable state to carry a TYPED sentence "
-          f"— {len(set(_all55))} distinct over 12 state(s), four obligations each with "
-          f"its own pass — sharing none with `V27`'s ledger sentences, which read the "
+          f"— {len(set(_all55))} distinct SENTENCE(s) over 12 state(s) — the word "
+          f"is sentences and not obligations, which the printed line got wrong for four "
+          f"revisions — sharing none with `V27`'s ledger sentences, which read the "
           f"same key for a different question · got {len(set(_all55))} distinct · "
           f"{'ok' if good else 'FAIL'}")
 
@@ -18464,6 +18660,248 @@ def selftest():
           f"· got {_shown(_stepsites55)}, {len(_entries55)} fence entry/entries "
           f"{'driving clean' if _fenceok55 else 'REJECTED'} · "
           f"{'ok' if good else 'FAIL'}")
+
+    # ---- rev91. V55 (m-o): WHO CLOSED THE GATES, READ TWICE AND COMPARED.
+    #
+    # The measurement run on the PUBLISHED rev90 closed its batch and still said a newcomer
+    # could run one alone "only after resolving two significant ambiguities", and this is the
+    # first of them: the spec template defaulted to `none -- every gate is asked` while the
+    # ledger beside it recorded gate after gate closed under a standing authorization, and
+    # NOTHING on any page said whether the operator's one-shot commission counted as that
+    # authorization. The ruling has ONE home and these arms hold it in both machineries -- the
+    # rule that refuses the contradiction, and the census that keeps the sentence where it is.
+    def _mkspec55(root, cell):
+        """A fast spec at the DECLARED default home, carrying the two rows this reads."""
+        _parts91 = _FAST_SPEC_DEFAULT.split("/")
+        os.makedirs(os.path.join(root, *_parts91[:-1]), exist_ok=True)
+        with open(os.path.join(root, *_parts91), "w", encoding="utf-8") as _fh91:
+            _fh91.write("# Quick Spec\n\n| Field | Value |\n|---|---|\n"
+                        "| Batch | `%s` |\n| %s | %s |\n"
+                        % (_GATED55["batch_id"], _V55_SPECROW, cell))
+
+    def _runstd55(cell, log, **state91):
+        """The REGISTERED rule's LAST finding -- this obligation's -- over a synthetic tree.
+
+        LAST rather than searched for, because the obligation is APPENDED and a search by
+        substring would pass on a run that raised it twice or not at all.
+        """
+        with tempfile.TemporaryDirectory() as _d91:
+            _st91 = dict(_GATED55)
+            _st91.update(state91)
+            if log is not None:
+                _st91["decisions_log"] = log
+            _mk55(_d91, **_st91)
+            if cell is not None:
+                _mkspec55(_d91, cell)
+            return [(_f91.sev, _f91.msg) for _f91 in reg["V55"](_d91, _artifacts(_d91))][-1]
+
+    _ASKCELL91 = "none \u2014 %s" % _V55_ASKFORM
+    _COMCELL91 = "\"land flow revision rev91\" %s" % _V55_COMMISSION
+    _STDLOG91 = [{"gate": "A", "guided": True, "date": "2026-09-21",
+                  "decision": "Phase A spec approved under the batch's standing "
+                              "authorization; Phase B is next."}]
+    # rev91 REVIEW `F1`: THE ASKED LEDGER IS BUILT FROM THE PAGE'S OWN TOKEN, never from the
+    # HEADER cell. The first cut spliced the header string into a `decision` -- a sentence no
+    # ledger author has any reason to write -- so the arm drove direction 2 with a literal it
+    # had manufactured itself while the direction could fire on nothing the flow produces.
+    # `_ASKLOG91` now opens the way `SKILL.md` step 3 tells a reader to open it; `_OLDASK91`
+    # keeps the header spelling as the SECOND accepted form, and both are driven.
+    _ASKLOG91 = [{"gate": "A", "guided": True, "date": "2026-09-21",
+                  "decision": "%s \u2014 the operator approved Phase A; Phase B is next."
+                              % _V55_ASKED}]
+    _OLDASK91 = [{"gate": "A", "guided": True, "date": "2026-09-21",
+                  "decision": "Phase A spec approved: %s." % _ASKCELL91}]
+    # (m) THE TWO DIRECTIONS, AND THE TWO AGREEMENTS THAT MUST NOT FIRE. A rule that only
+    # ever reddened would be indistinguishable from one that reddens on everything, so the
+    # agreeing pairs are driven in the same expression as the contradicting ones.
+    _dir91 = {"ask+standing": _runstd55(_ASKCELL91, _STDLOG91),
+              "commission+asked": _runstd55(_COMCELL91, _ASKLOG91),
+              "commission+headerspelling": _runstd55(_COMCELL91, _OLDASK91),
+              "ask+asked": _runstd55(_ASKCELL91, _ASKLOG91),
+              "commission+standing": _runstd55(_COMCELL91, _STDLOG91)}
+    good = bool(_dir91["ask+standing"][0] == NOTICE
+                and _dir91["commission+asked"][0] == NOTICE
+                and _dir91["commission+headerspelling"][0] == NOTICE
+                and _dir91["ask+asked"][0] == SKIP
+                and _dir91["commission+standing"][0] == SKIP
+                # EACH DIRECTION NAMES ITSELF, and the two spellings of ASKED reach the
+                # SAME sentence -- they are one finding about one contradiction, so the
+                # distinct count is one below the fixture count and says which pair shares.
+                and len({_v91[1] for _v91 in _dir91.values()}) == len(_dir91) - 1
+                and _dir91["commission+asked"][1] == _dir91["commission+headerspelling"][1]
+                and _V55_COMMISSION in _dir91["ask+standing"][1]
+                and "the same contradiction the other way round"
+                in _dir91["commission+asked"][1].lower()
+                # AND THE PURE CORE AGREES WITH THE REGISTERED RULE, so a fixture that
+                # stopped reaching the rule could not pass this arm by itself.
+                and _v55_standing("fast", "ok", "s.md", "ask", _ASKCELL91, 1, 0)[0] == NOTICE
+                and _v55_standing("fast", "ok", "s.md", "ask", _ASKCELL91, 0, 1)[0] == SKIP
+                and _v55_ledger_authority(_STDLOG91) == (1, 0)
+                and _v55_ledger_authority(_ASKLOG91) == (0, 1)
+                and _v55_ledger_authority(_OLDASK91) == (0, 1)
+                # AND THE PAGE MINTS THE TOKEN THE LEDGER SIDE READS. Without this conjunct
+                # the constant is a private invention of this file and direction 2 is
+                # unreachable by anyone following the instructions -- rev91's review `F1`.
+                and _V55_ASKED in " ".join(_skill55.split()))
+    ok &= good
+    print(f"  V55 {'STANDING-two-directions':<32} expected the `none \u2014 {_V55_ASKFORM}` "
+          f"header beside a ledger closing a gate under a `{_V55_STANDING}` to raise a "
+          f"NOTICE, the reverse pairing to raise its OWN in BOTH ledger spellings "
+          f"`SKILL.md` mints, and both agreeing pairs to pass \u2014 five fixtures, four "
+          f"distinct sentences, so neither direction can borrow the other's \u00b7 got "
+          # RENDERED, never a raw container repr: `DET REPR-none-raw` scans this very
+          # transcript for one, because `str()` of a dict or a set is an arm line
+          # whose order is a coin flip between runs.
+          f"{', '.join('%s=%s' % (_k91, _v91[0]) for _k91, _v91 in sorted(_dir91.items()))}"
+          f" \u00b7 "
+          f"{'ok' if good else 'FAIL'}")
+
+    # (n) THE PLACEHOLDER CANNOT SET THE FLAG IT IS A PLACEHOLDER FOR, and the cell is taken
+    # from the SHIPPED template rather than typed here -- `_fast_spec_batch` paid for exactly
+    # this on the `Batch` row, where a spec fresh from the template was read as another
+    # batch's record and the remedy named was one that loops.
+    _tpl91 = _read(_live_path(_flow_home(),
+                              "templates/fast-dev-flow/spec-template.md")) or ""
+    _tplstate91, _tplcell91 = _v55_standing_cell(_tpl91)
+    _ph91 = _runstd55(_tplcell91 or "<unset>", _STDLOG91)
+    _nospec91 = _runstd55(None, _STDLOG91)
+    # rev91 REVIEW `F3`/`F4`: the two states the first cut swept into `commission` and into
+    # `norow`. A declared absence reported as the operator's own words, and a blank cell
+    # reported as a row that is not there, are both false about the artifact -- `C-53` at the
+    # level of the SENTENCE rather than of the severity.
+    _abs91 = {_c91: _v55_standing_cell("| %s | %s |" % (_V55_SPECROW, _c91))[0]
+              for _c91 in ("not-run \u2014 no operator reachable", "n/a \u2014 single operator",
+                           "None.", "none", "pending")}
+    _blank91 = _runstd55("", _STDLOG91)
+    _absrun91 = _runstd55("not-run \u2014 no operator reachable", _STDLOG91)
+    _core91 = _runstd55(None, _STDLOG91, mode="core", stations_active=["P0", "P1"])
+    good = bool(_tplstate91 == "empty"
+                and _ph91[0] == SKIP and "placeholder cannot set the flag" in _ph91[1]
+                and _nospec91[0] == SKIP and "no spec of THIS batch's" in _nospec91[1]
+                and _core91[0] == SKIP and "this batch is `core`" in _core91[1]
+                and len({_ph91[1], _nospec91[1], _core91[1]}) == 3
+                # EVERY DECLARED ABSENCE IS ONE, and none of them is the ask form or a
+                # commission -- including the bare `none` the old `startswith` test read as
+                # the ask form on four letters it happens to open with.
+                and set(_abs91.values()) == {"absent"}
+                and _absrun91[0] == SKIP and "declares an ABSENCE" in _absrun91[1]
+                # AND A BLANK CELL IS NOT A MISSING ROW.
+                and _blank91[0] == SKIP
+                and "with an EMPTY cell" in _blank91[1]
+                and "no `%s` row AT ALL" % _V55_SPECROW not in _blank91[1]
+                and _blank91[1] != _nospec91[1]
+                # A HALF-FILLED CELL READS AS DECLARED -- `V9`'s posture, stated in the
+                # docstring and driven here so the statement cannot rot into a comment.
+                and _v55_standing_cell("| %s | `%s (%s)` |"
+                                       % (_V55_SPECROW, "<the commission>", "half"))[0]
+                == "commission"
+                # AND THE SECOND LEGAL FORM SURVIVES THE CELL READER, which is the one thing
+                # reusing `_v41_cell` would have broken: it strips a trailing parenthetical
+                # and the commission form ENDS in one.
+                and _v55_standing_cell("| %s | `%s` |" % (_V55_SPECROW, _COMCELL91))
+                == ("commission", _COMCELL91))
+    ok &= good
+    print(f"  V55 {'STANDING-placeholder-and-scope':<32} expected the SHIPPED template's own "
+          f"cell to declare NEITHER form, a spec that is not this batch's and a `core` batch "
+          f"to get their own sentences rather than share one, a half-filled cell to read as "
+          f"DECLARED, the `{_V55_COMMISSION}` form to survive the cell reader intact, all "
+          f"{len(_abs91)} declared absence(s) to read as ABSENCES rather than as the "
+          f"operator's own words, and a BLANK cell not to be reported as a missing row "
+          f"\u00b7 template cell {_tplstate91} \u00b7 absences "
+          f"{_shown(set(_abs91.values()))} \u00b7 {'ok' if good else 'FAIL'}")
+
+    # (o) ONE HOME FOR THE RULING, AND THE TWO COMMANDS POINT AT IT. `C-50`: the hard rule
+    # that a phase never advances without explicit approval stands in both commands, and the
+    # runtime that cannot deliver one is answered in the ADAPTER. A second wording in either
+    # command is the failure this census exists to catch, and the pointer's absence is the
+    # other -- a reader who meets the hard rule and is sent nowhere is the reader rev90
+    # measured.
+    _RULE91 = "the operator's INITIAL COMMISSION"
+    _POINT91 = "\u00a7*What refuses an invocation here* step 5"
+    _step591 = "".join(re.findall(r"(?ms)^5\. Name, in that same artifact.*?"
+                                  r"(?=^\*\*The marks the run prints)", _skill55)[:1])
+    # rev91 REVIEW `F6`: NORMALISED, all three. `_POINT91` sat intact in the template by the
+    # luck of where the wrap fell; moving one word earlier in that blockquote would have
+    # reddened this arm as if a rule had been deleted. The guard the docstring below declares
+    # was applied to two of the six sites and is now applied to all of them.
+    _fast91 = " ".join((_read(_live_path(_flow_home(),
+                                         "commands/fast-dev-flow.md")) or "").split())
+    _full91 = " ".join((_read(_live_path(_flow_home(),
+                                         "commands/dev-flow.md")) or "").split())
+    _tplflat91 = " ".join(_tpl91.split())
+
+    # rev91 REVIEW `F2`: THE RULING IS ONE CONTIGUOUS SENTENCE AND IS REQUIRED AS ONE. The
+    # first cut required three NON-CONTIGUOUS substrings and held nothing between them, so a
+    # page reading *the operator's INITIAL COMMISSION ... is NOT enough; only a later explicit
+    # approval IS that standing authorization, declared in the spec header at Phase A* passed
+    # every conjunct, kept the census at one home, and shipped the OPPOSITE of the operator's
+    # ruling in the one file that states it. The second literal is the clause that tells a
+    # prompt-less author which cell NOT to write, which nothing read at all.
+    _SENT91 = ("the operator's INITIAL COMMISSION \u2014 the words that opened the batch "
+               "\u2014 IS that standing authorization, and it is declared in the spec header "
+               "at Phase A.")
+    _CELL91 = "is the cell a runtime that CAN ask writes"
+
+    def _ruling91(text):
+        """Does step 5 carry the ruling? PURE, so a counterfactual can be fed it.
+
+        WHITESPACE-NORMALISED, here and below: each of these literals is longer than the
+        column this file wraps at, so a required literal read off the RAW text would turn a
+        cosmetic reflow into a RED selftest that reads as a content defect -- the bound
+        `SKILL-states-the-gate` declares one arm above, and has paid for once already.
+        """
+        _t91 = " ".join((text or "").split())
+        return bool(_SENT91 in _t91 and _CELL91 in _t91)
+
+    def _records91(text):
+        """Does the guided gate say it RECORDS rather than waits? PURE."""
+        _t91 = " ".join((text or "").split())
+        return bool("the gate RECORDS INSTEAD OF WAITING" in _t91
+                    and ("decision: \"standing authorization \u2014 "
+                         "<the commission, quoted or cited>\"") in _t91)
+
+    # THE TEMPLATE'S ROW IS READ, not the file: a legal form named anywhere else on the page
+    # is not a legal form the author of that cell can see.
+    _row91 = "".join(re.findall(r"(?m)^\|\s*%s\s*\|([^|]*)\|" % _V55_SPECROW, _tpl91)[:1])
+    _sites91 = {_rel91 for _rel91 in (_canon(_flow_home()) or {})
+                if _rel91.endswith(".md")
+                and _RULE91 in (_read(_live_path(_flow_home(), _rel91)) or "")}
+    _INVERT91 = ("is NOT enough; only a later explicit approval IS that standing "
+                 "authorization")
+    good = bool(_ruling91(_step591)
+                and not _ruling91(_step591.replace(_RULE91, "the operator"))
+                # THE REVERSAL, AND THE DELETION: the two mutations the review executed
+                # against the first cut and both of which it survived.
+                and not _ruling91(_step591.replace("IS that standing authorization",
+                                                   _INVERT91))
+                and not _ruling91(_step591.replace(_CELL91, "is one of the two forms"))
+                and _records91(_sec55)
+                and not _records91(_sec55.replace("RECORDS INSTEAD OF WAITING", ""))
+                # BOTH LEGAL FORMS STAND IN THE CELL THE AUTHOR FILLS, and the constants the
+                # rule reads are the template's own -- paired BOTH WAYS, which is what makes
+                # deleting either form from the template a RED rather than a silence.
+                and _V55_ASKFORM in _row91 and _V55_COMMISSION in _row91
+                and _POINT91 in _tplflat91
+                # THE TWO COMMANDS POINT AND DO NOT RESTATE.
+                and _POINT91 in _fast91 and _POINT91 in _full91
+                and not _ruling91(_fast91) and not _ruling91(_full91)
+                and not _records91(_fast91) and not _records91(_full91)
+                and "the gate records rather than waits" in _fast91
+                and "there is nothing to ask and the commission is the answer" in _full91
+                # AND THE RULING ITSELF STANDS IN THE ADAPTER ALONE, across every `.md` the
+                # manifest declares -- the census, not a list beside the loop.
+                # \u26a0 WHAT IT CLOSES IS A LITERAL POPULATION (rev91 review, `F11`): a
+                # PARAPHRASED second home passes it, exactly as `TPL FAST-one-home`'s
+                # line-identical scope already declares of itself. The corpus is complete;
+                # the matcher is not, and that is said here rather than left to be re-found.
+                and _sites91 == {"dev-flow/SKILL.md"})
+    ok &= good
+    print(f"  TPL {'STANDING-authorization-one-home':<32} expected the ruling to stand in "
+          f"`SKILL.md` step 5 ALONE across every `.md` the manifest declares \u2014 shown RED "
+          f"when its subject is generalised \u2014 the guided gate to say it RECORDS rather "
+          f"than waits, the template's `{_V55_SPECROW}` cell to carry BOTH legal forms the "
+          f"rule reads, and both commands to POINT at the one home without restating it "
+          f"\u00b7 got {_shown(_sites91)} \u00b7 {'ok' if good else 'FAIL'}")
 
     # ---- rev71. THE DOCUMENT→RULES MAP, DISCOVERED FROM THE SOURCE AND COMPARED BOTH WAYS.
     #
@@ -31568,7 +32006,10 @@ def selftest():
     _notyet88 = lambda rows: [m for _s, m in rows if "NOT YET REACHED" in m]
     good = bool(# CLOSED: every gate behind it, nothing excused, ledger COMPLETE.
             not _notyet88(_closed88)
-            and [s for s, _m in _closed88] == [SKIP, SKIP, SKIP, SKIP]
+            # rev91: five sentences on the guided path, the fifth being the spec
+            # header read against the ledger -- a SKIP here, the fixture spec carrying
+            # no `Standing authorization` row at all.
+            and [s for s, _m in _closed88] == [SKIP, SKIP, SKIP, SKIP, SKIP]
             and "every one of the 3 gate(s)" in _closed88[1][1]
             and "ledger is COMPLETE" in _closed88[3][1]
             and "reads `closed`" in _closed88[0][1]

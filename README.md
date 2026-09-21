@@ -56,6 +56,13 @@ Fresh readers on Codex and Kimi ran exactly this on a toy repository with no oth
 - Not an enforcement layer outside Claude Code. On other runtimes the operator stands where the guard would stand, and the record says so.
 - Not a code auditor. Confidence in code comes from the gates and the tests the flow makes you prove can fail, not from a human reading every line.
 
+## Limits — stated, not discovered later
+
+- **Enforcement is a Claude Code property.** Named reviewer roles, prompt gates and the hook that refuses a stale invocation exist there and nowhere else. On any other runtime the flow runs *unguarded*: the operator's initial commission is the batch's standing authorization, the guided gate records its decision instead of waiting for one, and the record says so. The validator still refuses an altered bundle and still reads the batch record on every runtime.
+- **The flow does not audit code line by line, and does not ask a human to.** Confidence comes from the gates, the tests the flow makes you prove can fail, and the evidence the record hashes. What a human actually read, at what depth, and what was deliberately not reviewed goes in the close artifact's human review ledger — a review with no record is indistinguishable from one that never happened.
+- **It was distilled from one flow's post-mortems.** The controls carry their origin batches as anonymous indices, and the catalog's own honesty note says which controls are stack-specific. Treat them as a strong prior, not a law.
+- **Fresh-reader verdicts are the acceptance test, and they are published with the flow.** At the current revision a weak reader with no context closes a fast batch with the skill alone; the obstacles it still names are listed in `CHANGELOG.md`, not smoothed.
+
 ## Layout
 
     dev-flow/

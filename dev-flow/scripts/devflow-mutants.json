@@ -8043,8 +8043,106 @@
    "expect_arms": [
     "SCR EVIDENCE-rows-and-check"
    ]
+  },
+  {
+   "subject": "devflow-validate",
+   "id": "r91-M01-the-adapter-drops-the-commission-ruling",
+   "origin": "rev91",
+   "file": "skills/dev-flow/SKILL.md",
+   "target": "rev91 / SKILL.md §*What refuses an invocation here* step 5, the ruling",
+   "old": " **On a runtime that cannot prompt\n     there is no second act to wait for: the operator's INITIAL COMMISSION — the words that\n     opened the batch — IS that standing authorization, and it is declared in the spec header\n     at Phase A.**",
+   "new": "",
+   "why": "THE RULING'S ONE HOME, EMPTIED. Without this sentence the page still says a batch on a runtime that cannot prompt runs under a standing authorization and still tells the reader to record its words -- which is exactly the text the rev90 measurement run read before reporting that nothing said whether the operator's one-shot commission COUNTED as one. Every other sentence in the bullet stays true; the question the reader actually had goes unanswered.",
+   "expect": "KILLED",
+   "expect_arms": [
+    "TPL STANDING-authorization-one-home"
+   ]
+  },
+  {
+   "subject": "devflow-validate",
+   "id": "r91-M02-the-template-loses-its-second-legal-form",
+   "origin": "rev91",
+   "file": "templates/fast-dev-flow/spec-template.md",
+   "target": "rev91 / spec-template.md §0, the `Standing authorization` cell",
+   "old": " · or: <the commission, quoted or cited> (runtime cannot prompt)",
+   "new": "",
+   "why": "THE CELL THE AUTHOR FILLS LOSES THE FORM A PROMPT-LESS RUNTIME NEEDS. The note below the table still describes it and `V55` still reads it, so the file argues with itself while every sentence in it stays grammatical -- and the author of a batch on a prompt-less runtime is handed `none — every gate is asked` as the only thing the row offers, which is the default that produced the finding.",
+   "expect": "KILLED",
+   "expect_arms": [
+    "TPL STANDING-authorization-one-home"
+   ]
+  },
+  {
+   "subject": "devflow-validate",
+   "id": "r91-M03-the-rule-accepts-the-ask-form-beside-a-standing-ledger",
+   "origin": "rev91",
+   "file": "docs/tools/devflow-validate.py",
+   "target": "rev91 / `_v55_standing`, the first direction",
+   "old": "    if state == \"ask\" and standing:",
+   "new": "    if state == \"ask\" and standing and asked:",
+   "why": "THE CONTRADICTION THE REV EXISTS FOR, MADE UNREACHABLE. A ledger closing gates under a standing authorization beside a header declaring that every gate is asked now passes, because the extra conjunct can only hold on a ledger that ALSO records a gate as asked -- a state the contradiction excludes. The reverse direction still fires and the rule still prints a pass sentence, so a run over a real batch looks exactly as it did.",
+   "expect": "KILLED",
+   "expect_arms": [
+    "V55 STANDING-two-directions"
+   ]
+  },
+  {
+   "subject": "devflow-validate",
+   "id": "r91-M04-the-fast-hard-rule-stops-pointing",
+   "origin": "rev91",
+   "file": "commands/fast-dev-flow.md",
+   "target": "rev91 / `/fast-dev-flow` §*Hard rules*, the advance rule's pointer",
+   "old": " — and where the runtime cannot prompt, what stands in its place is the batch's standing authorization, under which the gate records rather than waits (`SKILL.md` §*What refuses an invocation here* step 5, that rule's one home; no second wording of it stands here).",
+   "new": ".",
+   "why": "THE POINTER DELETED, LEAVING THE HARD RULE WHERE THE READER MEETS IT AND NOTHING ELSE. `C-50` is satisfied by pointing, never by silence: the reader who reaches *never advance a phase without explicit user approval* on a runtime with no prompts is sent nowhere, which is the collision the rev90 report named in those words. The rule itself is untouched and still correct on a runtime that CAN ask.",
+   "expect": "KILLED",
+   "expect_arms": [
+    "TPL STANDING-authorization-one-home"
+   ]
+  },
+  {
+   "subject": "devflow-validate",
+   "id": "r91-M05-the-ruling-is-reversed-with-every-literal-intact",
+   "origin": "rev91",
+   "file": "skills/dev-flow/SKILL.md",
+   "target": "rev91 / SKILL.md step 5, the ruling's verb",
+   "old": "IS that standing authorization, and it is declared in the spec header",
+   "new": "is NOT enough; only a later explicit approval IS that standing authorization, and it is declared in the spec header",
+   "why": "THE ONE HOME STATES THE OPPOSITE OF THE OPERATOR'S RULING, and the first cut of the census SURVIVED it -- measured by the independent review, which drove this exact string. Three non-contiguous substrings were required with nothing holding the material between them, so the reversal kept every literal, kept the census at one home, and shipped the inverse rule. This is the mutant for the fold that requires the sentence WHOLE.",
+   "expect": "KILLED",
+   "expect_arms": [
+    "TPL STANDING-authorization-one-home"
+   ]
+  },
+  {
+   "subject": "devflow-validate",
+   "id": "r91-M06-the-cell-clause-is-deleted",
+   "origin": "rev91",
+   "file": "skills/dev-flow/SKILL.md",
+   "target": "rev91 / SKILL.md step 5, the clause naming which cell NOT to write",
+   "old": " **`none — every gate is asked` is the cell a runtime that CAN ask writes;\n     a runtime that cannot never writes it.**",
+   "new": "",
+   "why": "THE ONLY SENTENCE IN THE CANON THAT TELLS A PROMPT-LESS AUTHOR NOT TO LEAVE THE ASK FORM IN THE HEADER, and nothing read it before the review found it. Delete it and the ruling still reads correctly, but `V55`'s one live NOTICE direction becomes a surprise the reader was never warned of -- a rule that refuses something no page asked them to avoid.",
+   "expect": "KILLED",
+   "expect_arms": [
+    "TPL STANDING-authorization-one-home"
+   ]
+  },
+  {
+   "subject": "devflow-validate",
+   "id": "r91-M07-the-asked-spelling-drifts-one-word",
+   "origin": "rev91",
+   "file": "skills/dev-flow/SKILL.md",
+   "target": "rev91 / SKILL.md §*Guided first run* step 3, the asked-gate token",
+   "old": "`decision: \"asked at the gate — <the operator's answer>\"`",
+   "new": "`decision: \"answered at the gate — <the operator's answer>\"`",
+   "why": "ONE WORD, AND THE SECOND NOTICE DIRECTION HAS NO SUBJECT AGAIN. The rule reads `asked at the gate` off the ledger because that is what this page mints; drift the page by a synonym and every gate a reader records under the page's own instruction stops being readable, so a commission header beside a ledger of asked gates passes. The sentence still reads perfectly, which is why the pairing has to be armed and not trusted.",
+   "expect": "KILLED",
+   "expect_arms": [
+    "V55 STANDING-two-directions"
+   ]
   }
  ],
- "live_floor": 557,
+ "live_floor": 564,
  "live_floor_why": "The number of NON-RETIRED mutants this registry must still hold. `MUT REGISTRY-anchors-live` asserts it. It is a RATCHET: lowering it is a deliberate act that says a battery got smaller, and it belongs here -- in the diff a reviewer reads -- rather than as a constant buried in the validator."
 }

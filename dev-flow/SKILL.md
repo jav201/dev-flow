@@ -105,8 +105,12 @@ newest changelog row.
    - **No prompts.** Where a command says *ask the user* or *do not advance without explicit
      approval* and the runtime cannot ask, the batch runs under the **standing authorization**
      its operator gave when the work was commissioned: record that authorization's words in the
-     spec or plan header, and every gate it stands for. An approval nobody can point to is the
-     state this step exists to refuse.
+     spec or plan header, and every gate it stands for. **On a runtime that cannot prompt
+     there is no second act to wait for: the operator's INITIAL COMMISSION — the words that
+     opened the batch — IS that standing authorization, and it is declared in the spec header
+     at Phase A.** **`none — every gate is asked` is the cell a runtime that CAN ask writes;
+     a runtime that cannot never writes it.** An approval nobody can point to is the state
+     this step exists to refuse.
 
 **The marks the run prints — five lines, because a verdict you cannot read is a verdict you will
 misreport.** The gate's summary line counts them, and every finding carries one:
@@ -159,7 +163,14 @@ per-increment gate and the Phase C final gate; in `core` and `full` each station
    saying there is none.
 3. **Wait for explicit approval.** Where the runtime cannot ask, the batch's standing
    authorization stands in — §*What refuses an invocation here* step 5 is that rule's home —
-   and the entry below records which of the two closed the gate.
+   and the entry below records which of the two closed the gate. **Where it cannot ask, the
+   gate RECORDS INSTEAD OF WAITING**: step 4's entry carries
+   `decision: "standing authorization — <the commission, quoted or cited>"` together with the
+   row step 1 printed, and that entry IS the gate — waiting for an approval no channel can
+   deliver is the stall this clause removes. **Where it CAN ask and the operator answered,
+   that same entry opens `decision: "asked at the gate — <the operator's answer>"`** — two
+   spellings for the two runtimes, and `V55` reads both against the spec header's
+   `Standing authorization` cell, which is why a batch cannot claim one and record the other.
 4. **Record the decision in `decisions_log`**, one entry carrying **`gate: <the gate's name>`**
    and **`guided: true`**, beside the `date` and `decision` the ledger already takes.
    **`date` is written `YYYY-MM-DD`** — a plain calendar day, the operator's LOCAL one, the
