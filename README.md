@@ -28,7 +28,7 @@ There is no installer. Copy `dev-flow/` and `dev-flow-lessons/` into the place y
 
 | Runtime | Where |
 |---|---|
-| Claude Code | the `skills/` directory of your Claude Code home (the commands under `dev-flow/commands/` can also be exposed as slash commands) |
+| Claude Code | the `skills/` directory of your Claude Code home. Invoke the `dev-flow` skill and follow its routing; do **not** copy the files under `dev-flow/commands/` out as standalone slash commands — copied out, they no longer know where the bundle lives, and their references to `init`, the templates and the scripts stop resolving |
 | Codex CLI | the `skills/` directory of your Codex home (the `.codex` folder in your user directory) |
 | Kimi Code CLI | your project's `.agents/skills/` (symlink or copy), or `kimi --skills-dir <path to this repo>` |
 
@@ -46,7 +46,7 @@ Requires Python 3.11+ and git. Windows, macOS and Linux.
 2. Pre-checks: run the gate on the project (it will pass with most rules *not applicable* — the batch does not exist yet).
 3. Phase A: write `.fast-dev-flow/spec.md` from `templates/fast-dev-flow/spec-template.md`; the flow seeds a five-key `.dev-flow/state.json` so the gate can see the batch.
 4. Phase B: implement in increments of at most four source files; each increment gets the short packet (`templates/fast-dev-flow/increment-template.md`, nine rows — exactly the fields a rule reads) with a RED counterfactual whose restore is proven by file hash.
-5. Phase C: run the gate again; it now reads the batch (`V41` re-hashes every cited evidence file), reconcile the backlog, close.
+5. Phase C: record the closing gate's decision (`C`) first, then run the gate again; it now reads the batch (`V41` re-hashes every cited evidence file, `V55` sees every gate recorded), reconcile the backlog, close.
 
 Fresh readers on Codex and Kimi ran exactly this on a toy repository with no other context; their reports shaped revisions 84–86 of the flow.
 
