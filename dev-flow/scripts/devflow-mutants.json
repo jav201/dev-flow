@@ -4055,8 +4055,8 @@
    "origin": "rev70",
    "target": "rev70 / _v65_outcome, the `first` default",
    "file": null,
-   "old": "                 what=\"requirements document\", names=\"verdict\", first=False):\n",
-   "new": "                 what=\"requirements document\", names=\"verdict\", first=True):\n",
+   "old": "                 what=\"requirements document\", names=\"verdict\", first=False,\n",
+   "new": "                 what=\"requirements document\", names=\"verdict\", first=True,\n",
    "why": "THE SECOND REVIEW'S PLANT, PROMOTED INTO THE CANON. One character in the shared core's signature opts `V45` AND `V46` into an extension neither asked for -- `C-14`'s defect exactly -- and the review measured it: SELFTEST PASSED, 0 arms red, no derived-arm noise, no anchor breakage. `r70-M18` guards `_v60_field`'s default and `FIRST-is-opt-in` guards the pure function; NOTHING guarded the core's default, and a walk over call-site KEYWORDS structurally cannot see one. The REMOVING direction was already held -- dropping `first=True` from a rule reddens `FIRST-match-wins` -- so only the widening direction was open, which is the direction that costs other rules.",
    "expect": "KILLED",
    "expect_arms": [
@@ -7543,16 +7543,284 @@
    "id": "r87-M09-fast-marker-ignores-the-declared-increments-home",
    "origin": "rev87",
    "file": null,
-   "target": "rev87 pass-2 fold / `_v55_packets`: configuration is READ, not guessed",
-   "old": "    declared = str(((doc or {}).get(_V41_HOMES) or {}).get(\"increments\") or \"\").strip()",
+   "target": "rev88 / `_declared_home_rel`: a declared artifact home is READ, not guessed -- the resolver `_v55_packets` was folded into at rev88, shared with `_fast_spec`",
+   "old": "    declared = str(((doc or {}).get(_V41_HOMES) or {}).get(key) or \"\").strip()",
    "new": "    declared = \"\"",
    "why": "THE MARKER PRINTED A DERIVATION THE READER IS INVITED TO CHECK, AND THE DERIVATION WAS NOT WHAT RAN -- `H4`'s own shape one level down. `artifact_homes.increments` is configuration by construction (`/dev-flow` §Artifact homes), and under this mutation a batch declaring a non-default home has Phase A's gate and its per-increment gate silently EXCUSED as not-yet-reached, with a `COMPLETE` ledger on top. Driven both ways by the arm: the packet in the declared home is found, and one left in the default home a declaration has moved away from is not.",
    "expect": "KILLED",
    "expect_arms": [
     "V55 REACHED-gates-only"
    ]
+  },
+  {
+   "subject": "devflow-validate",
+   "id": "r88-M01-gate-id-column-deleted",
+   "origin": "rev88",
+   "file": "commands/fast-dev-flow.md",
+   "target": "rev88 (1) / the reader's map: the `Gate id` column IS the gate names' home",
+   "old": " | Gate id |",
+   "new": " |",
+   "why": "THE FACT HAD NO HOME AND THE READER PAID FOR IT. A fresh reader of the published repository wrote `Phase A` and `Phase C` into `decisions_log` -- the words the command uses in prose -- and `V55` reported both gates unrecorded, naming neither the strings it accepts nor where they are published. The column is that fact's one home; delete it and the page stops saying what the rule reads, which is the state rev88 found.",
+   "expect": "KILLED",
+   "expect_arms": [
+    "MAP GATE-IDS-declared"
+   ]
+  },
+  {
+   "subject": "devflow-validate",
+   "id": "r88-M02-v55-accepts-the-phase-spelling",
+   "origin": "rev88",
+   "file": null,
+   "target": "rev88 (1) / `_v55_matches`: the documented spellings ALONE are read",
+   "old": "    return any(n.casefold() == low or n.casefold().startswith(low + \"-\") for n in names)",
+   "new": "    return any(low in n.casefold() for n in names)",
+   "why": "THE OPPOSITE REPAIR, AND IT IS THE WRONG ONE. Widening the match to a substring makes `Phase A` answer `A` and the reader's finding go away -- and it also makes `increments` answer `increment` and `P11` answer `P1`, which is the defect `STEM-not-prefix` was written for. The fix is to DECLARE the ids, not to accept anything shaped like one.",
+   "expect": "KILLED",
+   "expect_arms": [
+    "MAP GATE-IDS-declared",
+    "V55 STEM-not-prefix"
+   ]
+  },
+  {
+   "subject": "devflow-validate",
+   "id": "r88-M03-date-form-sentence-deleted",
+   "origin": "rev88",
+   "file": "skills/dev-flow/SKILL.md",
+   "target": "rev88 (2) / skills/dev-flow/SKILL.md step 4: the ledger's date form",
+   "old": "**`date` is written `YYYY-MM-DD`**",
+   "new": "**`date` carries the day the gate closed**",
+   "why": "`V27` reads `YYYY-MM-DD` and NO PAGE SAID SO, so the reader wrote an ISO-8601 timestamp and read a NOTICE about a field they had filled in. The form is stated where the entry's SHAPE is stated; a sentence that says *the day* and not the SPELLING is the state rev88 found, one wording over.",
+   "expect": "KILLED",
+   "expect_arms": [
+    "SKL DATE-form-stated"
+   ]
+  },
+  {
+   "subject": "devflow-validate",
+   "id": "r88-M04-v29-reads-the-batch-family-only",
+   "origin": "rev88",
+   "file": null,
+   "target": "rev88 (4) / `_V29_BATCH_DATE`: both id grammars, from one home",
+   "old": "_V29_BATCH_DATE = _V28_BATCH",
+   "new": "_V29_BATCH_DATE = re.compile(r\"^(\\d{4}-\\d{2}-\\d{2})-batch-\")",
+   "why": "THE RULE REFUSING ITS OWN FLOW'S GRAMMAR. `/dev-flow-init` MANDATES `<YYYY-MM-DD>-fast-NN` for a fast batch, and under this mutation `V29` reports that a conforming id *carries no `YYYY-MM-DD-batch-` prefix ... this is not a pass* -- `C-53`'s false-fail wearing a SKIP, measured on the 2026-09-20 publication run. Re-spelling the grammar here rather than reusing `_V28_BATCH` is also `C-50`: it is how the two drifted apart at rev85.",
+   "expect": "KILLED",
+   "expect_arms": [
+    "V29 BOTH-ID-GRAMMARS"
+   ]
+  },
+  {
+   "subject": "devflow-validate",
+   "id": "r88-M05-v45-reads-the-requirements-doc-in-fast",
+   "origin": "rev88",
+   "file": null,
+   "target": "rev88 (5) / `v45_premise_evaluation`: the mode decides which record holds the roll-up",
+   "old": "    if str((state or {}).get(\"mode\") or \"\") == \"fast\":",
+   "new": "    if str((state or {}).get(\"mode\") or \"\") == \"never\":",
+   "why": "A `fast` batch is seeded no `01-requirements.md` and keeps its premise table in `.fast-dev-flow/spec.md` §3b, which its own template says to do. Under this mutation the rule reads the requirements document in every mode and reports *read nowhere; this is not a pass* on a batch that wrote the table exactly where it was told to -- a rule that cannot see a mode's artifact reported as a mode that owes none.",
+   "expect": "KILLED",
+   "expect_arms": [
+    "V45 FAST-READS-THE-SPEC"
+   ]
+  },
+  {
+   "subject": "devflow-validate",
+   "id": "r88-M06-v55-ignores-the-fast-close-signal",
+   "origin": "rev88",
+   "file": null,
+   "target": "rev88 (3) / `_v55_reached`: the fast close signal the spec template defines",
+   "old": "        closed, cell = _v55_closed(text) if code == \"ok\" else (False, None)",
+   "new": "        closed, cell = False, None",
+   "why": "THE RULE CONTRADICTING ITSELF IN TWO ADJACENT LINES. With the close cell unread, a batch that had written `Current phase: closed` and recorded its `C` decision was still printed `NOT YET REACHED -- C` one line under `this batch's guided ledger is COMPLETE`, at rc 0. Measured on the 2026-09-20 publication run, where the reader accepted it as documented behaviour.",
+   "expect": "KILLED",
+   "expect_arms": [
+    "V55 CLOSE-SIGNAL-IS-THE-SPEC"
+   ]
+  },
+  {
+   "subject": "devflow-validate",
+   "id": "r88-M07-v55-close-signal-read-as-a-substring",
+   "origin": "rev88",
+   "file": null,
+   "target": "rev88 (3) / `_v55_closed`: the cell is matched, never searched",
+   "old": "    return cell.casefold() == _V55_CLOSED, cell",
+   "new": "    return _V55_CLOSED in cell.casefold(), cell",
+   "why": "THE PLACEHOLDER SETTING THE FLAG IT IS A PLACEHOLDER FOR. The template SHIPS the row reading `A / B / C / closed`, so a substring test scores every UNWRITTEN spec as a closed batch and the closing gate is excused on a batch that has not reached Phase B. Same shape as the security scan's bracket hole, one rule over.",
+   "expect": "KILLED",
+   "expect_arms": [
+    "V55 CLOSE-SIGNAL-IS-THE-SPEC"
+   ]
+  },
+  {
+   "subject": "devflow-validate",
+   "id": "r88-M08-v55-ledger-does-not-imply-reached",
+   "origin": "rev88",
+   "file": null,
+   "target": "rev88 (3) / `_v55_outcome`: a gate carrying a decision is behind the batch",
+   "old": "    if byledger and not unknown:",
+   "new": "    if byledger and unknown:",
+   "why": "THE TWO HALVES OF THE COVERAGE SENTENCE WERE DERIVED FROM DIFFERENT FACTS -- the ledger for the accusation, the on-disk marker for the excuse -- so a gate the ledger RECORDED could still be listed as not yet reached. The ledger is this flow's own record that a gate closed, and the union is monotone: it can only move a gate OUT of the excused set.",
+   "expect": "KILLED",
+   "expect_arms": [
+    "V55 MISSING-names-the-gate"
+   ]
+  },
+  {
+   "subject": "devflow-validate",
+   "id": "r88-M09-scan-pattern-dropped-from-the-command",
+   "origin": "rev88",
+   "file": "commands/fast-dev-flow.md",
+   "target": "rev88 (6) / the pattern list the shipped scanner READS",
+   "old": "`credential`, `vault`",
+   "new": "`vault`",
+   "why": "THE COMMAND IS THE LIST'S ONE HOME AND THE SCRIPT READS IT AT EVERY RUN, which is the whole design: there is no second inventory, so a pattern deleted from the page stops being scanned and a spec naming a credential passes the gate clean. The coupling is what makes the page auditable; it is also what makes this mutation reach the tool without touching the tool.",
+   "expect": "KILLED",
+   "expect_arms": [
+    "SCN SHIPS-and-reads-the-command"
+   ]
+  },
+  {
+   "subject": "devflow-validate",
+   "id": "r88-M10-scanner-harvests-the-control-examples",
+   "origin": "rev88",
+   "file": "docs/tools/devflow-scan-spec.py",
+   "target": "rev88 (6) / devflow-scan-spec.py: the list's anchor is load-bearing",
+   "old": "    body = body.split(_LIST_ANCHOR, 1)[1]",
+   "new": "    body = body",
+   "why": "THE SECTION STATES ITS FOUR CONTROLS IN BULLETS OF THE SAME SHAPE AS THE LIST, and each of them QUOTES example text in code spans -- `Information Flow Contract` among them, which is the negative control's own subject. Without the anchor the parser harvests those examples as patterns and the negative control FIRES ON ITSELF, so the scanner refuses to publish a verdict at all. Found by running the first cut, not by reading it.",
+   "expect": "KILLED",
+   "expect_arms": [
+    "SCN SHIPS-and-reads-the-command"
+   ]
+  },
+  {
+   "subject": "devflow-validate",
+   "id": "r88-M11-init-step3-stops-naming-its-mode",
+   "origin": "rev88",
+   "file": "commands/dev-flow-init.md",
+   "target": "rev88 (7) / dev-flow-init step 3: which mode the long schema is for",
+   "old": "**THE SCHEMA BELOW IS `core` AND `full`'s.",
+   "new": "**This is the shape every mode starts from.",
+   "why": "THE READER HAD TO CROSS-READ A DIFFERENT FILE TO SETTLE IT. Step 3 gives a thirty-key schema and the six-key `fast` declaration sits below it saying `/fast-dev-flow` writes THIS and nothing else; with no sentence saying they are one block per MODE, the two read as candidates to choose between, and the fresh reader resolved it out of `/fast-dev-flow` §Pre-checks.",
+   "expect": "KILLED",
+   "expect_arms": [
+    "CMD INIT-STEP3-NAMES-ITS-MODES"
+   ]
+  },
+  {
+   "subject": "devflow-validate",
+   "id": "r88-M12-scan-publishes-over-an-empty-scope",
+   "origin": "rev88",
+   "file": "docs/tools/devflow-scan-spec.py",
+   "target": "rev88 review `H1` / devflow-scan-spec.py: the scan is shown to have READ its subject",
+   "old": "    if not body.strip():",
+   "new": "    if False:",
+   "why": "THE VACUOUS SCAN, AND IT SHIPPED. `in_scope` keys on the heading token the template writes (`## <n>.`); a spec spelling its headings any other way -- `## 1 Objective`, `##3.`, `## 3.1 …`, a setext underline, none at all -- yields an EMPTY body, and all five controls still pass, because they run on synthetic conformant text and never touch the spec. Under this mutation the tool publishes `security_required: false`, exit 0, over a spec holding ten patterns and read ZERO bytes of, under a `scope:` line claiming four sections. `C-40` asked of the green: what would this look like if the repair had been made by removal? This IS that removal.",
+   "expect": "KILLED",
+   "expect_arms": [
+    "SCN SHIPS-and-reads-the-command"
+   ]
+  },
+  {
+   "subject": "devflow-validate",
+   "id": "r88-M13-fast-spec-not-keyed-to-the-batch",
+   "origin": "rev88",
+   "file": null,
+   "target": "rev88 review `H2` / `_fast_spec`: the single-slot spec is keyed to the declared batch",
+   "old": "    if said and declared and said != declared:",
+   "new": "    if False:",
+   "why": "`.fast-dev-flow/spec.md` IS SINGLE-SLOT AND `state.json` IS NOT. Between pre-check 3 declaring a new batch and Phase A step 2 regenerating the spec, the file on disk is the PREVIOUS batch's. Under this mutation `V45` affirms a premise roll-up that is another batch's, and `V55` inherits that batch's `closed` cell -- marking this batch's closing gate reached and then accusing two gates it has never taken of carrying no decision. That is `C-53`'s false accusation displaced one level, inside the rev that exists to remove it.",
+   "expect": "KILLED",
+   "expect_arms": [
+    "V45 FAST-READS-THE-SPEC",
+    "V55 CLOSE-SIGNAL-IS-THE-SPEC"
+   ]
+  },
+  {
+   "subject": "devflow-validate",
+   "id": "r88-M14-v55-reads-a-foreign-close-cell",
+   "origin": "rev88",
+   "file": null,
+   "target": "rev88 review `H2` / `_v55_reached`: only THIS batch's spec is a close signal",
+   "old": "        closed, cell = _v55_closed(text) if code == \"ok\" else (False, None)",
+   "new": "        closed, cell = _v55_closed(text) if code in (\"ok\", \"otherbatch\") else (False, None)",
+   "why": "THE HALF OF THE KEY THAT IS `V55`'s. `_fast_spec` can report `otherbatch` and this rule can still choose to read the cell anyway; under this mutation it does, and the previous batch's `closed` closes this batch's Phase C gate. The locator naming the problem is not the same as the reader acting on it, and a code nobody branches on is `C-58`'s field nobody reads.",
+   "expect": "KILLED",
+   "expect_arms": [
+    "V55 CLOSE-SIGNAL-IS-THE-SPEC"
+   ]
+  },
+  {
+   "subject": "devflow-validate",
+   "id": "r88-M15-v45-affirms-a-pass-on-a-ghost-batch",
+   "origin": "rev88",
+   "file": null,
+   "target": "rev88 review `H2` / `V45`: a ghost batch is still not a pass",
+   "old": "        if not _active_batch_dir(root):",
+   "new": "        if False:",
+   "why": "rev87 REPORTED *names no batch on disk ... this is not a pass* HERE, and rev88's first cut lost it: `fast`'s record does not live under `.dev-flow/<batch_id>/`, so reading it succeeds on a tree where `state.json` names a batch directory that is not on disk, and the sentence then affirms something about *the active batch* on a tree that has none. `V18` reports the cause; this rule must not contradict it.",
+   "expect": "KILLED",
+   "expect_arms": [
+    "V45 FAST-READS-THE-SPEC"
+   ]
+  },
+  {
+   "subject": "devflow-validate",
+   "id": "r88-M16-vault-home-returned-verbatim",
+   "origin": "rev88",
+   "file": null,
+   "target": "rev88 review `M1` / `_declared_home_rel`: a `vault:` home is not a repo path",
+   "old": "    elif \":\" in declared.split(\"/\", 1)[0]:",
+   "new": "    elif False:",
+   "why": "THE DOCSTRING SAID SO AND THE CODE DID NOT. A `vault:` home resolves against the flow's declared `vault_root` and against nothing else; returned verbatim it makes `V45` print `where = vault:Batches/<batch_id>/spec.md`, a location the finding's own reader cannot open -- the exact harm `_v65_outcome`'s `where` argument was added to prevent. Found by the rev88 review executing the resolver against the sentence beside it.",
+   "expect": "KILLED",
+   "expect_arms": [
+    "V45 FAST-READS-THE-SPEC"
+   ]
+  },
+  {
+   "subject": "devflow-validate",
+   "id": "r88-M17-ledger-union-unscoped-to-fast",
+   "origin": "rev88",
+   "file": null,
+   "target": "rev88 review `M3` / `_v55_outcome`: the ledger union is `fast`'s",
+   "old": "                if mode == \"fast\" else [])",
+   "new": "                if mode else [])",
+   "why": "IN `core`/`full` `current_station` IS A REAL POSITION AND THE LEDGER IS NOT. Unscoped, a batch parked at `P1` whose ledger names seven stations has every one of them reported behind it -- a false PROGRESS claim, categorically untrue of the batch, even though the union is monotone and can raise no false accusation. The defect the union exists for was measured in `fast`, where the owed set is a constant and the batch advances no station.",
+   "expect": "KILLED",
+   "expect_arms": [
+    "V55 LEDGER-UNION-IS-FASTS"
+   ]
+  },
+  {
+   "subject": "devflow-validate",
+   "id": "r88-M18-batch-row-placeholder-read-as-an-id",
+   "origin": "rev88",
+   "file": null,
+   "target": "rev88 review 2 `H1` / `_fast_spec_batch`: a cell that is not an id declares none",
+   "old": "    return cell if cell and _V28_BATCH.match(cell) else None",
+   "new": "    return cell or None",
+   "why": "THE PLACEHOLDER SETTING THE FLAG IT IS A PLACEHOLDER FOR, one section over from where this flow already wrote that sentence. The template SHIPS the row as `<the `batch_id` state.json declares, e.g. …>`; compared verbatim, a spec generated from this flow's OWN scaffold is classified as another batch's -- `V45` reporting *the spec on disk is NOT this batch's record* about the record, with a remedy that loops, and `V55` printing `NOT YET REACHED -- C` on a batch that wrote `closed`, which is the finding rev88 exists to remove reproduced through rev88's own fold. The test is the id GRAMMAR (`_V28_BATCH`, its one home), so the placeholder, a bare `<batch_id>` and a declared absence all mean NO ID DECLARED and the comparison is skipped.",
+   "expect": "KILLED",
+   "expect_arms": [
+    "V45 FAST-READS-THE-SPEC"
+   ]
+  },
+  {
+   "subject": "devflow-validate",
+   "id": "r88-M19-unresolvable-home-reads-as-an-absence",
+   "origin": "rev88",
+   "file": null,
+   "target": "rev88 review 2 `M1` / `_declared_home_rel`: three states, not two",
+   "old": "    return default, (\"unresolvable:\" + unread if unread else \"default\")",
+   "new": "    return default, \"default\"",
+   "why": "`r87-M09` WITH THE POLARITY FLIPPED. That mutant exists because a marker printed *the increments home this batch declares* while reading a hard-coded path; rev88's first review closed the no-declaration half, and the two-state repair created a third error -- a batch that really did declare a `vault:` home was told it *declares none for*. A marker a reader is invited to check has to be true in every direction, so an unresolvable declaration is NAMED rather than rendered as an absence.",
+   "expect": "KILLED",
+   "expect_arms": [
+    "V55 LEDGER-UNION-IS-FASTS"
+   ]
   }
  ],
- "live_floor": 418,
+ "live_floor": 437,
  "live_floor_why": "The number of NON-RETIRED mutants this registry must still hold. `MUT REGISTRY-anchors-live` asserts it. It is a RATCHET: lowering it is a deliberate act that says a battery got smaller, and it belongs here -- in the diff a reviewer reads -- rather than as a constant buried in the validator."
 }

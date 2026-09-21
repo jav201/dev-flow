@@ -2011,7 +2011,8 @@ def _v65_document(root, doc_name=_V65_DOC):
 
 
 def _v65_outcome(label, doc, code, identity=(), doc_name=_V65_DOC,
-                 what="requirements document", names="verdict", first=False):
+                 what="requirements document", names="verdict", first=False,
+                 where=None, holder="the active batch"):
     """(field label, document text, corpus code) -> [(sev, where, msg)]. PURE.
 
     The DOCUMENT-level sibling of `_v60_outcome` (packets) and `_v63_outcome` (requirement
@@ -2024,14 +2025,19 @@ def _v65_outcome(label, doc, code, identity=(), doc_name=_V65_DOC,
     declares an identity table. A copy-paste leaving one rule announcing the other's field
     reddens `PASS!=NOOP` instead of shipping a rule that lies about its own subject.
     """
-    where = ".dev-flow/<active batch>/" + doc_name
+    # rev88: `where` and `holder` ARRIVE AS ARGUMENTS so a mode whose record is not under the
+    # batch directory can be read by this same core. `fast` keeps its station record at
+    # `.fast-dev-flow/spec.md`, which is not a child of `.dev-flow/<batch>/`, and a hard-coded
+    # site would have printed a path the finding's own reader cannot open. The DEFAULTS are
+    # the pre-rev88 strings down to the byte, so every `core`/`full` sentence is unchanged.
+    where = where or (".dev-flow/<active batch>/" + doc_name)
     if code != "ok":
         return [(SKIP, where, {
             "nobatch": "`state.json` names no batch on disk, so the %s is "
                        "undefined and `**%s**` was read nowhere; this is not a pass"
                        % (what, label),
-            "nofile": "the active batch holds no `%s`, so `**%s**` was read nowhere; this is "
-                      "not a pass" % (doc_name, label),
+            "nofile": "%s holds no `%s`, so `**%s**` was read nowhere; this is "
+                      "not a pass" % (holder, doc_name, label),
         }[code])]
     state, _value = _v60_field(doc, label, bullet=True, identity=identity, first=first)
     if state == "absent":
@@ -2049,13 +2055,50 @@ def _v65_outcome(label, doc, code, identity=(), doc_name=_V65_DOC,
 
 
 def v45_premise_evaluation(root, art):
-    """The active batch's requirements document declares its `Premise evaluation` verdict.
+    """The active batch's station record declares its `Premise evaluation` verdict.
 
     `C-43`: verifying the work against the document answers *does the work match the spec?* and
     never *is what this spec ASSERTS ABOUT THE WORLD true?* A batch can be fully compliant with
     a requirement whose premise is false. The section is the artifact that makes the control
     checkable; without a reader the control degrades to *I thought about it*.
+
+    TWO RECORDS, ONE QUESTION (rev88). `core` and `full` write the roll-up into
+    `01-requirements.md` §2.7; `fast` writes it into `.fast-dev-flow/spec.md` §3b, in the SAME
+    grammar and with the same three verdicts, because that spec IS the fast batch's station
+    record. Until rev88 this rule read the requirements document in every mode, so on a
+    CONFORMING `fast` batch -- one that had written the table exactly where its own template
+    says to -- it reported *the active batch holds no `01-requirements.md`, so `**Premise
+    evaluation**` was read nowhere* and declared itself not a pass. A rule that cannot see a
+    mode's artifact is not the same as a mode that owes none, and `C-53` prices the two the
+    same. The outcome vocabulary is not forked: same core, same four states, same identity
+    table, and the LOCATOR is `_fast_spec`, shared with `V55`.
     """
+    state, _c45 = _state_json(root)
+    if str((state or {}).get("mode") or "") == "fast":
+        text, rel, code = _fast_spec(root, state or {})
+        # THE GHOST BATCH IS STILL NOT A PASS, and rev88's first cut lost that. `fast`'s
+        # record does not live under `.dev-flow/<batch_id>/`, so reading it succeeds on a
+        # tree where `state.json` names a batch directory that is not on disk -- and the
+        # sentence would then affirm something about "the active batch" on a tree that has
+        # none. rev87 reported *names no batch on disk ... this is not a pass* there, and so
+        # does this. `V18` names the cause; this rule does not restate it.
+        if not _active_batch_dir(root):
+            return [F("V45", SKIP, rel,
+                      "`state.json` names no batch on disk, so there is no active batch whose "
+                      "spec this is and `**%s**` was NOT read as one; this is not a pass. "
+                      "`V18` reports the cause" % _V45_LABEL)]
+        if code == "otherbatch":
+            return [F("V45", NOTICE, rel,
+                      "`%s` names batch `%s` in its \u00a70 header while `state.json` declares "
+                      "`%s`, so the spec on disk is NOT this batch's record and `**%s**` was "
+                      "read nowhere for it; this is not a pass. `/fast-dev-flow` Phase A step 2 "
+                      "regenerates the spec for the batch pre-check 3 declared"
+                      % (rel, _fast_spec_batch(text), str((state or {}).get("batch_id") or ""),
+                         _V45_LABEL))]
+        return [F("V45", s, w, m) for s, w, m
+                in _v65_outcome(_V45_LABEL, text, code, identity=_V45_VERDICTS,
+                                doc_name=rel, what="spec", where=rel,
+                                holder="this `fast` batch's tree")]
     doc, code = _v65_document(root)
     return [F("V45", s, w, m) for s, w, m
             in _v65_outcome(_V45_LABEL, doc, code, identity=_V45_VERDICTS)]
@@ -4345,7 +4388,7 @@ def sync_bundle(home):
 # the real tokens would reintroduce, in the selftest, the thing the arm exists to remove.
 # They are spelled only INSIDE the plant sentinels, because this paragraph is scanned too.
 # PUBLISH-VOCABULARY-BEGIN  (masked from the scan by `_publish_hits`; see its docstring)
-_PUBFILES82 = 37          # rev86: + templates/fast-dev-flow/increment-template.md
+_PUBFILES82 = 38          # rev88: + scripts/devflow-scan-spec.py, the shipped scanner
 
 _VAL82 = "scripts/devflow-validate.py"
 _REG82 = "scripts/devflow-mutants.json"
@@ -7005,7 +7048,9 @@ def _v27_outcome(log, packets, newest_commit, commit_why=None, mode=None, guided
     if not days:
         out.append((NOTICE, _V27_WHERE, "no `decisions_log` entry carries a `date` in "
                     "`YYYY-MM-DD` form over %d entry/entries, so the ledger's currency cannot "
-                    "be compared against anything" % len(log)))
+                    "be compared against anything. A PLAIN CALENDAR DAY is the form, and an "
+                    "ISO-8601 timestamp is not it; `SKILL.md` §*Guided first run* step 4 "
+                    "is where that is stated for the author" % len(log)))
     elif newest_commit is None:
         out.append((SKIP, _V27_WHERE, "the newest `decisions_log` entry is dated %s; %s, so "
                     "currency was NOT checked and this is not a pass"
@@ -7280,7 +7325,28 @@ def v28_closed_before_superseded(root, art):
 # C-53's false-fail; and the defect is INVISIBILITY, not permission. Nothing blocked batch-89's
 # drift and nothing needed to. It needed to be SEEN.
 
-_V29_BATCH_DATE = re.compile(r"^(\d{4}-\d{2}-\d{2})-batch-")
+# rev88: THE DATE WITNESS NEEDS THE DAY AND NOTHING ELSE, AND BOTH FAMILIES CARRY IT.
+# Until rev88 this rule kept its own `-batch-`-only spelling of the id grammar while `V28` and
+# `V39` had already gained `-fast-` at rev85 -- three rules of one gate, two spellings of one
+# fact, which is `C-50`. The cost was measured on the 2026-09-20 publication run: an id this
+# flow's own `/dev-flow-init` MANDATES (`<YYYY-MM-DD>-fast-NN`) made the rule report *carries
+# no `YYYY-MM-DD-batch-` prefix ... this is not a pass* on a CONFORMING batch, and the reader
+# had to decide unaided that a rule refusing the flow's own grammar was noise (`C-53`).
+# `_V28_BATCH` IS REUSED rather than re-spelled, so the grammar has one home and widening it
+# there widens it here by construction. `V28` needs the family and the number for ORDERING;
+# this rule needs `group(1)` alone -- the day -- which both families encode identically. A
+# MALFORMED id still falls through to the unevaluable branch, which is what keeps this a
+# widening of the grammar and not the removal of the witness.
+#
+# ⚠ AND IT IS ALSO A NARROWING, DISCLOSED HERE RATHER THAN LEFT TO BE DISCOVERED (rev88
+# review, `M2`). rev87's pattern was an unanchored PREFIX, so `2026-09-20-batch-89-hotfix`,
+# `2026-09-20-batch-1a` and `2026-09-20-batch-` all reached the date witness; `_V28_BATCH` is
+# anchored at `-(batch|fast)-(\d+)$`, so all three now take the unevaluable branch and say
+# so. That is the RIGHT trade -- `V28` needs the number to order by and an id whose suffix
+# is not a number cannot be ordered, so accepting it here while `V28` refuses it would be
+# the two-spellings defect this line exists to remove -- and the cost is that a project
+# using a suffixed id loses a check it had. `BOTH-ID-GRAMMARS` drives one of the three.
+_V29_BATCH_DATE = _V28_BATCH
 _V29_DAY = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 _V29_WHERE = ".dev-flow/state.json"
 
@@ -7329,10 +7395,11 @@ def _v29_outcome(log, batch_id, archive, archive_of):
                  "not a pass. `V27` reports the absent list itself")]
     m = _V29_BATCH_DATE.match(str(batch_id or ""))
     if not m:
-        return [(SKIP, _V29_WHERE, "the declared batch %s carries no `YYYY-MM-DD-batch-` "
-                 "prefix, so neither the date witness nor the predecessor's archive can be "
-                 "applied and the log's scope was NOT checked; this is not a pass"
-                 % ("`%s`" % batch_id if batch_id else "(none)"))]
+        return [(SKIP, _V29_WHERE, "the declared batch %s is neither `YYYY-MM-DD-batch-NN` nor "
+                 "`YYYY-MM-DD-fast-NN` -- the two id grammars `/dev-flow-init` mandates, and "
+                 "BOTH are accepted here -- so neither the date witness nor the predecessor's "
+                 "archive can be applied and the log's scope was NOT checked; this is not a "
+                 "pass" % ("`%s`" % batch_id if batch_id else "(none)"))]
     day = m.group(1)
     if not log:
         return [(SKIP, _V29_WHERE, "the `decisions_log` of `%s` is empty, so it carries no "
@@ -9362,6 +9429,33 @@ _V55_WHERE = ".dev-flow/state.json"
 _V55_FAST_GATES = ("A", "increment", "C")
 _V55_STREAK = 3                     # the flow's three-batch convention, stated in `SKILL.md`
 _V55_GATEMARK = "this is a GUIDED gate"
+# rev88: THE `fast` CLOSE SIGNAL, and it is a field the template ALREADY DEFINES rather than
+# one this rule mints. `templates/fast-dev-flow/spec-template.md` §*7. Batch status* ships the
+# row `| Current phase | A / B / C / closed |`, and Phase C step 5 tells the author to write
+# `closed` into it. Until rev88 nothing read it, so this rule's own header sentence -- *the
+# closing gate stays in this set until the batch closes and nothing on disk marks it* -- was
+# true by omission: a batch that HAD closed, HAD written the cell and HAD recorded its `C`
+# decision was still printed as *NOT YET REACHED -- C* one line under *ledger is COMPLETE*.
+# One rule, two adjacent lines, contradicting each other, exit 0. Measured 2026-09-20.
+_V55_PHASE_ROW = re.compile(r"(?mi)^\|\s*(?:\*\*)?Current phase(?:\*\*)?\s*\|([^|]*)\|")
+_V55_CLOSED = "closed"
+# THE GATE IDS THE FINDING NAMES. Spelled here rather than read from the command, and the
+# REASON matters because the first cut gave one this same revision refutes: it said reading
+# them from the page "is not available", and `devflow-scan-spec.py` -- shipped by this rev --
+# reads that very page from `__file__` in both install layouts at every run (rev88 review,
+# `L4`). ⚠ AND THE REPLACEMENT REASON WAS WRONG TOO, which the second review measured:
+# it said a gate rule NEVER reads the flow's own documents, and `V30` and `V39` are both
+# registered rules that do (`_flow_home()`, at their own sites). The honest reason is about
+# THIS rule's finding and nothing wider: `V55` reports over a PROJECT tree, and a finding
+# whose text depends on a file outside that tree is one the project cannot reproduce from
+# what it was given. `V30`'s subject IS the flow, and `V39` reads it for a template it
+# compares against -- both are reading their own subject, which is the distinction the
+# first two attempts at this sentence flattened. So the
+# strings are spelled once, here, and `MAP GATE-IDS-declared` -- a SELFTEST arm, which may
+# read the flow's own files -- compares them against the `Gate id` column of
+# `commands/fast-dev-flow.md` BOTH WAYS at every run. That is the pairing `C-50` asks for
+# when a fact genuinely has to exist in two machineries.
+_V55_FAST_SPELLING = ("`A`", "`increment-NNN`", "`C`")
 
 
 def _v55_fastgates(text):
@@ -9393,18 +9487,49 @@ def _v55_packets(root, doc):
     level down, and the second independent review measured it in both directions. The
     declared home is read here, the default is the fallback, and the marker names whichever
     was used rather than the key it would have liked to read.
+
+    rev88: the resolution itself moved to `_declared_home_rel`, which `_fast_spec` shares, so
+    two keys of one block are no longer resolved by two spellings. ⚠ The behaviour is
+    unchanged FOR EVERY `repo:` AND ABSENT HOME -- which is every home any rule declares --
+    and it CHANGED for a `vault:` one: at rev87 that value was returned verbatim and the
+    listing of it found nothing, and it now takes the default. The first draft of this note
+    said "the behaviour is unchanged" flat, and the second review measured the exception.
     """
-    declared = str(((doc or {}).get(_V41_HOMES) or {}).get("increments") or "").strip()
     batch = str((doc or {}).get("batch_id") or "")
-    rel = (declared.split(":", 1)[1] if declared.lower().startswith("repo:") else declared)
-    rel = rel.replace("<batch_id>", batch).strip("/") if rel else ""
-    if not rel:
-        rel = "/".join(p for p in (".dev-flow", batch, "03-increments") if p)
+    rel, said = _declared_home_rel(
+        doc, "increments", "/".join(p for p in (".dev-flow", batch, "03-increments") if p))
+    # THE MARKER NAMES WHICH DERIVATION RAN, over all THREE states. `declares` is true only
+    # when a declaration was read; the default says so; and a declaration this resolver
+    # cannot resolve is NAMED, because telling a batch that declared a `vault:` home that it
+    # *declares none* is `r87-M09`'s defect with the polarity flipped (second review, `M1`).
+    home = "`%s`, the increments home this batch %s" % (
+        rel,
+        "declares" if said == "declared"
+        else "declares none for, so the default was used" if said == "default"
+        else "declares as `%s`, which is not a repository path this rule can resolve, so the "
+             "default was used" % said.split(":", 1)[1])
     try:
         names = os.listdir(os.path.join(root, *rel.split("/")))
     except OSError:
-        return 0, rel
-    return sum(1 for n in names if _V27_PACKET.match(n)), rel
+        return 0, home
+    return sum(1 for n in names if _V27_PACKET.match(n)), home
+
+
+def _v55_closed(spec_text):
+    """Does the fast spec declare the batch CLOSED? -> (bool, the cell as written). PURE.
+
+    EXACT MATCH ON THE CELL, never a substring of it, and that is the whole of the care this
+    needs: the template SHIPS the row reading `A / B / C / closed`, so a rule asking whether
+    the word appears would read every unfilled spec as a closed batch -- the placeholder
+    setting the flag it is a placeholder for, which is the scanner's bracket hole one rule
+    over. `_v41_cell` takes off emphasis and code spans, so `**closed**` and `` `closed` ``
+    are the same answer as `closed` and an author is not punished for formatting.
+    """
+    m = _V55_PHASE_ROW.search(spec_text or "")
+    if not m:
+        return False, None
+    cell = _v41_cell(m.group(1)).strip()
+    return cell.casefold() == _V55_CLOSED, cell
 
 
 def _v55_gatename(entry):
@@ -9432,6 +9557,25 @@ def _v55_recorded(log):
         else:
             unnamed += 1
     return names, unnamed
+
+
+def _v55_spelling(mode):
+    """The sentence naming the gate ids the ledger is expected to carry. PURE.
+
+    THE FINDING SAYS WHAT IT WANTS. Until rev88 this rule reported a gate as unrecorded and
+    named neither the strings it accepts nor where they are published, so a reader who had
+    written `Phase A` saw a gate refused and could only recover the accepted spelling by
+    reading this file. Naming what a rule expects is the difference between a finding and a
+    riddle, and the home is NAMED rather than quoted so this sentence cannot become a second
+    inventory of the ids.
+    """
+    if mode == "fast":
+        return ("The gate ids a `fast` batch writes are %s -- declared in "
+                "`commands/fast-dev-flow.md` §*The reader's map*, `Gate id` column, and "
+                "those spellings ALONE are read: `Phase A` is not `A`."
+                % ", ".join(_V55_FAST_SPELLING))
+    return ("The gate's name in `%s` is its STATION ID, as `stations_active` lists it, in "
+            "either `gate` or `station`." % (mode or "this mode"))
 
 
 def _v55_matches(owed, names):
@@ -9497,6 +9641,28 @@ def _v55_outcome(guided, mode, owed, log, reached=None, marker=None, why=None):
     out = []
     unknown = reached is None
     reached = [] if unknown else reached
+    # rev88: A GATE THAT CARRIES A DECISION IS BEHIND THE BATCH, WHATEVER THE MARKER SAW.
+    # The two halves of this rule's coverage sentence were derived from DIFFERENT facts -- the
+    # ledger for the accusation, the on-disk marker for the excuse -- so a gate the ledger
+    # recorded could still appear in the not-yet-reached list, which is the rule contradicting
+    # itself inside one run. The ledger is the flow's OWN record that a gate closed; it is
+    # therefore a witness, and it is a monotone one: it can only move a gate OUT of the excused
+    # set, never into it, so it can create no accusation that was not already derivable.
+    # SCOPED TO `fast` (rev88 review, `M3`). In `core`/`full` `current_station` is a real
+    # position and the ledger is not: a batch parked at `P1` whose ledger names seven stations
+    # had this union report every one of them behind it, which is a false PROGRESS claim even
+    # though the union is monotone and can raise no false accusation. The defect this union
+    # exists for was measured in `fast`, where the owed set is a constant and the batch
+    # advances no station, so that is where it applies.
+    byledger = ([g for g in owed if g not in reached and _v55_matches(g, names)]
+                if mode == "fast" else [])
+    if byledger and not unknown:
+        reached = list(reached) + byledger
+        marker = ("%s; and %s carr%s a `decisions_log` entry naming %s, which is this flow's "
+                  "own record that the gate closed"
+                  % (marker or "no marker was given", ", ".join("`%s`" % g for g in byledger),
+                     "ies" if len(byledger) == 1 else "y",
+                     "it" if len(byledger) == 1 else "them"))
     missing = [g for g in reached if not _v55_matches(g, names)]
     notyet = [g for g in owed if g not in reached]
     if unknown:
@@ -9516,11 +9682,11 @@ def _v55_outcome(guided, mode, owed, log, reached=None, marker=None, why=None):
         out.append((NOTICE, _V55_WHERE, "%d of the %d gate(s) this `%s` batch has REACHED "
                     "carry no `decisions_log` entry with `guided: true` naming them -- %s%s. "
                     "A gate the agent walked the reader through and did not record is a gate "
-                    "nobody can point to afterwards. What decided that they are behind this "
+                    "nobody can point to afterwards. %s What decided that they are behind this "
                     "batch: %s"
                     % (len(missing), len(reached), mode,
                        ", ".join("`%s`" % g for g in missing), nolist,
-                       marker or "no marker was given")))
+                       _v55_spelling(mode), marker or "no marker was given")))
     else:
         out.append((SKIP, _V55_WHERE, "all %d gate(s) this `%s` batch has REACHED carry a "
                     "`decisions_log` entry with `guided: true` naming them (%s)"
@@ -9532,9 +9698,12 @@ def _v55_outcome(guided, mode, owed, log, reached=None, marker=None, why=None):
                     "REACHED and are therefore not judged -- %s. A gate is accused only once "
                     "the batch is past it (`C-53`), and this line is the other half of the "
                     "coverage sentence above rather than a silence. ⚠ THE CLOSING GATE "
-                    "STAYS IN THIS SET UNTIL THE BATCH CLOSES and nothing on disk marks it "
-                    "before it does, so this rule never accuses it: the close step's own "
-                    "instruction is what reaches it"
+                    "LEAVES THIS SET WHEN THE BATCH RECORDS THAT IT CLOSED: in `fast` that "
+                    "is `Current phase: closed` in the spec, which Phase C step 5 tells the "
+                    "author to write and rev88 taught this rule to read; in `core` and "
+                    "`full` nothing on disk marks it, so it stays here until the batch is "
+                    "gone and this rule never accuses it. A gate this batch RECORDED in "
+                    "`decisions_log` is never in this list either, whatever the marker saw"
                     % (len(notyet), len(owed), mode,
                        ", ".join("`%s`" % g for g in notyet))))
     elif not unknown:
@@ -9585,20 +9754,52 @@ def _v55_reached(root, mode, owed, doc):
     `core`/`full` advance `current_station` through `stations_active`, so every station before
     it is a gate this batch closed. `fast` advances nothing (`/fast-dev-flow` §*`state.json`
     is DECLARED and not MAINTAINED*), so its marker is the batch RECORD: Phase B opens only
-    once Phase A's gate has closed, and its first increment packet is what says so. The
-    CLOSING gate is behind no marker in either mode and is never accused -- said in the
-    finding itself rather than left as a silence.
+    once Phase A's gate has closed, and its first increment packet is what says so.
+
+    THE CLOSING GATE GAINED A MARKER AT rev88, IN `fast` ONLY, and this docstring said
+    the opposite until it did. The fast spec's §7 `Current phase` cell is the close
+    signal `templates/fast-dev-flow/spec-template.md` already defines and Phase C step 5
+    already tells the author to write; reading it is what stops this rule printing *NOT
+    YET REACHED -- C* one line under *ledger is COMPLETE*. In `core`/`full` the closing
+    station is still behind no marker and is still never accused -- said in the finding
+    itself rather than left as a silence.
     """
     if mode == "fast":
         packets, home = _v55_packets(root, doc)
-        if not packets:
-            return [], ("no `increment-NNN.md` stands under `%s`, the increments home this "
-                        "batch declares, so Phase B has not opened and no gate is behind it "
-                        "yet" % home)
-        return [g for g in owed if g != _V55_FAST_GATES[-1]], (
-            "%d increment packet(s) stand under `%s`, the increments home this batch "
-            "declares, so Phase A's gate and the per-increment gate are behind it"
-            % (packets, home))
+        text, rel, code = _fast_spec(root, doc)
+        # ONLY THIS BATCH'S SPEC IS A CLOSE SIGNAL. `otherbatch` is read as NO signal rather
+        # than as an open one, and the marker says which: inheriting the previous batch's
+        # `closed` cell marked this batch's closing gate reached and then accused two gates
+        # it had never taken of carrying no decision -- `C-53` displaced one level, measured
+        # by the rev88 review.
+        closed, cell = _v55_closed(text) if code == "ok" else (False, None)
+        # ONE WITNESS PER GATE, and no gate borrows another's. A packet on disk says Phase A's
+        # gate closed and the per-increment gate was taken; `Current phase: closed` says the
+        # Phase C gate closed. A batch that closed having written no packet therefore reaches
+        # `A` and `C` and NOT `increment` here -- accusing a gate nobody ever took is the
+        # false accusation `C-53` refuses, and it is the mirror of the omission this rev
+        # repairs. ⚠ HERE, and not necessarily in the rule's OUTPUT: `_v55_outcome` adds a
+        # SECOND witness in this mode -- a gate the ledger records under `guided: true` -- so
+        # the set this function returns is the MARKER's answer and not the whole of it. The
+        # first cut of this comment claimed the whole of it, and the rev88 review drove the
+        # counterexample: closed, zero packets, a full ledger, all three behind the batch.
+        reached = ([g for g in _V55_FAST_GATES[:2] if packets]
+                   + ([_V55_FAST_GATES[0]] if closed and not packets else [])
+                   + ([_V55_FAST_GATES[-1]] if closed else []))
+        said = ("`Current phase` in `%s` reads `%s`" % (rel, cell) if cell is not None
+                else "`%s` declares no `Current phase` row" % rel if code == "ok"
+                else "`%s` names batch `%s` and not the declared `%s`, so it is NOT this "
+                     "batch's record and its close cell was not read"
+                     % (rel, _fast_spec_batch(text), str(doc.get("batch_id") or ""))
+                if code == "otherbatch"
+                else "no spec stands at `%s`" % rel)
+        if not reached:
+            return [], ("no `increment-NNN.md` stands under %s, and %s, so no gate is "
+                        "behind it yet" % (home, said))
+        return [g for g in owed if g in reached], (
+            "%d increment packet(s) stand under %s, and %s -- so %s %s behind it"
+            % (packets, home, said, ", ".join("`%s`" % g for g in reached),
+               "is" if len(reached) == 1 else "are"))
     current = str(doc.get("current_station") or "").strip()
     if not current:
         return None, "`state.json` declares no `current_station`"
@@ -9892,7 +10093,7 @@ _RULE_COVERS = {
     "V42": "every deferral marker outside the two backlog lanes is keyed to one of them, over the TRACKED corpus of `.dev-flow/design/**`, `ADR-*` and the batch record -- near-spellings counted apart, an empty corpus reported rather than scored zero (rev66, `Q6`)",
     "V43": "every increment packet of the ACTIVE batch declares its `Reverse census` -- the five trigger-family-B probes run with their commands and verdicts, the ones that did NOT fire named with their probe, or the legal empty `none` (rev68, `C-26`+`C-48`: the reader gate row 5 never had; the ROW is absent from 246 of 246 packets in the record and the section heading present in 2 -- both measured case-sensitively, as this reader is)",
     "V44": "every increment packet of the ACTIVE batch declares its `RED counterfactual` -- the ONE mutation that made this packet's OWN new assertion fail, where its transcript is stored, and the restore digest, or the legal empty `none` (rev68, `C-20`+`C-40`: the reader gate row 4 never had; distinct from `V37`, which reads a BATTERY's per-arm verdicts)",
-    "V45": "the ACTIVE batch's `01-requirements.md` declares its `Premise evaluation` -- the roll-up verdict over §2.7's table, LEADING with one of the three tokens that table mints (✅/❌/❓ or TRUE/FALSE/UNDECIDABLE) or the legal empty `none`; a cell that names no verdict is the empty state, never a value (rev69, `C-43`: the first reader the most-cited control in the flow has ever had; the SECTION is present in 10 of 66 live contracts and the keyed FIELD in 0 of 66, both measured case-sensitively as this reader is)",
+    "V45": "the ACTIVE batch's station record declares its `Premise evaluation` -- `01-requirements.md` §2.7 in `core`/`full`, and in `fast` the spec `artifact_homes.spec` declares (§3b), which is that mode's whole record and holds the same field in the same grammar (rev88) -- the roll-up verdict over that table, LEADING with one of the three tokens that table mints (✅/❌/❓ or TRUE/FALSE/UNDECIDABLE) or the legal empty `none`; a cell that names no verdict is the empty state, never a value (rev69, `C-43`: the first reader the most-cited control in the flow has ever had; the SECTION is present in 10 of 66 live contracts and the keyed FIELD in 0 of 66, both measured case-sensitively as this reader is)",
     "V46": "the ACTIVE batch's `01-requirements.md` declares its `Fork preconditions` -- `C-52`'s four conditions with a verdict each, or the legal empty `none -- this batch runs one lane` (rev69, `C-52`: its first reader, and the home of the CROSSED reverse census, which `C-52` says structurally cannot be performed from inside a lane; 17 of 66 live contracts carry lane/fork language and 0 declare the block)",
     "V47": "the ACTIVE batch's `04-validation.md` declares its batch verdict as the keyed `**Result:**` field, LEADING with one of the flow's three tokens (`PASS-WITH-NOTES` / `PASS` / `FAIL`); a cell that names none is the empty state, never a value (rev70, `C-58`: the first reader the flow's most load-bearing fact has ever had — the FIELD is absent from 55 of 65 records and the `Verdict (read first)` heading present in 16, both measured case-sensitively as this reader is. The increment gate's reviewer vocabulary, which mints `BLOCK` instead of `FAIL`, is deliberately NOT unified with this one)",
     "V48": "the ACTIVE batch's `04-validation.md` declares WHO completed the evidence checklist, in `V36`'s identity grammar reused rather than re-minted (rev70, `C-58`: the template calls this section blocking and nothing read it for 64 batches; the field is absent from 53 of 65 records and the active batch's cell names nobody. The ROWS are not counted — the 32 records carrying the section write them six ways — so the count is declared and the rows are read by the reviewer)",
@@ -9945,14 +10146,14 @@ _RULE_SELECTOR = {
     "V40": "S1 (`state.json` ALONE) + the tree's own absolute path, and an EXECUTED case-folding probe -- rev55's `_casefold_probe`, because the value compared was written by another checkout",
     "V43": "S1 (the active batch's `03-increments/` ALONE -- `V31`/`V32`/`V36`'s selector, and deliberately not `V9`'s S3 walk: 246 of 246 packets in the record carry no such row, so a retroactive walk is 246 notices nobody reads)",
     "V44": "S1 (the active batch's `03-increments/` ALONE -- `V31`/`V32`/`V36`'s selector; the row NUMBER is never read, because the obligation sits at row 4 in nine packets and at row 3 in five, across checklists of four different lengths)",
-    "V45": "S1 (the active batch's `01-requirements.md` as ONE DOCUMENT -- neither `V31`'s packet corpus nor `V33`-`V35`'s requirement BLOCKS: the field sits in §2.7, outside every block, and a block-scoped reader cannot see it)",
-    "V46": "S1 (the active batch's `01-requirements.md` as ONE DOCUMENT -- `V45`'s corpus. The fork is the TRUNK's act and the trunk's document is where its preconditions can be declared; a lane's own packet structurally cannot answer for the crossed census)",
+    "V45": "S1 (the active batch's station record as ONE DOCUMENT -- `01-requirements.md` in `core`/`full`, `.fast-dev-flow/spec.md` in `fast` (rev88), resolved through `_fast_spec` and keyed to the declared batch. Neither `V31`'s packet corpus nor `V33`-`V35`'s requirement BLOCKS: the field sits outside every block, and a block-scoped reader cannot see it)",
+    "V46": "S1 (the active batch's `01-requirements.md` as ONE DOCUMENT -- `V45`'s corpus in `core`/`full`. `C-52`'s fork is not owed in `fast` and this rule does not follow `V45` into the spec — ⚠ and it does NOT go n/a there either: it reports the `nofile` SKIP over a document that mode never creates, which is honest about having read nothing and is louder than the absence deserves. Named as a bound rather than repaired at rev88 (second review, `M4`): making it mode-aware is `V46`'s own change and not this rev's subject. The fork is the TRUNK's act and the trunk's document is where its preconditions can be declared; a lane's own packet structurally cannot answer for the crossed census)",
     "V47": "S1 (the active batch's `04-validation.md` as ONE DOCUMENT — `V45`'s corpus shape at a second document, not a fourth core. `V5` reads this file's LEDGER arithmetic and `V39` reads whether it is written at all; neither asks it to declare a verdict)",
     "V48": "S1 (the active batch's `04-validation.md` as ONE DOCUMENT — `V47`'s corpus. The station is Phase 4 and the owner is `qa-reviewer`, so the checklist's completer is declared in the artifact that station produces)",
     "V49": "S1 (the active batch's `04-validation.md` as ONE DOCUMENT — `V47`'s corpus. `C-51`'s section is minted here and nowhere else; `increment-template.md` gate row 3 NAMES the obligation but the packet is not where the roll-up lives)",
     "V50": "S1 (the active batch's `05-close.md` as ONE DOCUMENT — `V45`'s corpus shape at a THIRD document, not a fifth core. ⚠ The file exists only under `mode: core`; a `full` batch writes `05-postmortem.md` + `06-docs/` instead, and both rules then report the `nofile` SKIP, which says in its own words that it is not a pass. That is the honest reading and not a gap: a `full` batch's conditional gates are `C-14`/`V32`'s at the increment gate, and giving this rule a second document would be two subjects under one id)",
     "V54": "S1 (the active batch's `05-close.md` as ONE DOCUMENT \u2014 `V50`'s corpus and `V50`'s `mode: core` limit, stated once there and not restated as a third claim here. TWO obligations under one id, both through `_v65_outcome`: the ledger roll-up and the perimeter declaration)",
-    "V55": "S1 (`.dev-flow/state.json` ALONE \u2014 the active slot's `guided`, `mode`, `stations_active` and `decisions_log`. No batch document is opened, which is why it answers on a tree whose batch directory holds nothing yet. THREE obligations under one id: the gate coverage, the shape of a guided entry, and the streak disclosure)",
+    "V55": "S1 (`.dev-flow/state.json` \u2014 the active slot's `guided`, `mode`, `stations_active` and `decisions_log` \u2014 plus, in `fast` alone, two MARKERS of progress: the increment packets under `artifact_homes.increments` and the `Current phase` cell of the spec `artifact_homes.spec` declares (rev88). It still opens no batch document in `core`/`full`, which is why it answers there on a tree whose batch directory holds nothing yet. THREE obligations under one id: the gate coverage, the shape of a guided entry, and the streak disclosure)",
     "V53": "S3 (the WHOLE project record — every `.md` under `.dev-flow/`, resolved against the working tree outside it. The ACTIVE batch's slice of that corpus is what can BLOCK; the rest is a census, and the partition is the rule's whole design rather than a scoping detail)",
     "V52": "S1 (the active batch's staged design proposals — every `# Design proposal` document under `.dev-flow/<batch_id>/design/`, the one home a rule can reach. ⚠ The CANONICAL copy in `full` is the vault one and no rule will ever read it; this reads the staged INPUT `/dev-flow-sync` publishes from, and says so in its own sentences)",
     "V51": "S1 (the active batch's `05-close.md` as ONE DOCUMENT — `V50`'s corpus and `V50`'s `mode: core` limit, which is stated once there and not restated as a second claim here)",
@@ -10215,6 +10416,129 @@ def _active_batch_state(root):
     if not os.path.isdir(path):
         return None, "ghost"
     return path, "ok"
+
+
+#  ------------------------------------- rev88: THE `fast` BATCH'S RECORD IS ITS SPEC, AND
+#  THERE IS ONE LOCATOR FOR IT.
+#
+# `mode: fast` seeds no `01-requirements.md` and no `04-validation.md`; its whole station
+# record is `.fast-dev-flow/spec.md`, declared in `artifact_homes.spec` (`/dev-flow-init`
+# §*The `fast` declaration*). Two rules read it from rev88 -- `V45` for the premise roll-up in
+# its §3b, `V55` for the close signal in its §7 -- and they read it THROUGH HERE, because two
+# resolvers of one declared home is the defect `_v55_packets`' own docstring records one key
+# over: a rule that hard-codes the default and then PRINTS that it read the declared home.
+_FAST_SPEC_KEY = "spec"
+_FAST_SPEC_DEFAULT = ".fast-dev-flow/spec.md"
+
+
+def _declared_home_rel(doc, key, default):
+    """`artifact_homes.<key>` -> (repo-relative path, was it DECLARED?). PURE.
+
+    `repo:` comes off, `<batch_id>` is filled from the declaration itself, and an absent or
+    unusable declaration falls back to `default`. The second element is THE STATE, and there
+    are THREE of them because two were not enough: `declared` (a `repo:` home this resolver
+    read), `default` (no declaration at all), and `unresolvable` (a declaration this resolver
+    cannot turn into a repository path -- today that is `vault:`). `r87-M09` exists because a
+    marker printed *the increments home this batch declares* while reading a hard-coded path;
+    rev88's first review found the other half of it -- no declaration at all, and the sentence
+    still said *declares* -- and the SECOND review found the half the two-state repair created:
+    a batch that really did declare a `vault:` home was told it *declares none*. A derivation a
+    reader is invited to check has to be the derivation that ran, in every direction there is.
+
+    ⚠ A `vault:` HOME TAKES THE FALLBACK, and this is a rev88-review repair rather than a
+    restatement: the first cut said so in this docstring and returned the value verbatim, so
+    `V45` printed `where = vault:Batches/<batch_id>/spec.md` -- a location the finding's own
+    reader cannot open, which is the exact harm `_v65_outcome`'s `where` argument exists to
+    prevent. `vault:` resolves against the flow's declared `vault_root` and against nothing
+    else (`/dev-flow` §Artifact homes); it is not a repository path and this resolver does
+    not own one. No rule declares a `vault:` home for either key that reaches here, so the
+    fallback is the honest answer and `False` is what says it was not the declared one.
+    """
+    declared = str(((doc or {}).get(_V41_HOMES) or {}).get(key) or "").strip()
+    batch = str((doc or {}).get("batch_id") or "")
+    unread = ""
+    if declared.lower().startswith("repo:"):
+        rel = declared.split(":", 1)[1]
+    elif ":" in declared.split("/", 1)[0]:
+        rel, unread = "", declared    # `vault:` and any other prefix this resolver cannot read
+    else:
+        rel = declared
+    rel = rel.replace("<batch_id>", batch).strip("/") if rel else ""
+    if rel:
+        return rel, "declared"
+    return default, ("unresolvable:" + unread if unread else "default")
+
+
+_FAST_SPEC_BATCH = re.compile(r"(?mi)^\|\s*(?:\*\*)?Batch(?:\*\*)?\s*\|([^|]*)\|")
+
+
+def _fast_spec_batch(text):
+    """The batch id the fast spec's \u00a70 header DECLARES, or None. PURE.
+
+    ⚠ A CELL THAT IS NOT AN ID IS NOT A DISAGREEMENT, and the first cut of this function got
+    that exactly backwards. It compared the cell verbatim, so the row as the TEMPLATE SHIPS
+    it -- `<the `batch_id` state.json declares, e.g. …>` -- was read as another batch's id,
+    and a spec generated from this flow's own template was classified `otherbatch`. `V45`
+    then printed *the spec on disk is NOT this batch's record* (false: it is) and named a
+    remedy that loops (regenerating from the template reproduces the placeholder), and `V55`
+    printed `NOT YET REACHED -- C` on a batch that had written `closed` -- **the finding
+    rev88 exists to remove, reproduced through the door rev88's own fold opened.**
+    Measured by the second independent review, on the first batch the rev88 template would
+    ever produce.
+
+    THE TEST IS THE ID GRAMMAR, not a bracket test, and `_V28_BATCH` is its one home (`C-50`)
+    -- the same constant `V28` orders by and `V29` takes its day from. A cell holding the
+    template's own words, a bare `<batch_id>`, a declared absence (`none — …`), or anything
+    else that is not a batch id means NO ID WAS DECLARED, and the comparison is skipped with
+    `ok` exactly as it is for a pre-rev88 spec carrying no row at all. The flow already owned
+    this concept twice in files this rev touched -- `_v60_field`'s `empty` state, and
+    `strip_untouched`'s skip of spans "still carrying the template's own words" -- and
+    `_v55_closed`'s docstring argues the case one function away, for the §7 cell, in the
+    words *the placeholder setting the flag it is a placeholder for*. It was written for one
+    cell and not applied to the other.
+    """
+    m = _FAST_SPEC_BATCH.search(text or "")
+    if not m:
+        return None
+    cell = _v41_cell(m.group(1)).strip()
+    return cell if cell and _V28_BATCH.match(cell) else None
+
+
+def _fast_spec(root, doc):
+    """(the fast spec's text, the repo-relative path read, code). NOT pure.
+
+    Codes are `_v65_document`'s two plus one this record needs and the batch record does not:
+    `ok`, `nofile`, and `otherbatch`. There is no `nobatch` here -- the spec's home does not
+    depend on a batch directory existing, which is precisely why a `fast` batch can carry its
+    record before its first packet lands; a caller that owes the ghost-batch sentence asks
+    `_active_batch_dir` for it, as `V45` does.
+
+    ⚠ `otherbatch` EXISTS BECAUSE THIS FILE IS SINGLE-SLOT AND `state.json` IS NOT.
+    `.dev-flow/<batch_id>/01-requirements.md` cannot be another batch's by construction --
+    the path carries the id. `.fast-dev-flow/spec.md` can, and does, for the whole window
+    between pre-check 3 declaring the new batch and Phase A step 2 regenerating the spec.
+    Measured by the rev88 review: a batch sitting at Phase A, whose only spec on disk was the
+    PREVIOUS batch's and still read `Current phase | closed`, had `V55` mark its closing gate
+    reached and then accuse two gates it had never taken of carrying no decision. Reading a
+    stale record as the active one is not a weaker version of reading the right one; it is a
+    different finding wearing its sentence. The comparison is skipped -- with `ok` -- when the
+    spec carries no `Batch` row at all, or carries one that declares no ID -- the template's
+    own placeholder, a declared absence, anything `_V28_BATCH` does not match. Specs written
+    before rev88 have no row, and a spec fresh from the template has the placeholder; refusing
+    either would be `C-53`'s false-fail on every batch already on disk AND on every batch the
+    template will produce. The row's ABSENCE is reported by the callers that care, not by
+    this locator.
+    """
+    rel = _declared_home_rel(doc, _FAST_SPEC_KEY, _FAST_SPEC_DEFAULT)[0]
+    path = os.path.join(root, *rel.split("/"))
+    if not os.path.isfile(path):
+        return None, rel, "nofile"
+    text = _read(path) or ""
+    said = _fast_spec_batch(text)
+    declared = str((doc or {}).get("batch_id") or "").strip()
+    if said and declared and said != declared:
+        return text, rel, "otherbatch"
+    return text, rel, "ok"
 
 
 def _active_batch_dir(root):
@@ -17700,15 +18024,33 @@ def selftest():
     _partial55 = _run55(packets=2, decisions_log=[_FULL55[0]], **_GATED55)
     _whole55 = _run55(packets=2, decisions_log=_FULL55, **_GATED55)
     _pmsg55 = [_m55 for _s55, _m55 in _partial55 if _s55 == NOTICE]
-    good = bool(len(_pmsg55) == 1 and "`increment`" in _pmsg55[0]
-                and "1 of the 2 gate(s)" in _pmsg55[0]
-                and "`A`" not in _pmsg55[0]
+    # rev88: THE ACCUSATION AND THE SPELLING SENTENCE ARE READ APART. The finding now ends by
+    # naming the gate ids it accepts, so a reader who wrote `Phase A` is not left to recover
+    # them from this file -- and the accusation half must still name ONLY the missing gate,
+    # which a whole-message test can no longer say now that every id appears in the tail.
+    _pacc55 = _pmsg55[0].split("The gate ids a")[0] if _pmsg55 else ""
+    good = bool(len(_pmsg55) == 1 and "`increment`" in _pacc55
+                and "1 of the 2 gate(s)" in _pacc55
+                and "`A`" not in _pacc55
+                and all(_sp55 in _pmsg55[0] for _sp55 in _V55_FAST_SPELLING)
+                and "`Phase A` is not `A`" in _pmsg55[0]
+                and "`Gate id` column" in _pmsg55[0]
+                # AND A GATE THE LEDGER RECORDS IS BEHIND THE BATCH. `_FULL55` carries a `C`
+                # entry, so the whole-ledger run reaches all THREE gates and the not-yet-
+                # reached line is gone -- where until rev88 it printed `NOT YET REACHED -- C`
+                # one line under a ledger it had just called COMPLETE.
                 and _sev(_whole55) == [SKIP, SKIP, SKIP, SKIP]
-                and "all 2 gate(s)" in _whole55[0][1])
+                and "all 3 gate(s)" in _whole55[0][1]
+                and "carries a `decisions_log` entry naming it" in _whole55[0][1]
+                and "every one of the 3 gate(s)" in _whole55[1][1]
+                and not [_m55 for _s55, _m55 in _whole55 if "NOT YET REACHED" in _m55])
     ok &= good
     print(f"  V55 {'MISSING-names-the-gate':<32} expected a guided `fast` batch missing its "
           f"per-increment gate to raise ONE NOTICE naming `increment` and not the gate it DID "
-          f"record, and the same batch with that entry written to fall silent · got "
+          f"record — with the spelling sentence naming {_shown(set(_V55_FAST_SPELLING))} and "
+          f"its home, read APART from the accusation — and the same batch with the whole "
+          f"ledger written to fall silent AND to excuse nothing, because a gate carrying a "
+          f"`guided: true` decision is a gate this flow's own record says closed · got "
           f"{_shown(set(_sev(_partial55)))} → {_shown(set(_sev(_whole55)))} · "
           f"{'ok' if good else 'FAIL'}")
 
@@ -17764,6 +18106,57 @@ def selftest():
     # reporting 2 BLOCK and 2 NOTICE -- and `SKILL.md` tells the operator to turn `guided` off
     # on that figure. What is armed is that the token tracks THIS batch's ledger, that no
     # count of closed batches is claimed, and that both halves of the scope are printed.
+    # THE LEDGER UNION IS `fast`'s, AND A `core` LEDGER IS NOT A POSITION (second review,
+    # `H2`/`M3`). In `core`/`full` `current_station` really says where the batch is; a ledger
+    # naming a station ahead of it is a claim, not a marker, and unscoping the union made the
+    # rule report every named station behind a batch parked at `P1` -- a false PROGRESS claim.
+    # `_v55_outcome` was driven at ONE site with a mode and it was `"fast"`, so `r88-M17`
+    # restored the defect and survived with its claim unmet. This is that drive.
+    _core55 = _v55_outcome(True, "core", ["P0", "P1", "P2"],
+                           [{"station": "P2", "guided": True, "date": "2026-09-20",
+                             "decision": "claimed"}], ["P0"], "at `P1`")
+    _corenotyet55 = [_m55 for _s55, _w55, _m55 in _core55 if "NOT YET REACHED" in _m55]
+    _fastunion55 = _v55_outcome(True, "fast", list(_V55_FAST_GATES),
+                                [{"gate": "C", "guided": True, "date": "2026-09-20",
+                                  "decision": "closed"}], ["A"], "one packet")
+    # THE MARKER'S THIRD STATE HAS A READER. `_declared_home_rel` distinguishes a home this
+    # batch DECLARED, one it declared NONE for, and one it declared that this resolver cannot
+    # turn into a repository path -- and telling a batch that really did declare a `vault:`
+    # home that it *declares none for* is `r87-M09` with the polarity flipped. Driven over
+    # all three, because a three-state marker with two drives is a two-state marker.
+    _mark55 = {}
+    for _k55, _h55 in (("declared", {"increments": "repo:docs/inc/"}),
+                       ("default", {}),
+                       ("unresolvable", {"increments": "vault:Batches/<batch_id>/inc/"})):
+        with tempfile.TemporaryDirectory() as _d55m:
+            _mark55[_k55] = _v55_packets(_d55m, {"batch_id": "2026-09-20-fast-01",
+                                                 _V41_HOMES: _h55})[1]
+    _fadeunion55 = [_m55 for _s55, _w55, _m55 in _fastunion55 if "NOT YET REACHED" in _m55]
+    good = bool(len(_corenotyet55) == 1 and "`P2`" in _corenotyet55[0]
+                and "`P1`" in _corenotyet55[0]
+                # THREE MARKER STATES, THREE SENTENCES, none of them the other's.
+                and _mark55["declared"].endswith("this batch declares")
+                and "declares none for" in _mark55["default"]
+                and "vault:Batches/<batch_id>/inc/" in _mark55["unresolvable"]
+                and "not a repository path" in _mark55["unresolvable"]
+                and "declares none for" not in _mark55["unresolvable"]
+                and len({_v55 for _v55 in _mark55.values()}) == 3
+                # AND IN `fast` THE UNION STILL APPLIES, or the scoping removed the repair
+                # instead of bounding it: `C` carries a decision, so it is behind the batch.
+                and not [_m55 for _m55 in _fadeunion55 if "`C`" in _m55])
+    ok &= good
+    print(f"  V55 {'LEDGER-UNION-IS-FASTS':<32} expected a `core` batch at `P1` whose ledger "
+          f"names `P2` to STILL excuse `P1` and `P2` as not yet reached — a station is a "
+          f"position there and a ledger entry is a claim — while a `fast` batch whose ledger "
+          f"names `C` has `C` behind it, because that mode advances no station and the ledger "
+          f"is the only record a closed gate leaves · and the increments marker to carry "
+          f"THREE distinct sentences — a home this batch declared, one it declared none for, "
+          f"and one it declared that is not a repository path, NAMED rather than rendered as "
+          f"an absence · got "
+          f"{len(_corenotyet55)} core excuse(s), {len(_fadeunion55)} fast, "
+          f"{len(set(_mark55.values()))} marker state(s) · "
+          f"{'ok' if good else 'FAIL'}")
+
     _fade55 = [_m55 for _s55, _m55 in _whole55 if "fade-out" in _m55.lower()]
     _fade0 = [_m55 for _s55, _m55 in _partial55 if "fade-out" in _m55.lower()]
     _fadeun55 = [_m55 for _s55, _m55 in _corenone if "fade-out" in _m55.lower()]
@@ -17844,7 +18237,7 @@ def selftest():
     for _mode55 in ("fast", "core"):
         _v27msgs55 |= set(_m55 for _s55, _w55, _m55
                           in _v27_outcome(None, set(), None, "no commit", mode=_mode55))
-    good = bool(len(set(_all55)) == 22 and not (set(_all55) & _v27msgs55)
+    good = bool(len(set(_all55)) == 23 and not (set(_all55) & _v27msgs55)
                 and all(_w55 == _V55_WHERE for _s55, _w55, _m55
                         in _v55_outcome(True, "fast", list(_V55_FAST_GATES), _FULL55,
                                         ["A", "increment"], "a marker")))
@@ -22997,8 +23390,15 @@ def selftest():
             # a schema defect.
             ("NODATE", ([{"station": "P3", "date": "26/08/2026", "decision": _d27a}],
                         {1}, "2026-08-26", None), 3, [SKIP, SKIP, NOTICE],
+             # rev88: AND IT NAMES THE FORM'S HOME. The reader of the 2026-09-20
+             # publication run wrote an ISO-8601 timestamp, because no page this flow
+             # ships said what shape the field takes. The page says it now, and the
+             # finding points at the page rather than leaving the author to guess.
              "no `decisions_log` entry carries a `date` in `YYYY-MM-DD` form over 1 "
-             "entry/entries, so the ledger's currency cannot be compared against anything"),
+             "entry/entries, so the ledger's currency cannot be compared against "
+             "anything. A PLAIN CALENDAR DAY is the form, and an ISO-8601 timestamp is "
+             "not it; `SKILL.md` §*Guided first run* step 4 is where that is "
+             "stated for the author"),
             # THE EMPTY LOG. Zero entries with packets on disk is the purest freeze there is,
             # and `log == []` must not be read as `log is None`.
             ("EMPTY-LOG", ([], {1, 2}, "2026-08-26", None), 3, [NOTICE, SKIP, NOTICE],
@@ -23439,14 +23839,18 @@ def selftest():
              "`state.json` holds no `decisions_log` list, so whether the log in the active slot "
              "belongs to the active batch was NOT checked; this is not a pass. `V27` reports "
              "the absent list itself"),
+            # rev88: BOTH GRAMMARS ARE NAMED IN THE SENTENCE, because the reader who hit this
+            # branch on a CONFORMING `-fast-` id was told only what it was not.
             ("UNSHAPED-ID", (_own29, "design", None, None), SKIP,
-             "the declared batch `design` carries no `YYYY-MM-DD-batch-` prefix, so neither the "
-             "date witness nor the predecessor's archive can be applied and the log's scope was "
-             "NOT checked; this is not a pass"),
+             "the declared batch `design` is neither `YYYY-MM-DD-batch-NN` nor "
+             "`YYYY-MM-DD-fast-NN` -- the two id grammars `/dev-flow-init` mandates, and BOTH "
+             "are accepted here -- so neither the date witness nor the predecessor's archive "
+             "can be applied and the log's scope was NOT checked; this is not a pass"),
             ("NO-ID", (_own29, None, None, None), SKIP,
-             "the declared batch (none) carries no `YYYY-MM-DD-batch-` prefix, so neither the "
-             "date witness nor the predecessor's archive can be applied and the log's scope was "
-             "NOT checked; this is not a pass"),
+             "the declared batch (none) is neither `YYYY-MM-DD-batch-NN` nor "
+             "`YYYY-MM-DD-fast-NN` -- the two id grammars `/dev-flow-init` mandates, and BOTH "
+             "are accepted here -- so neither the date witness nor the predecessor's archive "
+             "can be applied and the log's scope was NOT checked; this is not a pass"),
             # An empty log is in scope, and `log == []` must not be read as `log is None`.
             ("EMPTY", ([], _b29, None, _p29), SKIP,
              "the `decisions_log` of `2026-08-28-batch-89` is empty, so it carries no entry "
@@ -28665,7 +29069,10 @@ def selftest():
     _git30, _gcite30 = _v30_floor(_d30["git"])
     _labs30 = sorted({h[0] for h in _d30["api"]})
     _want30 = ["`from __future__ import annotations`", "`subprocess.run(capture_output=)`"]
-    # FOUR Python files from rev64, not three: `docs/tools/devflow-mutate.py` entered
+    # FIVE Python files from rev88, not four: rev64 added the harness and rev88 the
+    # spec scanner, which is a SHIPPED tool and therefore inside the file set's floor.
+    # The citation is asserted unmoved for the scanner too -- it binds no catalogued
+    # construct either. FOUR from rev64, not three: the harness
     # the canon table with the harness. The CITATION is asserted unmoved on purpose --
     # the harness binds NO catalogued construct (no `from __future__`, no
     # `capture_output=`, no walrus, no `match`), so the floor is still bound where it
@@ -28678,10 +29085,10 @@ def selftest():
     # happens to be a repo) and `Q18 UNVERSIONED-enumerated` (an ignored artifact). The
     # manifest's row moves with them; the floor does not.
     good = (_api30 == (3, 7) and _git30 == (2, 28, 0) and _d30["errors"] == []
-            and len(_d30["files"]) == 4 and len(_d30["git"]) == 8 and _labs30 == _want30
+            and len(_d30["files"]) == 5 and len(_d30["git"]) == 8 and _labs30 == _want30
             and _cite30[0].endswith("devflow-validate.py:41"))
     ok &= good
-    print(f"  V30 {'LIVE-derived':<24} expected the real canon's 4 Python file(s) to bind API "
+    print(f"  V30 {'LIVE-derived':<24} expected the real canon's 5 Python file(s) to bind API "
           f"3.7 by exactly 2 construct kinds and git 2.28.0 at 8 sites · got API "
           f"{_vs(_api30) if _api30 else 'undetermined'} at {_cite30[0] if _cite30 else '-'}, "
           f"git {_vs(_git30) if _git30 else 'undetermined'} at "
@@ -30499,6 +30906,569 @@ def selftest():
           f"the planted `str(set)` line CAUGHT by the SCAN (1 of 2 fed lines) · got "
           f"{len(_hits61)} hit(s), plant={_seenp61} seen/{len(_hitsp61)} hit · "
           f"{'ok' if good else 'FAIL: ' + (_hits61[0][:70] if _hits61 else 'the scan is blind')}")
+    # ================================================================ rev88. THE SEVEN GAPS A
+    # WEAK FRESH READER FOUND ON THE PUBLISHED REPOSITORY, each closed with the arm that keeps
+    # it closed. The run: Kimi 2.7 over a clone of the published mirror at rev87, a fresh toy,
+    # the standing fresh-reader prompt. The batch CLOSED -- six commits, three phases, a green
+    # gate -- and the verdict was still NO, because five of the seven were the flow telling the
+    # reader one thing and a rule reading another.
+
+    # ---- rev88 (1). THE `fast` GATE NAMES ARE DECLARED, IN ONE PLACE, AND THE RULE THAT READS
+    # THEM AGREES WITH THE COLUMN. The reader wrote `Phase A` and `Phase C` -- the words the
+    # command uses in prose -- and `V55` reported the gates unrecorded, naming neither the
+    # strings it accepts nor where they are published. Two halves, both armed: the column
+    # EXISTS and carries exactly the three ids, and `_V55_FAST_SPELLING` is compared against it
+    # BOTH WAYS, because the rule spells them in Python and the page spells them in markdown
+    # and a pairing is the only thing that can hold two machineries to one fact.
+    _fast88 = _read(_live_path(_flow_home(), "commands/fast-dev-flow.md")) or ""
+    _skill88 = _read(_live_path(_flow_home(), "dev-flow/SKILL.md")) or ""
+    _MAPHEAD88 = "## The reader's map"
+
+    def _mapcells88(text, col=3):
+        """Column `col` of every DATA row of the reader's map -> a list of cells. PURE."""
+        sec = "".join(re.findall(r"(?ms)^## The reader's map[^\n]*\n(.*?)(?=^## )", text or "")[:1])
+        out = []
+        for line in sec.splitlines():
+            if not line.startswith("| ") or set(line) <= set("|- "):
+                continue
+            cells = [c.strip() for c in line.strip().strip("|").split("|")]
+            if len(cells) != 4 or cells[0] == "Step":
+                continue
+            out.append(cells[col])
+        return out
+
+    def _gateids88(text):
+        """The DISTINCT gate ids the column publishes, in first-seen order. PURE."""
+        seen = []
+        for cell in _mapcells88(text):
+            for tok in re.findall(r"`([^`]+)`", cell):
+                if tok not in seen:
+                    seen.append(tok)
+        return seen
+
+    _ids88 = _gateids88(_fast88)
+    _spell88 = [s.strip("`") for s in _V55_FAST_SPELLING]
+    # THE STEM TEST IS DRIVEN ON THE PUBLISHED STRINGS THEMSELVES, not on invented ones: each
+    # id the page prints must answer the owed gate the rule derives, and the spelling the
+    # reader actually used must NOT -- which is the whole finding, executed.
+    # DRIVEN ON THE PUBLISHED STRINGS, which is what the comment above claims and what the
+    # first cut did not do — it hard-typed the three ids beside a sentence saying it had read
+    # them off the page (rev88 review, `L2`). Every id the COLUMN prints must answer the gate
+    # the rule derives, and the two spellings the fresh reader actually wrote must not.
+    _stemok88 = (all(any(_v55_matches(_g88, {_id88}) for _id88 in _ids88)
+                     for _g88 in _V55_FAST_GATES)
+                 and all(any(_v55_matches(_g88, {_id88}) for _g88 in _V55_FAST_GATES)
+                         for _id88 in _ids88)
+                 and _v55_matches("increment", {"increment-001"})
+                 and not _v55_matches("A", {"Phase A"})
+                 and not _v55_matches("C", {"Phase C"}))
+    # THE COLUMN IS THE HOME AND THE ADAPTER POINTS AT IT (`C-50`). The adapter must NAME the
+    # column and must NOT carry the three strings itself, or the fact has two inventories
+    # again -- which is how it drifted into having none.
+    _sec88 = "".join(re.findall(r"(?ms)^## Guided first run$(.*?)(?=^## )", _skill88)[:1])
+    _points88 = ("`Gate id`" in _sec88 and "The reader's map" in _sec88
+                 and not re.search(r"`increment-NNN`", _sec88))
+    # AND THE PREDICATE IS SHOWN REFUSING THE MUTATION THIS CLOSES: the column deleted.
+    _nocol88 = re.sub(r"(?m)^(\|.*\|)[^|\n]*\|\s*$", r"\1", _fast88)
+    # ⚠ AN ABSOLUTE CONJUNCT, AND IT IS WHAT MAKES THE PAIRING ARMED (rev88 review, `H6`).
+    # Every other conjunct here compares two things DERIVED FROM THE SAME PAGE, so deleting
+    # the column's header left `_ids88` untouched and `r88-M01` SURVIVED with its claim unmet
+    # — the parser half armed twice and the pairing half not at all. The column's own header
+    # label is now required by name, and so is the spelling the READER used being absent from
+    # the published set, which is the defect in one line.
+    # AND THE BLOCKQUOTE BESIDE THE COLUMN RESTATES THE THREE IDS, inside the column's own
+    # declared home (second review, `L2`). It is the reader's-eye copy and the arm derived
+    # `_ids88` from the COLUMN alone, so the prose could drift to `Phase A` with the selftest
+    # green -- the drift this arm exists to prevent, in the one place a reader looks first.
+    _blk88 = "".join(re.findall(r"(?ms)^> \*\*THE `Gate id` COLUMN.*?(?=^\n)", _fast88)[:1])
+    good = bool("| Gate id |" in _fast88
+                and "Phase A" not in " ".join(_mapcells88(_fast88))
+                and _blk88 and all(("`%s`" % _i88) in _blk88 for _i88 in _ids88)
+                and "`Phase A` is not" in _blk88
+                and sorted(_ids88) == sorted(_spell88) and len(_ids88) == 3 and _stemok88
+            and _points88 and len(_mapcells88(_fast88)) == _MAPROWS86
+            and _gateids88(_nocol88) != _ids88
+            and "`Phase A` is not `A`" in _v55_spelling("fast")
+            and all(s in _v55_spelling("fast") for s in _V55_FAST_SPELLING)
+            and "STATION ID" in _v55_spelling("core"))
+    ok &= good
+    print(f"  MAP {'GATE-IDS-declared':<28} expected the `Gate id` column of the fast "
+          f"command's reader's map to publish exactly the three gate ids a `fast` batch "
+          f"writes, one cell per map row, and `_V55_FAST_SPELLING` to equal them BOTH WAYS "
+          f"— so the rule's Python and the page's markdown cannot drift — with each published "
+          f"id shown ANSWERING the gate the rule derives and `Phase A`/`Phase C` shown "
+          f"REFUSED, the adapter NAMING the column and restating none of the strings, and the "
+          f"predicate shown red when the column is deleted · got {_shown(set(_ids88))} over "
+          f"{len(_mapcells88(_fast88))} row(s) · {'ok' if good else 'FAIL'}")
+
+    # ---- rev88 (2). THE LEDGER'S DATE HAS A WRITTEN FORM. `V27` wanted `YYYY-MM-DD` and no
+    # page said so, so the reader wrote an ISO-8601 timestamp and read a NOTICE about a field
+    # they had filled in. The form is stated where the entry's SHAPE is stated -- one home --
+    # and the finding points back at that home rather than leaving the author to guess.
+    _DATE88 = "**`date` is written `YYYY-MM-DD`**"
+
+    def _datestated88(text):
+        """Does the adapter's section state the ledger's date FORM? PURE, so it can be fed a
+        counterfactual -- which is the whole difference between a literal an arm reads and a
+        literal an arm DRIVES."""
+        return _DATE88 in (text or "") and "ISO-8601" in (text or "")
+
+    _nodate88 = _v27_outcome([{"gate": "A", "date": "2026-09-20T10:00:00Z", "decision": "x"}],
+                             set(), None, "no commit", mode="fast")
+    _nd88 = [m for s, _w, m in _nodate88 if "`YYYY-MM-DD` form" in m]
+    _ok88 = _v27_outcome([{"gate": "A", "date": "2026-09-20", "decision": "x"}],
+                         set(), "2026-09-20", None, mode="fast")
+    good = bool(_datestated88(_sec88)
+            and len(_nd88) == 1 and "ISO-8601 timestamp is not it" in _nd88[0]
+            and "\u00a7*Guided first run* step 4" in _nd88[0]
+            and not [m for _s, _w, m in _ok88 if "`YYYY-MM-DD` form" in m]
+            # THE SENTENCE IS THE ARM'S SUBJECT, so the PREDICATE is shown refusing the
+            # section with it rewritten. The first cut wrote `_DATE88 not in
+            # _sec88.replace(_DATE88, ...)`, which is True for every input including the
+            # empty string -- a decorative conjunct beside a real one (rev88 review, `L1`).
+            and not _datestated88(_sec88.replace(_DATE88, "**`date` is written somehow**"))
+            and not _datestated88("")
+            and _datestated88(_sec88))
+    ok &= good
+    print(f"  SKL {'DATE-form-stated':<28} expected `SKILL.md` §*Guided first run* step 4 — "
+          f"where the ledger entry's shape is stated — to say the `date` field is written "
+          f"`YYYY-MM-DD` and that an ISO-8601 timestamp is not it, `V27`'s own finding to say "
+          f"the same and to NAME that step as the home, and a plain-day ledger to raise no "
+          f"such finding at all · got {len(_nd88)} finding(s) on a timestamped ledger · "
+          f"{'ok' if good else 'FAIL'}")
+
+    # ---- rev88 (3). `V29` READS BOTH ID GRAMMARS, because the flow MANDATES both. The reader
+    # kept the `-fast-` id `/dev-flow-init` requires and was told it *carries no
+    # `YYYY-MM-DD-batch-` prefix ... this is not a pass* -- a rule refusing its own flow's
+    # grammar, on a conforming batch, which is `C-53`'s false-fail wearing a SKIP.
+    _FASTID88 = "2026-09-20-fast-01"
+    _log88 = [{"gate": "A", "date": "2026-09-20", "decision": "spec approved"}]
+    _fastok88 = _v29_outcome(_log88, _FASTID88, None, None)
+    _fastbad88 = _v29_outcome([{"gate": "A", "date": "2026-09-01", "decision": "old"}],
+                              _FASTID88, None, None)
+    _batchok88 = _v29_outcome(_log88, "2026-09-20-batch-01", None, None)
+    _mal88 = [_v29_outcome(_log88, bad, None, None)
+              for bad in ("design", "2026-09-20-quick-01", "fast-01", "2026-9-20-fast-01")]
+    good = (len(_fastok88) == 1 and _fastok88[0][0] == SKIP
+            and "supersedes no batch" in _fastok88[0][2]
+            and "carries no" not in _fastok88[0][2]
+            # THE DATE WITNESS REALLY RAN ON THE FAST ID -- proved by making it fire.
+            and _fastbad88[0][0] == NOTICE and "dated before" in _fastbad88[0][2]
+            and "2026-09-20" in _fastbad88[0][2]
+            # THE `-batch-` FAMILY IS UNCHANGED, which is what makes this a widening.
+            and _batchok88[0][2] == _fastok88[0][2].replace(_FASTID88, "2026-09-20-batch-01")
+            # AND A MALFORMED ID STILL FALLS THROUGH, or the grammar was not widened but
+            # removed -- four shapes, including a same-family id with a one-digit month.
+            and all(len(m) == 1 and m[0][0] == SKIP and "is neither" in m[0][2] for m in _mal88)
+            # ONE HOME FOR THE GRAMMAR: this rule reuses `V28`'s constant rather than
+            # re-spelling it, which is why widening it there widened it here.
+            and _V29_BATCH_DATE is _V28_BATCH)
+    ok &= good
+    print(f"  V29 {'BOTH-ID-GRAMMARS':<28} expected the `<YYYY-MM-DD>-fast-NN` id this flow's "
+          f"own `/dev-flow-init` MANDATES to reach the date witness rather than the "
+          f"unevaluable branch — shown by making that witness FIRE on it — the `-batch-NN` "
+          f"family to answer identically, {len(_mal88)} malformed id(s) to still fall through "
+          f"with a sentence naming BOTH grammars, and the grammar itself to have ONE home "
+          f"(`_V28_BATCH`, reused and not re-spelled) · got "
+          f"{_shown({_fastok88[0][0], _fastbad88[0][0]})} · {'ok' if good else 'FAIL'}")
+
+    # ---- rev88 (4). `V45` READS THE PREMISE TABLE WHERE THE MODE PUTS IT. `fast` keeps it in
+    # `.fast-dev-flow/spec.md` §3b -- its own template says so -- and the rule read
+    # `01-requirements.md` in every mode, so it reported *read nowhere; this is not a pass* on
+    # a batch that had written the table exactly where it was told to.
+    _ROLL88 = "- **Premise evaluation:** \u2705 TRUE \u2014 3 premises evaluated at Phase A\n"
+
+    def _fasttree88(d, spec=None, homes=None, mode="fast", batch="2026-09-20-fast-01",
+                    spec_at=None):
+        """A synthetic batch tree -> its root. `spec=None` writes no spec at all.
+
+        ⚠ `spec_at` EXISTS BECAUSE A FIXTURE MUST NOT LOCATE ITSELF WITH THE CODE UNDER TEST.
+        The first cut resolved the write path through `_declared_home_rel` -- the very
+        function two of these arms exist to police -- so `r88-M16`, which makes that resolver
+        hand back a `vault:` string, made the FIXTURE BUILDER die on `makedirs` and the whole
+        selftest CRASHED before any verdict line. A crash is not a detection (`R-88-10`), so
+        the mutant scored CRASH rather than KILLED and the repair it guards stayed unproven.
+        A caller that wants the spec somewhere the resolver would not choose says so here.
+        """
+        os.makedirs(os.path.join(d, ".dev-flow", batch), exist_ok=True)
+        state = {"mode": mode, "batch_id": batch, "guided": True,
+                 "artifact_homes": homes if homes is not None
+                 else {"spec": "repo:.fast-dev-flow/spec.md",
+                       "increments": "repo:.dev-flow/<batch_id>/03-increments/"}}
+        with open(os.path.join(d, ".dev-flow", "state.json"), "w", encoding="utf-8") as fh:
+            json.dump(state, fh)
+        if spec is not None:
+            rel = spec_at or _declared_home_rel(state, _FAST_SPEC_KEY, _FAST_SPEC_DEFAULT)[0]
+            p = os.path.join(d, *rel.split("/"))
+            os.makedirs(os.path.dirname(p), exist_ok=True)
+            with open(p, "w", encoding="utf-8") as fh:
+                fh.write(spec)
+        return d
+
+    def _v45run88(**kw):
+        with tempfile.TemporaryDirectory() as d:
+            _fasttree88(d, **kw)
+            return [(f.sev, f.where, f.msg) for f in reg["V45"](d, _artifacts(d))]
+
+    # THE SHIPPED LINE, HARVESTED, not an invented placeholder (rev88 review, `L3`).
+    # The first cut hand-wrote a `<...>` cell, which lands in `_v60_field`'s `empty`
+    # state, and printed that it had driven "still the template's placeholder" -- while
+    # the line the template ACTUALLY ships leads with a `<` and names no verdict, so it
+    # lands in `unidentified`. Both are NOTICE, so nothing behaved differently; the
+    # arm's CLAIM was wrong, and an arm that says it drove the shipped artifact has to
+    # have opened it.
+    _tplsrc88 = _read(_live_path(_flow_home(),
+                                 "templates/fast-dev-flow/spec-template.md")) or ""
+    _TPLROLL88 = "".join(re.findall(r"(?m)^- \*\*Premise evaluation:\*\*.*$",
+                                    _tplsrc88)[:1]) + "\n"
+    _v45good88 = _v45run88(spec="## 3b. Premise table\n\n" + _ROLL88)
+    _v45none88 = _v45run88(spec="## 3b. Premise table\n\nnothing here\n")
+    _v45tpl88 = _v45run88(spec="## 3b. Premise table\n\n" + _TPLROLL88)
+    _v45nofile88 = _v45run88(spec=None)
+    _v45moved88 = _v45run88(spec="## 3b\n\n" + _ROLL88,
+                            homes={"spec": "repo:docs/quick-spec.md"})
+    # A `vault:` HOME IS NOT A REPOSITORY PATH (second review, `H2`/`M1`). `_declared_home_rel`
+    # sends it to the fallback, and NO ARM DROVE THAT until now -- `r88-M16` restored the
+    # defect and survived with its claim unmet, which is the same shape as the pairing arms
+    # pass 1 found: a repair written and its drive not written. The spec is written at the
+    # DEFAULT path, so a resolver returning the `vault:` string verbatim finds nothing there
+    # and the finding names a location its own reader cannot open.
+    _v45vault88 = _v45run88(spec="## 3b\n\n" + _ROLL88,
+                            homes={"spec": "vault:Batches/<batch_id>/spec.md"},
+                            spec_at=_FAST_SPEC_DEFAULT)
+    # AND THE `Batch` ROW AS THE TEMPLATE SHIPS IT DECLARES NO ID, so nothing is compared.
+    # The first cut compared the cell verbatim, so a spec generated from this flow's own
+    # template was classified as ANOTHER batch's -- `V45` saying *the spec on disk is NOT this
+    # batch's record* about the record, and `V55` printing `NOT YET REACHED -- C` on a batch
+    # that had written `closed`. Harvested from the template, exactly as `_TPLROLL88` is,
+    # because a hand-written row is not the row the reader will have.
+    _TPLBATCH88 = "".join(re.findall(r"(?m)^\| Batch \|.*$", _tplsrc88)[:1]) + "\n"
+    _v45tplrow88 = _v45run88(spec="## 0. Batch header\n\n| Field | Value |\n|---|---|\n"
+                             + _TPLBATCH88 + "\n## 3b. Premise table\n\n" + _ROLL88)
+    # AND `core` IS UNTOUCHED: the same rule over a `core` tree still reads the requirements
+    # document and says so, or this is a fork of the rule rather than a widening of it.
+    with tempfile.TemporaryDirectory() as _d88:
+        _fasttree88(_d88, spec=None, mode="core", batch="2026-09-20-batch-01")
+        _v45core88 = [(f.sev, f.where, f.msg) for f in reg["V45"](_d88, _artifacts(_d88))]
+    # rev88 review `H2`: `.fast-dev-flow/spec.md` IS SINGLE-SLOT AND `state.json` IS NOT.
+    # Between pre-check 3 declaring a new batch and Phase A step 2 regenerating the spec, the
+    # file on disk is the PREVIOUS batch's -- and both readers took it for the active record:
+    # `V45` affirmed a roll-up that was another batch's, and `V55` inherited a `closed` cell
+    # and then accused two gates this batch had never taken. Driven from both sides: the row
+    # AGREEING is a pass, the row DISAGREEING is refused by name in both rules, and a spec
+    # with NO row at all is still read (every spec written before rev88 has none, and
+    # refusing those would be `C-53`'s false-fail on every batch already on disk).
+    _BATCHROW88 = "## 0. Batch header" + chr(10) + chr(10) + "| Field | Value |" + chr(10)         + "|---|---|" + chr(10) + "| Batch | `%s` |" + chr(10) + chr(10)
+    _v45same88 = _v45run88(spec=(_BATCHROW88 % "2026-09-20-fast-01")
+                           + "## 3b. Premise table" + chr(10) + chr(10) + _ROLL88)
+    _v45other88 = _v45run88(spec=(_BATCHROW88 % "2026-09-19-fast-07")
+                            + "## 3b. Premise table" + chr(10) + chr(10) + _ROLL88)
+    with tempfile.TemporaryDirectory() as _d88g:
+        # THE GHOST: `state.json` names a batch directory that is not on disk. rev87 reported
+        # *names no batch on disk ... this is not a pass*; rev88's first cut affirmed a pass
+        # about "the active batch" on a tree that has none, because `fast`'s record does not
+        # live under the batch directory and the `nobatch` branch became unreachable.
+        os.makedirs(os.path.join(_d88g, ".fast-dev-flow"))
+        with open(os.path.join(_d88g, ".fast-dev-flow", "spec.md"), "w",
+                  encoding="utf-8") as _fh88:
+            _fh88.write("## 3b\n\n" + _ROLL88)
+        os.makedirs(os.path.join(_d88g, ".dev-flow"))
+        with open(os.path.join(_d88g, ".dev-flow", "state.json"), "w",
+                  encoding="utf-8") as _fh88:
+            json.dump({"mode": "fast", "batch_id": "2026-09-20-fast-01", "guided": True,
+                       "artifact_homes": {"spec": "repo:.fast-dev-flow/spec.md"}}, _fh88)
+        _v45ghost88 = [(f.sev, f.where, f.msg) for f in reg["V45"](_d88g, _artifacts(_d88g))]
+    good = bool(_v45same88[0][0] == SKIP and "declares" in _v45same88[0][2]
+            and _v45other88[0][0] == NOTICE
+            and "2026-09-19-fast-07" in _v45other88[0][2]
+            and "not this batch's record" in _v45other88[0][2].replace("NOT", "not")
+            and _v45ghost88[0][0] == SKIP
+            and "names no batch on disk" in _v45ghost88[0][2]
+            and "this is not a pass" in _v45ghost88[0][2]
+            and _v45good88[0][0] == SKIP and "declares" in _v45good88[0][2]
+            and _v45good88[0][1] == ".fast-dev-flow/spec.md"
+            and _v45none88[0][0] == NOTICE
+            and bool(_TPLROLL88.strip())
+            and _v45tpl88[0][0] == NOTICE and "names no verdict" in _v45tpl88[0][2]
+            and _v45nofile88[0][0] == SKIP
+            and "01-requirements.md" not in _v45nofile88[0][2]
+            and ".fast-dev-flow/spec.md" in _v45nofile88[0][2]
+            # THE DECLARED HOME IS READ, not the default guessed: the same spec at another
+            # declared path is found, which is what makes `_fast_spec` a locator and not a
+            # constant wearing one.
+            and _v45moved88[0][0] == SKIP and _v45moved88[0][1] == "docs/quick-spec.md"
+            and _v45vault88[0][0] == SKIP
+            and _v45vault88[0][1] == ".fast-dev-flow/spec.md"
+            and "vault:" not in _v45vault88[0][2]
+            and bool(_TPLBATCH88.strip()) and "<" in _TPLBATCH88
+            and _v45tplrow88[0][0] == SKIP and "declares" in _v45tplrow88[0][2]
+            and _v45core88[0][0] == SKIP and "01-requirements.md" in _v45core88[0][2])
+    ok &= good
+    print(f"  V45 {'FAST-READS-THE-SPEC':<28} expected the premise roll-up to be read out of "
+          f"`.fast-dev-flow/spec.md` on a `mode: fast` batch — driven through all four states "
+          f"the rule owns (declared / absent / the roll-up line the template ACTUALLY "
+          f"ships, harvested from it / no spec at all) and through a NON-DEFAULT declared `artifact_homes.spec`, with the "
+          f"no-spec sentence naming the SPEC and never `01-requirements.md` — and `core` to "
+          f"go on reading the requirements document, because this is a widening and not a "
+          f"fork · the spec KEYED to the declared batch, driven both ways (same id passes, a "
+          f"PREVIOUS batch's id refused by name — the `V55` half of the same key is "
+          f"driven at `V55 CLOSE-SIGNAL-IS-THE-SPEC`), with the §0 row AS THE TEMPLATE SHIPS "
+          f"IT — harvested from it — declaring NO id, so a spec fresh from this flow's own "
+          f"scaffold is never read as another batch's · a `vault:` home shown taking the "
+          f"fallback, so no finding names a location its reader cannot open · a GHOST batch "
+          f"still reported *names no batch on disk … "
+          f"this is not a pass*, as rev87 reported it · got "
+          f"{_shown({_v45good88[0][0], _v45none88[0][0], _v45nofile88[0][0]})} · "
+          f"{'ok' if good else 'FAIL'}")
+
+    # ---- rev88 (5). THE CLOSING GATE HAS A MARKER NOW, AND THE RULE STOPS CONTRADICTING
+    # ITSELF. The reader set `Current phase: closed`, recorded the `C` decision, and `V55`
+    # still printed `1 of the 3 gate(s) owed are NOT YET REACHED -- C` one line under `this
+    # batch's guided ledger is COMPLETE`, at rc 0. Two witnesses close it, and each is armed
+    # on its own: the spec's own close cell, and the ledger entry itself.
+    _PHASE88 = "## 7. Batch status\n\n| Field | Value |\n|---|---|\n| Current phase | %s |\n"
+    _TPLPHASE88 = _PHASE88 % "A / B / C / closed"
+
+    def _v55run88(spec, log, packets=1, batch="2026-09-20-fast-01"):
+        with tempfile.TemporaryDirectory() as d:
+            _fasttree88(d, spec=spec, batch=batch)
+            inc = os.path.join(d, ".dev-flow", batch, "03-increments")
+            os.makedirs(inc, exist_ok=True)
+            for i in range(1, packets + 1):
+                open(os.path.join(inc, "increment-%03d.md" % i), "w",
+                     encoding="utf-8").write("# %d\n" % i)
+            sp = os.path.join(d, ".dev-flow", "state.json")
+            doc = json.load(open(sp, encoding="utf-8"))
+            doc["decisions_log"] = log
+            json.dump(doc, open(sp, "w", encoding="utf-8"))
+            return [(f.sev, f.msg) for f in reg["V55"](d, _artifacts(d))]
+
+    _CLOG88 = [{"gate": "A", "guided": True, "date": "2026-09-20", "decision": "spec"},
+               {"gate": "increment-001", "guided": True, "date": "2026-09-20", "decision": "i"},
+               {"gate": "C", "guided": True, "date": "2026-09-20", "decision": "closed"}]
+    _closed88 = _v55run88(_PHASE88 % "closed", _CLOG88)
+    _open88 = _v55run88(_PHASE88 % "B", _CLOG88[:2])
+    _tplph88 = _v55run88(_TPLPHASE88, _CLOG88[:2])
+    _fmt88 = [_v55run88(_PHASE88 % f, _CLOG88) for f in ("**closed**", "`closed`", "CLOSED")]
+    # rev88 review `H2`: A FOREIGN BATCH'S CLOSE CELL IS NOT THIS BATCH'S CLOSE SIGNAL. The
+    # spec is single-slot and `state.json` is not, so between pre-check 3 and Phase A step 2
+    # the file on disk is the PREVIOUS batch's -- and inheriting its `closed` marked this
+    # batch's closing gate reached and then accused two gates it had never taken of carrying
+    # no decision, which is the `C-53` false accusation this rev exists to remove, one level
+    # down. The `Batch` row `templates/fast-dev-flow/spec-template.md` §0 now carries is what
+    # keys the file, and the marker NAMES the id it found rather than falling silent.
+    _BATCHROW55 = ("## 0. Batch header" + chr(10) + chr(10) + "| Field | Value |" + chr(10)
+                   + "|---|---|" + chr(10) + "| Batch | `%s` |" + chr(10) + chr(10))
+    _foreign55 = _v55run88((_BATCHROW55 % "2026-09-19-fast-07") + (_PHASE88 % "closed"),
+                           [], packets=0)
+    _mine55 = _v55run88((_BATCHROW55 % "2026-09-20-fast-01") + (_PHASE88 % "closed"),
+                        _CLOG88, packets=1)
+    _notyet88 = lambda rows: [m for _s, m in rows if "NOT YET REACHED" in m]
+    good = bool(# CLOSED: every gate behind it, nothing excused, ledger COMPLETE.
+            not _notyet88(_closed88)
+            and [s for s, _m in _closed88] == [SKIP, SKIP, SKIP, SKIP]
+            and "every one of the 3 gate(s)" in _closed88[1][1]
+            and "ledger is COMPLETE" in _closed88[3][1]
+            and "reads `closed`" in _closed88[0][1]
+            # NOT CLOSED: `C` is still excused BY NAME, which is the behaviour this keeps.
+            and _notyet88(_open88) and "`C`" in _notyet88(_open88)[0]
+            and "reads `B`" in _open88[0][1]
+            # THE UNFILLED TEMPLATE ROW IS NOT A CLOSE. It CONTAINS the word `closed`, so a
+            # substring reading would score every unwritten spec as a closed batch -- the
+            # placeholder setting the flag it is a placeholder for.
+            and _notyet88(_tplph88)
+            and not _v55_closed(_TPLPHASE88)[0] and _v55_closed(_PHASE88 % "closed")[0]
+            # EMPHASIS AND CODE SPANS ARE THE SAME ANSWER; case is too.
+            and all(not _notyet88(r) for r in _fmt88)
+            # A FOREIGN BATCH'S CELL MARKS NOTHING, AND THE MARKER SAYS WHOSE IT WAS.
+            and not [_m88 for _s88, _m88 in _foreign55 if _s88 == NOTICE]
+            and _notyet88(_foreign55)
+            and [_m88 for _s88, _m88 in _foreign55
+                 if "names batch `2026-09-19-fast-07`" in _m88]
+            # AND THE SAME SPEC CARRYING THIS BATCH'S OWN ID STILL CLOSES IT, so the key is a
+            # discrimination and not a switch that turns the close signal off.
+            and not _notyet88(_mine55))
+    ok &= good
+    print(f"  V55 {'CLOSE-SIGNAL-IS-THE-SPEC':<28} expected `Current phase: closed` in the "
+          f"fast spec — the cell `templates/fast-dev-flow/spec-template.md` §7 already "
+          f"defines and Phase C step 5 already tells the author to write — to put the `C` "
+          f"gate BEHIND the batch, so the rule stops listing as not-yet-reached a gate it has "
+          f"just called recorded; the same spec at phase `B` to go on excusing `C` by name; "
+          f"the template's own UNFILLED row, which contains the word, to be no close at all; "
+          f"and `**closed**`, `` `closed` `` and `CLOSED` to read the same · and the cell of "
+          f"a spec whose §0 `Batch` row names ANOTHER batch to mark nothing at all, with the "
+          f"marker naming the id it found, while the same spec carrying this batch's own id "
+          f"still closes it · got "
+          f"{len(_notyet88(_closed88))} excused when closed, "
+          f"{len(_notyet88(_open88))} when open · {'ok' if good else 'FAIL'}")
+
+    # ---- rev88 (6). THE SCANNER SHIPS. `/fast-dev-flow` Phase A step 6 defined the scan
+    # precisely and said *no scanner ships with this flow*; two readers of the publication test
+    # implemented it themselves, and the second named it as an obstacle. It ships now, and the
+    # COMMAND stays the pattern list's one home -- the script reads the list from the command
+    # at every run, so there is no second inventory and a pattern deleted from the page stops
+    # being scanned, which is what lets a reader audit the page and trust the tool.
+    _SCAN88 = "docs/tools/devflow-scan-spec.py"
+    _scanpath88 = _live_path(_flow_home(), _SCAN88)
+    if not os.path.isfile(_scanpath88):
+        ok &= _nosubject85("SCN", "SHIPS-and-reads-the-command",
+                           "no `%s` on this tree" % _SCAN88, 28)
+    else:
+        _scanmod88 = {}
+        exec(compile(_read(_scanpath88), _scanpath88, "exec"), _scanmod88)
+        _tpl88 = _read(_live_path(_flow_home(),
+                                  "templates/fast-dev-flow/spec-template.md")) or ""
+        _pats88 = _scanmod88["patterns"](_fast88)
+        # BOTH WAYS AGAINST THE PAGE'S OWN LIST, derived here by a SECOND expression: the
+        # script's parser and this one must agree, or one of them is reading something else.
+        _listsec88 = _fast88.split(_scanmod88["_LIST_ANCHOR"], 1)
+        _page88, _seen88 = [], False
+        for _ln88 in (_listsec88[1] if len(_listsec88) == 2 else "").splitlines():
+            if _ln88.startswith("- **"):
+                _seen88 = True
+                _page88 += re.findall(r"`([^`]+)`", _ln88)
+            elif _seen88 and _ln88.strip():
+                break
+        _ctl88 = _scanmod88["controls"](_fast88, _tpl88)
+        # THE MUTANT'S OWN DIRECTION, DRIVEN AS A COUNTERFACTUAL: a pattern removed from the
+        # COMMAND stops being scanned. That is the coupling, executed rather than asserted.
+        _cut88 = _fast88.replace("`session`, ", "")
+        _fires88 = _scanmod88["scan"]("## 3.\n- When a session expires, re-issue it.\n",
+                                      _fast88, _tpl88)[0]
+        _cutfires88 = _scanmod88["scan"]("## 3.\n- When a session expires, re-issue it.\n",
+                                         _cut88, _tpl88)[0]
+        # THE TWO LAYOUTS ARE PROBED, not assumed: this file sits in `docs/tools/` in the
+        # authoring repository and in `scripts/` in the bundle, and a hard-coded depth works
+        # in exactly one of them.
+        with tempfile.TemporaryDirectory() as _d88b:
+            for _lay88 in ("scripts", os.path.join("docs", "tools")):
+                os.makedirs(os.path.join(_d88b, _lay88), exist_ok=True)
+            os.makedirs(os.path.join(_d88b, "commands"), exist_ok=True)
+            open(os.path.join(_d88b, "commands", "fast-dev-flow.md"), "w",
+                 encoding="utf-8").write("x")
+            _lay1 = _scanmod88["flow_home"](os.path.join(_d88b, "scripts", "s.py"))
+            _lay2 = _scanmod88["flow_home"](os.path.join(_d88b, "docs", "tools", "s.py"))
+            # AND A TREE THAT IS NOT A FLOW HOME RETURNS None, IN ITS OWN TEMPORARY
+            # DIRECTORY -- a negative probe placed under `_d88b` would find `_d88b` itself and
+            # pass for the wrong reason, which is the plant that has to be right for the two
+            # positives above to mean anything.
+            with tempfile.TemporaryDirectory() as _d88n:
+                _lay3 = _scanmod88["flow_home"](os.path.join(_d88n, "a", "b", "s.py"))
+        # AND END TO END, AS A CHILD PROCESS, over three trees: the three exit codes a reader
+        # actually gets. A pure check of the pure functions would say nothing about `__main__`.
+        _rc88 = {}
+        for _name88, _body88 in (
+                ("negative", _tpl88),
+                ("positive", "## 3.\n- When a session token expires, re-issue it.\n"),
+                ("absent", None)):
+            with tempfile.TemporaryDirectory() as _d88c:
+                if _body88 is not None:
+                    os.makedirs(os.path.join(_d88c, ".fast-dev-flow"))
+                    open(os.path.join(_d88c, ".fast-dev-flow", "spec.md"), "w",
+                         encoding="utf-8").write(_body88)
+                _cp88 = subprocess.run([sys.executable, _scanpath88], cwd=_d88c,
+                                       capture_output=True, timeout=300,
+                                       env=dict(os.environ, PYTHONIOENCODING="utf-8"))
+                _rc88[_name88] = (_cp88.returncode,
+                                  _cp88.stdout.decode("utf-8", "replace"))
+        _tabled88 = _SCAN88 in (_canon(_flow_home()) or {})
+        # rev88 review `H1`: THE SCAN MUST BE SHOWN TO HAVE READ ITS SUBJECT. `in_scope` keys
+        # on the heading token the template ships, and five spellings a real author can write
+        # yield an EMPTY body -- on which all five controls still passed, because they run on
+        # synthetic text. The tool published `security_required: false` over a spec holding
+        # ten patterns and read ZERO bytes of. Driven here as the pair it has to be: each
+        # scope-losing spelling REFUSED with rc 2, and the conforming template still scanned.
+        _LOSS88 = ("## 1 Objective" + chr(10) + "a session token expires" + chr(10),
+                   "##1. Objective" + chr(10) + "a session token expires" + chr(10),
+                   "## 3.1 Criteria" + chr(10) + "a session token expires" + chr(10),
+                   "Objective" + chr(10) + "---------" + chr(10) + "a session token" + chr(10),
+                   "a session token expires, re-issue it" + chr(10))
+        _lossrc88 = []
+        for _body88 in _LOSS88:
+            with tempfile.TemporaryDirectory() as _d88l:
+                os.makedirs(os.path.join(_d88l, ".fast-dev-flow"))
+                open(os.path.join(_d88l, ".fast-dev-flow", "spec.md"), "w",
+                     encoding="utf-8").write(_body88)
+                _cpl88 = subprocess.run([sys.executable, _scanpath88], cwd=_d88l,
+                                        capture_output=True, timeout=300,
+                                        env=dict(os.environ, PYTHONIOENCODING="utf-8"))
+                _lossrc88.append((_cpl88.returncode,
+                                  b"security_required" in _cpl88.stdout,
+                                  b"read NOTHING" in _cpl88.stdout))
+        _scoped88 = bool(_scanmod88["in_scope"](_tpl88).strip())
+        # ⚠ A NAMED FLOOR, AND IT IS WHAT MAKES THIS AN INVENTORY CHECK (rev88 review, `H6`).
+        # `patterns == page` compares two parses of the SAME page, so a pattern DELETED from
+        # the command vanished from both sides and the comparison still agreed — `r88-M09`
+        # SURVIVED at 63 patterns against a floor of 60. The both-ways test proves there is
+        # ONE parser; these six prove there is a LIST. They are the patterns whose absence is
+        # a hole a reader would recognise on sight, `.env` among them because its matching is
+        # the one the command documents as a hazard.
+        _FLOOR88 = (".env", "credential", "token", "password", "drop table", "webhook")
+        good = bool(all(_f88 in _pats88 for _f88 in _FLOOR88)
+                    and sorted(set(_pats88)) == sorted(set(_page88)) and len(_pats88) >= 60
+                and ".env" in _pats88
+                # THE SECTION'S OWN CONTROL EXAMPLES ARE NOT PATTERNS. `Information Flow
+                # Contract` is quoted in the negative control's bullet, and a parser that read
+                # every bullet of the section harvested it -- which made the negative control
+                # fire on itself.
+                and "Information Flow Contract" not in _pats88
+                and all(want == got for _n88, want, got in _ctl88) and len(_ctl88) == 5
+                and _fires88 == ["session"] and _cutfires88 == []
+                and _lay1 == os.path.normpath(_d88b) and _lay2 == os.path.normpath(_d88b)
+                and _lay3 is None
+                and _rc88["negative"][0] == 0 and _rc88["positive"][0] == 1
+                and _rc88["absent"][0] == 2
+                # EVERY scope-losing spelling REFUSES, publishes NO verdict, and says what it
+                # read instead -- and the conforming template still yields a body, so the
+                # refusal is a discrimination and not a tool that refuses everything.
+                and all(_r88 == (2, False, True) for _r88 in _lossrc88)
+                and len(_LOSS88) == 5 and _scoped88
+                and b"byte(s) read" in _rc88["negative"][1].encode()
+                and "security_required: false" in _rc88["negative"][1]
+                and "security_required: true" in _rc88["positive"][1]
+                and "`token`" in _rc88["positive"][1]
+                # THE CONTROLS ARE PRINTED BEFORE THE VERDICT, so the reader sees the probe
+                # discriminating rather than being told it did (`C-55`'s rider).
+                and _rc88["negative"][1].index("control  :") < _rc88["negative"][1].index(
+                    "security_required:")
+                and _tabled88
+                # AND THE COMMAND NO LONGER SAYS THE OPPOSITE.
+                and "No scanner ships with this flow" not in _fast88
+                and "devflow-scan-spec.py" in _fast88)
+        ok &= good
+        print(f"  SCN {'SHIPS-and-reads-the-command':<28} expected `{_SCAN88}` to be on disk, "
+              f"in the hashed manifest, and to take its {len(_pats88)} pattern(s) from "
+              f"`commands/fast-dev-flow.md` — compared BOTH WAYS against a second parse of "
+              f"the same list, so there is one inventory and not two — with the section's own "
+              f"control examples NOT harvested as patterns, all {len(_ctl88)} control rows "
+              f"holding, a pattern CUT from the command shown to stop firing, both install "
+              f"layouts probed and a third refused, {len(_LOSS88)} spelling(s) of the "
+              f"section headings that lose the SCOPE each shown REFUSING with rc 2 and "
+              f"publishing no verdict — the vacuous scan the first cut shipped, where five "
+              f"green controls stood over a spec read zero bytes of — and the three exit "
+              f"codes a reader gets measured END TO END in a child process · got rc "
+              f"{tuple(_rc88[k][0] for k in ('negative', 'positive', 'absent'))} · "
+              f"{'ok' if good else 'FAIL'}")
+
+    # ---- rev88 (7). `/dev-flow-init` STEP 3 SAYS WHICH MODE ITS SCHEMA IS FOR. The reader had
+    # to cross-read the fast command's pre-checks to learn that the thirty-key block and the
+    # six-key block below it are one block per MODE and not two candidates.
+    _init88 = _read(_live_path(_flow_home(), "commands/dev-flow-init.md")) or ""
+    _step388 = "".join(re.findall(r"(?ms)^3\. Generate the initial `state\.json`\.(.*?)(?=^4\. )",
+                                  _init88)[:1])
+    good = ("THE SCHEMA BELOW IS `core` AND `full`'s" in _step388
+            and "SIX-KEY declaration" in _step388
+            and "\u00a7*The `fast` declaration*" in _step388
+            and "### The `fast` declaration" in _init88
+            and _step388.index("THE SCHEMA BELOW IS") < 200)
+    ok &= good
+    print(f"  CMD {'INIT-STEP3-NAMES-ITS-MODES':<28} expected `/dev-flow-init` step 3 to say "
+          f"IN ITS FIRST SENTENCE that its schema is `core`/`full`'s and that `fast` writes "
+          f"the six-key declaration below it, pointing at that section by its shipped heading "
+          f"— the pointer the fresh reader had to reconstruct from a different file · got "
+          f"offset {_step388.index('THE SCHEMA BELOW IS') if 'THE SCHEMA BELOW IS' in _step388 else -1} "
+          f"· {'ok' if good else 'FAIL'}")
+
     # ---- rev85. THE EXIT CODE A SKILL-ONLY READER ACTUALLY GETS, MEASURED ON A REAL BUNDLE.
     #
     # Operator decision, 2026-09-18: *`--selftest` run FROM THE BUNDLE exits 0*. Everything

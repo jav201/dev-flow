@@ -43,26 +43,41 @@ which of five documents a step's rule is in; the cross-referential sprawl both r
 every selftest by `MAP POINTERS-resolve`, which reddens on a file this bundle does not carry and
 on a heading no shipped file holds.
 
-| Step | The rule's ONE home | Reserved field(s) it produces |
-|---|---|---|
-| Pre-check 3 — declare the batch | `commands/dev-flow-init.md` §*The `fast` declaration* | `mode` · `batch_id` · `flow_version` · `stations_active` · `guided` · `artifact_homes` |
-| Every gate — the guided first run, when `guided: true` | `SKILL.md` §*Guided first run* | one `decisions_log` entry per gate, carrying `gate` and `guided: true` |
-| Pre-check 4 — create the declared homes | `commands/dev-flow-init.md` §*Actions* | — (directories and the backlog lane) |
-| Pre-check 5 — runtime absences | `SKILL.md` §*What refuses an invocation here* | the absences, named in the spec's §0 |
-| Phase A · 2 — write the spec | `templates/fast-dev-flow/spec-template.md` §*0. Batch header* | flow revision · base ref · `PULL` outcome · standing authorization |
-| Phase A · 4 — acceptance criteria | `templates/fast-dev-flow/spec-template.md` §*3. Acceptance criteria* | `AC-<n>` |
-| Phase A · 5 — Information Flow Contract, Part A | `templates/fast-dev-flow/spec-template.md` §*3c. Information Flow Contract* | `SOURCE` · `NODES` · `SINK` · `owner : AC-<n>` |
-| Phase A · 6 — sensitive-pattern scan | `commands/fast-dev-flow.md` §*Patterns that trigger `security_required`* | `security_required` |
-| Every gate — premises | `commands/fast-dev-flow.md` §*Premise evaluation at every gate* | one verdict per premise, in the spec's §3b |
-| Phase B · 1 — security pass, if fired | `agents/security-reviewer.md` §*Output format* | the four answers, in the spec's §6 |
-| Phase B · 2 — implement under the budget | `agents/software-dev.md` §*Hard caps* | `SOURCE files` |
-| Phase B · 3 — the packet, per increment | `templates/fast-dev-flow/increment-template.md` §*4 · Test results* | `RED counterfactual` · `Reverse census` · `Mutation verdicts` · `Instrument RED-proof` · `Emitted-form assertion` · `Correction population` |
-| Phase B · 3 — the packet's evidence | `templates/fast-dev-flow/increment-template.md` §*Evidence files* | `Evidence files` |
-| Phase B · 3 — the packet's review cell | `templates/fast-dev-flow/increment-template.md` §*4b · Independent review* | `Independent review` |
-| Phase C · 1 — validation pass | `agents/qa-reviewer.md` §*Output formats* | the per-criterion verdicts, with their evidence states |
-| Phase C · 1 — naming a result's state | `commands/dev-flow.md` §*Evidence states* | the state of every result reported, from that table's seven — named there and nowhere else |
-| Phase C · 4 — closing artifact | `templates/fast-dev-flow/spec-template.md` §*8. Close* | the close block, and the spec marked `closed` |
-| Phase C · 6 — backlog reconciliation | `commands/dev-flow.md` §*A deferral carries the marker* | `⏸ DEFER` |
+| Step | The rule's ONE home | Reserved field(s) it produces | Gate id |
+|---|---|---|---|
+| Pre-check 3 — declare the batch | `commands/dev-flow-init.md` §*The `fast` declaration* | `mode` · `batch_id` · `flow_version` · `stations_active` · `guided` · `artifact_homes` | `A` |
+| Every gate — the guided first run, when `guided: true` | `SKILL.md` §*Guided first run* | one `decisions_log` entry per gate, carrying `gate` and `guided: true` | `A` · `increment-NNN` · `C` |
+| Pre-check 4 — create the declared homes | `commands/dev-flow-init.md` §*Actions* | — (directories and the backlog lane) | `A` |
+| Pre-check 5 — runtime absences | `SKILL.md` §*What refuses an invocation here* | the absences, named in the spec's §0 | `A` |
+| Phase A · 2 — write the spec | `templates/fast-dev-flow/spec-template.md` §*0. Batch header* | `Batch` · flow revision · base ref · `PULL` outcome · standing authorization | `A` |
+| Phase A · 4 — acceptance criteria | `templates/fast-dev-flow/spec-template.md` §*3. Acceptance criteria* | `AC-<n>` | `A` |
+| Phase A · 5 — Information Flow Contract, Part A | `templates/fast-dev-flow/spec-template.md` §*3c. Information Flow Contract* | `SOURCE` · `NODES` · `SINK` · `owner : AC-<n>` | `A` |
+| Phase A · 6 — sensitive-pattern scan | `commands/fast-dev-flow.md` §*Patterns that trigger `security_required`* | `security_required` | `A` |
+| Every gate — premises | `commands/fast-dev-flow.md` §*Premise evaluation at every gate* | one verdict per premise, in the spec's §3b | `A` · `increment-NNN` · `C` |
+| Phase B · 1 — security pass, if fired | `agents/security-reviewer.md` §*Output format* | the four answers, in the spec's §6 | `increment-NNN` |
+| Phase B · 2 — implement under the budget | `agents/software-dev.md` §*Hard caps* | `SOURCE files` | `increment-NNN` |
+| Phase B · 3 — the packet, per increment | `templates/fast-dev-flow/increment-template.md` §*4 · Test results* | `RED counterfactual` · `Reverse census` · `Mutation verdicts` · `Instrument RED-proof` · `Emitted-form assertion` · `Correction population` | `increment-NNN` |
+| Phase B · 3 — the packet's evidence | `templates/fast-dev-flow/increment-template.md` §*Evidence files* | `Evidence files` | `increment-NNN` |
+| Phase B · 3 — the packet's review cell | `templates/fast-dev-flow/increment-template.md` §*4b · Independent review* | `Independent review` | `increment-NNN` |
+| Phase C · 1 — validation pass | `agents/qa-reviewer.md` §*Output formats* | the per-criterion verdicts, with their evidence states | `C` |
+| Phase C · 1 — naming a result's state | `commands/dev-flow.md` §*Evidence states* | the state of every result reported, from that table's seven — named there and nowhere else | `C` |
+| Phase C · 4 — closing artifact | `templates/fast-dev-flow/spec-template.md` §*8. Close* | the close block, and the spec marked `closed` | `C` |
+| Phase C · 6 — backlog reconciliation | `commands/dev-flow.md` §*A deferral carries the marker* | `⏸ DEFER` | `C` |
+
+> **THE `Gate id` COLUMN IS WHERE THE GATE NAMES ARE DECLARED, AND IT IS THEIR ONE HOME**
+> (`C-50`). A `fast` batch has exactly **three** gates and they are spelled **`A`**,
+> **`increment-NNN`** and **`C`** — the per-increment gate carries its own number, so a batch
+> with two increments writes `increment-001` and `increment-002`. **These are the literal
+> strings `decisions_log` carries** in the `gate` field `SKILL.md` §*Guided first run* step 4
+> asks a guided batch for, and **`V55` reads them and accepts nothing else** — with one
+> stated latitude: an id may carry a `-<suffix>`, which is what lets the per-increment gate
+> be owed once and taken N times (`increment-001`, `increment-002`). `Phase A` is not
+> `A`, and a gate recorded under a name the column does not publish is a gate `V55` reports as
+> unrecorded. In `core` and `full` the gate's name is instead **its station id** — `P0`…`P6`,
+> whichever ones `stations_active` lists — and the ledger has spelled that field `station`
+> since the station schema landed; both spellings are read. Measured 2026-09-20: a reader of
+> the published repo wrote `Phase A` and `Phase C`, because no file this flow ships said what
+> the strings were, and had to reverse-engineer them from `V55`'s own finding.
 
 ## Pre-checks
 
@@ -84,15 +99,20 @@ on a heading no shipped file holds.
 
 ### Actions
 1. If the user hasn't given enough context, **ask** in a single short round: objective, loose user stories, what is OUT of scope.
-2. Generate `.fast-dev-flow/spec.md` following `templates/fast-dev-flow/spec-template.md` — the template ships with the flow, at that path, and its §0 header is where the flow revision, the base ref, the `PULL` outcome and the batch's standing authorization are recorded.
+2. Generate `.fast-dev-flow/spec.md` following `templates/fast-dev-flow/spec-template.md` — the template ships with the flow, at that path, and its §0 header is where **the batch id**, the flow revision, the base ref, the `PULL` outcome and the batch's standing authorization are recorded. **Write the `Batch` row with the id pre-check 3 declared**: `.fast-dev-flow/spec.md` is single-slot and `state.json` is not, so that row is what tells `V45` and `V55` this spec is THIS batch's record and not the previous one's. Left as the template ships it, it declares no id and nothing is compared — which is safe, and is not the same as having written it.
 3. **If the design decision is not obvious** (e.g. structural change, new integration, real ambiguity), briefly delegate to `architect` for a 1-2 paragraph recommendation. If it's obvious, do NOT delegate — unnecessary overhead.
 4. Write **observable acceptance criteria**. Pattern: `When <input>, the system shall <observable output>`. Don't write "the system works well" or similar. **If it's not observable, it's not a criterion — it's a wish.**
 5. **Information Flow Contract — Part A ONLY (C-54), written into the spec's §3c, which is that block's HOME in this flow.** Declare the flow this change touches. **`templates/ifc-template.md` §1 is the grammar's one home and the spec's §3c ships that same fence**, field for field — `SOURCE → NODES → SINK`, one field per line, a node beginning at `- fn :` — so there is one shape to follow and §3c is where you write it. **`owner` here is an ACCEPTANCE-CRITERION id — `AC-<n>` from §3 — and never an invented `LLR-`**: the full flow owns an LLR, this flow mints none, and a requirement id that names no requirement is worse than the gap. Until rev85 the obligation was stated here with no section to hold it and no answer for `owner`, and the reader of the 2026-09-18 re-run had to mint both. Information flows always exist, whatever the stack, and a node nobody owns is work nobody asked for. **Part B — addresses, `cardinality`, `consumers` — is NOT owed here**; it belongs to the full flow. **Its trigger question is this phase's escalation signal:** if the change alters *how a consumer reaches* something rather than *what it carries* — a selector, an index, a channel, an offset — stop and run `/dev-flow` instead. That is exactly the class of change that looks small, passes a value-based check, and breaks every reader indexing the surface positionally.
-6. **Scan the spec for sensitive patterns — YOU run it; this command is its SPECIFICATION, not its implementation.** No scanner ships with this flow: the section below defines the scope, the matching, the pattern list and the four controls precisely enough to implement in a few lines of grep, and that definition is what makes your result checkable by someone else. Flag each detected pattern in section 6 of the spec. If at least one flag is positive, set `security_required: true` in the spec.
+6. **Scan the spec for sensitive patterns — A SCANNER SHIPS WITH THIS FLOW AND YOU RUN IT** (flow rev88):
+   ```
+   cd <this flow's root>               # the directory holding FLOW-VERSION.md, scripts/
+   python scripts/devflow-scan-spec.py <the project root>/.fast-dev-flow/spec.md
+   ```
+   **Same working directory as the gate command** — `SKILL.md` §*What refuses an invocation here* step 1 — so one `cd` serves both tools and neither path is written relative to the other tree. With NO argument the scanner reads `.fast-dev-flow/spec.md` under the CURRENT directory, which is the shorter form when you are already standing in the project. **Exit `0` means nothing fired, `1` means at least one pattern fired — a VERDICT, not a breakage — and `2` means the scan could not run and claims nothing about the spec.** It prints the four controls below with their expected and actual answers before it prints its verdict, and refuses to publish one if a control fails. **The section below stays the PATTERN LIST'S ONE HOME and the script READS it from there at every run** (`C-50`) — there is no second inventory, so deleting a pattern here stops the scanner matching it, which is what lets you audit the command and trust the tool. Copy the printed flags into section 6 of the spec; if at least one fired, set `security_required: true`. Until rev88 this step said *no scanner ships with this flow* and handed the reader a specification to implement; two readers of the publication test implemented it, and the second one named it as an obstacle.
 
 ### Patterns that trigger `security_required`
 
-**SCOPE — sections 1–4 of the spec** (objective, user stories, acceptance criteria, validation strategy), and **nothing else — §3b AND §3c INCLUDED IN THAT EXCLUSION**. §6 is where the answer is written, §0 and §7–8 carry the header, the batch status and the close, §3b is the premise table, whose *executed evidence* column is commands, digests and file paths, and §3c is the Information Flow Contract, whose node names are the change's own vocabulary; scanning any of them makes the spec's own record fire the scan that produced it. The four scanned sections are the ones a human WROTE ABOUT THE CHANGE; everything numbered around them is the record OF the batch.
+**SCOPE — sections 1–4 of the spec** (objective, user stories, acceptance criteria, validation strategy), and **nothing else — §3b AND §3c INCLUDED IN THAT EXCLUSION**. §6 is where the answer is written, §0 and §7–8 carry the header, the batch status and the close, §5 is the non-goals list — what the batch will NOT do, which is the one section where naming a sensitive surface means the opposite of touching it — §3b is the premise table, whose *executed evidence* column is commands, digests and file paths, and §3c is the Information Flow Contract, whose node names are the change's own vocabulary; scanning any of them makes the spec's own record fire the scan that produced it. The four scanned sections are the ones a human WROTE ABOUT THE CHANGE; everything numbered around them is the record OF the batch.
 
 **AND WITHIN THOSE FOUR SECTIONS THE SCAN READS AUTHORED TEXT, NOT THE SCAFFOLD — and the line between them is UNTOUCHED, not BRACKETED.** A `<…>` span is skipped **only while its contents are still the template's own words**, exactly as `templates/fast-dev-flow/spec-template.md` ships them: `<role>`, `<goal>`, `<input>`, `<output>` and their siblings. An unfilled placeholder is the template talking, not the author — `As a <role>, I want <goal>` fires `role` on a spec nobody has written yet, and a flag a blank template can raise carries no information about the change.
 
@@ -172,7 +192,7 @@ Any match → `security_required: true`. Report to the user which flags fired an
    - **Open risks / pending** (if any).
    - **Security flags fired and how they were handled** (if applicable).
    - **Suggested commit message** (short, imperative).
-5. Update `.fast-dev-flow/spec.md`, marking the spec `closed` with the date.
+5. Update `.fast-dev-flow/spec.md`, marking the spec `closed` with the date — the word goes in the **`Current phase`** cell of the spec's §7 status table, and **that cell is the close signal `V55` reads** (flow rev88): while it says anything else AND the ledger records no `C` decision, the `C` gate is one the batch has not reached and the rule excuses it instead of judging it. **Two witnesses, either one sufficient** — the cell, and a `decisions_log` entry naming `C`, which is this flow's own record that the gate closed; the rule prints which one it used. `templates/fast-dev-flow/spec-template.md` §*7. Batch status* is that field's home and states the consequence there.
 6. **Backlog reconciliation (MANDATORY — the carry-over contract).** Reconcile the project's canonical cross-batch backlog — **the file, or lane files, that its `docs/engineering-rules.md` designates; absent such a designation, `.dev-flow/BACKLOG.md`** — a prioritized cross-batch queue shared by BOTH flows, never a per-batch file, and **already on disk since pre-check 4, which creates the declared lane**; if the project routes to a lane this batch had not resolved then, create that lane now. **If the project routes to lanes, reconcile the lane this batch belongs to** — resolve the routing before reading, because a partitioned queue keeps no open work in the original file and reading that file alone returns an empty queue that looks like "nothing pending". Then: (a) mark every item this batch shipped `DONE` with its PR/SHA; (b) **carry forward, drop nothing** — append every open item plus every new carry / deferred finding / "Open risks / pending" from the closing artifact; (c) bump the recorded base ref + a "last refresh: <date>" line. **A deferral written anywhere carries the `⏸ DEFER` marker, and this step reads the census** — `V42` reports every marker in `.dev-flow/design/**`, in an ADR or in the batch record that is keyed to no backlog entry; see `/dev-flow` §*A deferral carries the marker*, which is that rule's one home. **Include the backlog edit in this batch's commit/PR** so the backlog travels with the code that changed it. The batch is not complete until the backlog reflects it — a fast-flow ships small, but the backlog still updates every time.
 
 ### Final gate

@@ -152,7 +152,14 @@ per-increment gate and the Phase C final gate; in `core` and `full` each station
    authorization stands in — §*What refuses an invocation here* step 5 is that rule's home —
    and the entry below records which of the two closed the gate.
 4. **Record the decision in `decisions_log`**, one entry carrying **`gate: <the gate's name>`**
-   and **`guided: true`**, beside the `date` and `decision` the ledger already takes. In `core`
+   and **`guided: true`**, beside the `date` and `decision` the ledger already takes.
+   **`date` is written `YYYY-MM-DD`** — a plain calendar day, the form `/dev-flow-init` step 3
+   seeds everywhere in `state.json` and the only form `V27` reads; an ISO-8601 timestamp is
+   not it, and a ledger dated any other way is a ledger `V27` reports as carrying no date.
+   **WHAT GOES IN `gate` IS NOT INVENTED HERE EITHER:** in `fast` the three gate ids are
+   declared in `commands/fast-dev-flow.md` §*The reader's map — one row per step, and where
+   its operative rule lives*, in its **`Gate id`** column, which is that fact's one home —
+   this step points at it and does not restate the strings. In `core`
    and `full` the gate's name is its station id and the ledger has spelled that field `station`
    since the station schema landed; **both spellings are read**, so a batch on that schema keeps
    writing `station` and adds the flag. `V55` compares the entries against the gates the mode

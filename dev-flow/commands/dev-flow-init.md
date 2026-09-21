@@ -39,7 +39,7 @@ Initialize the engineering workflow in the current project.
            └── executive-summary.md     (skeleton from template)
    ```
    **`<batch_id>/` is a directory, and never a flat `.dev-flow/`.** A `state.json` that declares a `batch_id` with no directory of that name is the *ghost* state: `V18` reports it, and `V1`-`V9` fall back to walking the tree and judge whichever historical document the walk reaches first. Until rev62 this command created the flat shape, so **every project it ever initialised started life as a ghost.**
-3. Generate the initial `state.json`. **This block is the flow's ONLY inventory of the `artifact_homes` defaults** — `/dev-flow` §`state.json` schema declares the shape and points here for those **twelve** keys, so the fact has one home and there is no second copy to drift. Every value below is either a literal or a substitution step 1 already asked for; nothing here is filled in later:
+3. Generate the initial `state.json`. **THE SCHEMA BELOW IS `core` AND `full`'s. `fast` writes the SIX-KEY declaration in §*The `fast` declaration* further down this step and nothing else** — the two blocks are not alternatives to choose between, they are one block per mode, and this sentence is the pointer that says so where a reader first meets the long one. **This block is the flow's ONLY inventory of the `artifact_homes` defaults** — `/dev-flow` §`state.json` schema declares the shape and points here for those **twelve** keys, so the fact has one home and there is no second copy to drift. Every value below is either a literal or a substitution step 1 already asked for; nothing here is filled in later:
    ```json
    {
      "project": "<name>",
