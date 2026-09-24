@@ -1,5 +1,7 @@
 # dev-flow
 
+[![flow selftest](https://github.com/jav201/dev-flow/actions/workflows/flow-selftest.yml/badge.svg)](https://github.com/jav201/dev-flow/actions/workflows/flow-selftest.yml)
+
 **A supervised engineering flow for AI coding agents whose record cannot be faked.**
 
 Most agent workflows tell the model *what to write*. dev-flow also governs *how the work is recorded and checked*, the way software engineering has done it for decades: a V-model of stations, requirements traced to acceptance tests, increments with review packets, independent review, evidence that names its source, and a close with a post-mortem. That artifact structure is the control surface — the same one that regulated software practice relies on — carried over to agent-driven development and enforced rather than recommended.
@@ -40,6 +42,26 @@ Then verify the copy from inside it:
 
 Requires Python 3.11+ and git. Windows, macOS and Linux.
 
+## The record, and the gate's voice
+
+What a batch leaves behind, and what each part is for:
+
+    .fast-dev-flow/spec.md               WHAT the batch claimed
+    .dev-flow/state.json                 WHICH batch is active, and its decisions ledger
+    .dev-flow/<batch>/03-increments/     WHAT each increment proved
+    .dev-flow/<batch>/evidence/          THE BYTES every digest cites
+    .dev-flow/BACKLOG.md                 WHAT carries to the next batch
+
+The gate never says more than it measured. Run it on an empty repository and it passes — and tells you what a pass means here (real output, `--brief`, trimmed):
+
+    0 block · 5 notice · 49 not applicable
+      [!] V18  .dev-flow/state.json: no `.dev-flow/state.json`, so nothing declares the active batch …
+      [!] V27  .dev-flow/state.json: `state.json` holds no `decisions_log` list, so neither the coverage nor the currency of the record was checked …
+      [!] V42  .dev-flow/: the tracked file set could not be enumerated …, so the deferral corpus is undefined …
+    n/a: 49 rule(s) with no subject on this tree (no mode declared on this tree) — run without --brief to list them
+
+A green with no subject is reported as *no subject*, never as a pass. That sentence is the whole design.
+
 ## Your first batch in ten minutes (fast flow)
 
 1. Open `dev-flow/SKILL.md` and follow its routing: the fast flow is `commands/fast-dev-flow.md`; its **reader's map** lists, for every step, the one file and section that holds the rule.
@@ -78,7 +100,7 @@ Fresh readers on Codex and Kimi ran exactly this on a toy repository with no oth
 
 ## Versioning
 
-`FLOW-VERSION.md` carries the flow revision and a hash per shipped file. The validator verifies the copy you run against that manifest, both directions. Changing a shipped file without a new revision is a BLOCK by design.
+`FLOW-VERSION.md` carries the flow revision and a hash per shipped file. It travels with the flow because it is the identity contract the validator enforces. Some of its recipes name the canonical authoring home, which has paths a published bundle does not; if you are reading this repository, the recipe under *From inside a bundle* is yours, and the canon recipes belong to the authoring home. Nothing in the manifest is secret — the two recipes are two doors into the same contract. The validator verifies the copy you run against that manifest, both directions. Changing a shipped file without a new revision is a BLOCK by design.
 
 ## License
 

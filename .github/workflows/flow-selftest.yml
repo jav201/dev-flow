@@ -1,0 +1,29 @@
+# Proves every rule of the shipped validator can still go RED, from inside the published bundle.
+# Green means exactly one thing: the selftest passed in bundle mode on a clean checkout.
+# It does not verify a project; run scripts/devflow-validate.py <project root> for that.
+name: flow selftest
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  selftest:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: selftest (bundle mode)
+        working-directory: dev-flow
+        run: python scripts/devflow-validate.py --selftest
+      - name: gate on an empty tree (must be 0 block)
+        working-directory: dev-flow
+        run: |
+          mkdir -p /tmp/empty && git -C /tmp/empty init -q
+          python scripts/devflow-validate.py --brief /tmp/empty
