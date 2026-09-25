@@ -2948,8 +2948,8 @@
    "origin": "rev67",
    "target": "rev67 / _capsrc67 skills walk",
    "file": null,
-   "old": "    _sk67 = os.path.join(_fh67, \"skills\")",
-   "new": "    _sk67 = os.path.join(_fh67, \"nonexistent-skills\")",
+   "old": "    _sk67 = os.path.join(_selfh67, \"skills\")",
+   "new": "    _sk67 = os.path.join(_selfh67, \"nonexistent-skills\")",
    "why": "THE SKILLS WALK POINTED AT NOTHING -- the population shrinks back below the two live members the second review found (`project-template-selection` attributing the RETIRED flat total's enforcement to these very commands, and `teach_skill` stating it under a heading naming the practice's supervised-incremental workflow). Two review rounds were spent widening this population by hand, one directory at a time; the walk is what ends that, and the exact per-file vector is what notices when it stops walking.",
    "expect": "KILLED",
    "expect_arms": [
@@ -8212,8 +8212,78 @@
    "expect_arms": [
     "BUN NO-CATALOG-says-so"
    ]
+  },
+  {
+   "subject": "devflow-validate",
+   "id": "r93-M01-skills-walk-reads-the-canon-home-again",
+   "origin": "rev93",
+   "file": null,
+   "target": "rev93 / the cap census's `skills/` walk, rooted on this runtime's OWN home",
+   "old": "    _sk67 = os.path.join(_selfh67, \"skills\")",
+   "new": "    _sk67 = os.path.join(_flow_home(), \"skills\")",
+   "why": "THE DEFECT ITSELF, PUT BACK. One word, and it is the whole of the finding an external review made on 2026-09-24: from a bundle installed beside a canon home the walk reaches `~/.claude/skills` and reads the catalog a SECOND time, after the resolver has already read the bundle's sibling. The parent run cannot see it -- it IS a canon home, where `_selfh67` and `_flow_home()` are the same directory -- and neither can CI, whose runner has no `~/.claude`. Only the machine a reader actually has can, which is why this mutant's declared killer is the arm that runs one.",
+   "expect": "KILLED",
+   "expect_arms": [
+    "BUN THIRD-MACHINE"
+   ]
+  },
+  {
+   "subject": "devflow-validate",
+   "id": "r93-M02-duplicate-collapses-silently",
+   "origin": "rev93",
+   "file": null,
+   "target": "rev93 / `_census93`, the branch that KEEPS a collision",
+   "old": "        if rel in at:\n            dup.append((rel, at[rel], src))\n            continue\n",
+   "new": "        if rel in at:\n            continue\n",
+   "why": "THE VACUOUS REPAIR. A `set()` makes the count right and the second read invisible, which is exactly the shape rev93 refused: the census would then be silently one file short the day a walk stopped finding something, and the arm that counts it would still be green. The control is the DUPLICATE and not the count, so the planted collision is what has to fire.",
+   "expect": "KILLED",
+   "expect_arms": [
+    "CMD BUDGET-census-deduped"
+   ]
+  },
+  {
+   "subject": "devflow-validate",
+   "id": "r93-M03-third-machine-has-no-canon-home",
+   "origin": "rev93",
+   "file": null,
+   "target": "rev93 / `BUN THIRD-MACHINE`'s staged `.claude/` home",
+   "old": "                    _sk93 = os.path.join(_fh93, \".claude\", \"skills\")",
+   "new": "                    _sk93 = os.path.join(_fh93, \"not-a-claude-home\", \"skills\")",
+   "why": "THE THIRD MACHINE QUIETLY BECOMES THE SECOND. `HOME` still points at `_fh93`, but nothing under it looks like a canon home, so the child is a bundle with an empty home again -- rc 0, the same named SKIP set, green on every other clause the arm asserts. The only thing that can notice is the shape read back at the path the CHILD resolves, which is why that read is spelled at the assertion and not taken from the staging variable. A fixture deleted is the way a green gets cheaper without anybody deciding to make it cheaper (`C-40`).",
+   "expect": "KILLED",
+   "expect_arms": [
+    "BUN THIRD-MACHINE"
+   ]
+  },
+  {
+   "subject": "devflow-validate",
+   "id": "r93-M04-published-ci-untabled",
+   "origin": "rev93",
+   "file": "docs/FLOW-VERSION.md",
+   "target": "rev93 / the manifest row that puts the published repository's CI inside `flow_hash`",
+   "old": "| `docs/analysis/publish/workflows/flow-selftest.yml` | `",
+   "new": "| `docs-analysis-publish-workflows-flow-selftest.yml` | `",
+   "why": "THE PUBLISHED CI FALLS BACK OUT OF THE FLOW'S IDENTITY. This is the state rev87 through rev92 shipped in: the workflow a consumer's pull request runs is authored in canon and copied into the export, and nothing holds the two ends together -- outside the table, outside `flow_hash`, read by no rule -- so weakening it moves no hash and reddens nothing. Tabling it is the repair and this is the mutant that proves the table row is load-bearing rather than decorative.",
+   "expect": "KILLED",
+   "expect_arms": [
+    "PUB CI-published-tabled"
+   ]
+  },
+  {
+   "subject": "devflow-validate",
+   "id": "r93-M05-census-group-disappears-in-a-bundle",
+   "origin": "rev93",
+   "file": null,
+   "target": "rev93 / the cap census's catalog append, the ONLY member of its group in a bundle",
+   "old": "    if _selfb67:",
+   "new": "    if _selfb67 and False:",
+   "why": "A CENSUS GROUP VANISHES AND THE COUNT BARELY MOVES. The re-review's `R1`: a name-keyed population goes wrong in two directions and rev93's first cut armed only one of them -- a DUPLICATE was a FAIL and a DISAPPEARANCE was not, on the two bundle machines where `CMD BUDGET-one-variable` (which pins the vector exactly) has no subject. Deleting the catalog append takes the bundle census from 32 to 30 and zeroes the third declared group while leaving the other two untouched, which is why the arm requires the GROUPS non-empty and not only the total: a floor alone is satisfied by one group carrying another's share. DECLARED LIKE `r93-M01`: the PARENT cannot see this one -- on a canon home `_selfb67` is False and the branch never ran -- so the kill comes from the machine a reader actually has, through the child's own `CMD BUDGET-census-deduped` going red on both the floor and the zeroed group.",
+   "expect": "KILLED",
+   "expect_arms": [
+    "BUN THIRD-MACHINE"
+   ]
   }
  ],
- "live_floor": 569,
+ "live_floor": 574,
  "live_floor_why": "The number of NON-RETIRED mutants this registry must still hold. `MUT REGISTRY-anchors-live` asserts it. It is a RATCHET: lowering it is a deliberate act that says a battery got smaller, and it belongs here -- in the diff a reviewer reads -- rather than as a constant buried in the validator."
 }

@@ -81,26 +81,29 @@ newest changelog row.
    bundle, which ships two of the four. Nothing else is skipped silently — and zero BLOCKs is
    a green flow identity, not a green flow.
    **The same is true of `python scripts/devflow-validate.py --selftest`, which proves the TOOL rather
-   than the project and EXITS 0 from here.** **TWENTY-EIGHT of its arms have no subject in a bundle and each
-   SKIPs by name, with the reason printed — 30 SKIP line(s) in all, because three rules ask the same
+   than the project and EXITS 0 from here.** **THIRTY of its arms have no subject in a bundle and each
+   SKIPs by name, with the reason printed — 32 SKIP line(s) in all, because three rules ask the same
    question and each says so on its own line**, and a closing summary line counts them by subject.
-   Count them in the output and expect exactly these names, in six groups.
+   Count them in the output and expect exactly these names, in eight groups.
    *No canon tree or checkout beside this copy:* `BUNDLE-skips-named`, `FOUR-PLACES-agree`,
-   `LIVE-two-checkouts`, `E2E-live`, and the four `SKIPS-named` + `BUNDLE-ONLY-reds` +
-   `SELFTEST-exits-0` + `NO-CATALOG-says-so`, which stage a bundle OUT of a canon home and so have
-   nothing to stage from here.
+   `LIVE-two-checkouts`, `E2E-live`, and the five `SKIPS-named` + `BUNDLE-ONLY-reds` +
+   `SELFTEST-exits-0` + `NO-CATALOG-says-so` + `THIRD-MACHINE`, which stage a bundle OUT of a canon
+   home — the last of them INTO a fake one, the shape this README's own install line produces — and
+   so have nothing to stage from here.
    *No live project record (the corpus is a per-installation path a bundle cannot declare):*
    `FLOOR-b09`, `FLOOR-b10`, `FLOOR-b11`, `FLOOR-b74`, `DISK-word-b87`, `CORPUS-reconciled`,
    `CORPUS-no-invented`, `CORPUS-seed-declared`, `LIVE-line`, `LIVE-corpus`, `LIVE-pass`,
    `LIVE-agree` (one line per rule that asks it), `LIVE-no-false-block` and `A12-live`.
-   *No published population to walk:* `no-leaked-shapes` and `canon-home-path-population`. *Not the whole Python file set:* `LIVE-derived`.
+   *No published population to walk:* `no-leaked-shapes` and `canon-home-path-population`.
+   *No export recipe here — the CI a pull request runs is checked where it is authored:*
+   `CI-published-tabled`. *Not the whole Python file set:* `LIVE-derived`.
    *No installed skills beside the flow:* `BUDGET-one-variable`. *No diagrams directory:*
    `PATHS-batch-scoped`. *A derived manifest carries the table and not the changelog:* `ID-GAP-63-64`.
    A skipped arm is counted and named, never dropped, and an arm compares this list
    against a real bundle run.
    PLATFORM ADDENDUM: on a platform with NO NAMED VOLUMES (anything but Windows) FOUR more skip,
    because the states they ask about do not exist there — `NORM-separator`, `RELATIVE-driveless`,
-   `VOLUME-other`, `PATH-absolute-refused` — for 32 names over 34 SKIP line(s) in all. The verdict line is still `SELFTEST PASSED` or
+   `VOLUME-other`, `PATH-absolute-refused` — for 34 names over 36 SKIP line(s) in all. The verdict line is still `SELFTEST PASSED` or
    `SELFTEST FAILED`, and anything but a zero exit means this copy of the tool is broken, not that the
    flow is.
 5. Name, in that same artifact, every mechanism in the first paragraph that was unavailable

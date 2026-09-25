@@ -3824,6 +3824,20 @@ _BUNDLE_LOCAL = {"hooks/flow-guard.py", "hooks/install.py"}
 # REPOSITORY. The mirror is not where it runs, and a third category needs a third sentence —
 # reusing either of the other two would print something confidently false.
 _BUNDLE_CI = {".github/workflows/flow-selftest.yml"}
+# Canon, hashed, not mirrored, and not for ANY of the three reasons above: this is the CI of
+# the PUBLISHED repository, kept here because here is where it is authored and from here
+# `docs/analysis/publish/make-repo.sh` copies it into the export's `.github/workflows/`.
+# rev93, the independent review's second note. It shipped from rev87 to rev92 as a copy
+# nothing guarded: outside the table, outside `flow_hash`, and unreadable by any rule, so a
+# hand edit to the SOURCE of the one CI a consumer's pull request runs moved no hash and
+# reddened nothing. An unhashed executor is rev13's `F-2`, and this is the third time that
+# shape has been found one directory further out.
+# ⚠ DECLARED BOUND, and the review's `F5`: what is hashed is the SOURCE. The copy that lands
+# in the published repository is outside every tree a rule here can read -- `V7 BUNDLE-subset`
+# names this row among the six that fall outside a bundle -- so an edit made IN the export
+# still moves nothing. Closing that needs a rule with the published checkout in reach, which
+# no runtime running this file has; saying so is the honest half of the repair.
+_BUNDLE_PUBCI = {"docs/analysis/publish/workflows/flow-selftest.yml"}
 _BUNDLE_EXTRA = {"docs/FLOW-VERSION.md": "dev-flow/FLOW-VERSION.md"}   # the manifest itself
 
 
@@ -4231,6 +4245,9 @@ def _not_mirrored_reason(rel):
         return "Claude Code-specific; the mirror's consumer has no settings.json hooks"
     if rel in _BUNDLE_CI:
         return "CI for the canon repository; the mirror is not where it runs"
+    if rel in _BUNDLE_PUBCI:
+        return ("CI for the PUBLISHED repository; make-repo.sh copies it into the export's "
+                ".github/workflows/, and the mirror is not where it runs either")
     return "agent-skills is its only home"
 
 
@@ -4401,6 +4418,42 @@ def _home_holds92(rel):
 def _home_missing92():
     """Which declared populations this runtime's own flow home does NOT hold. I/O."""
     return [(r, w) for r, w in _HOME_POPULATIONS92 if not _home_holds92(r)]
+
+
+# ---------------------------------------------------------------- rev93: a POPULATION is a SET
+#
+# `C-65` says census the AXIS, not the line, and rev92 did that for WHERE a file is read from
+# (`_self_path`) while leaving HOW MANY TIMES it is read unasked. The cap census answered it
+# badly: the sibling catalog was appended once through the rev92 resolver and a second time by
+# a `skills/` walk that still rooted on `_flow_home()`. On a clean machine the walk found
+# nothing; on the AUTHOR'S machine there was no bundle; on the one machine that has BOTH -- a
+# bundle installed under a canon home, which is the published README's own recipe -- the same
+# two files entered the census twice and an arm asserting exact counts read 5 where it
+# declares 3. Two green machines, one red shape between them.
+#
+# Collapsing to a `set()` would have made the count right and the defect invisible, which is
+# the vacuous repair `C-40` exists to refuse. So a name arriving twice is KEPT, with BOTH
+# source paths, and an arm prints it.
+
+
+def _census93(members):
+    """[(rel, text)] and the collisions, for a population keyed by flow-relative NAME.
+
+    `members` is an iterable of `(rel, text, source_path)`. The first read of a name wins and
+    every later one is returned in `duplicates` carrying the path it came from AND the path
+    the name was first read from -- because *the census is 5 long* and *the census read two
+    files twice* are different sentences, and only the second one can be acted on.
+
+    Pure, so an arm can plant a collision through it and prove the control can go red.
+    """
+    rows, at, dup = [], {}, []
+    for rel, text, src in members:
+        if rel in at:
+            dup.append((rel, at[rel], src))
+            continue
+        at[rel] = src
+        rows.append((rel, text))
+    return rows, dup
 
 
 def _self_ships(rel):
@@ -8558,7 +8611,11 @@ def v39_station_artifact(root, art):
     batch = os.path.basename(path) if path else doc.get("batch_id")
     station, status = doc.get("current_station"), doc.get("phase_status")
     listing, empties = [], {}
-    home = os.path.join(_flow_home(), "templates", "dev-flow")
+    # rev93: the path this rule PRINTS is resolved for the runtime reading it. Joined onto
+    # `~/.claude` it named a directory a bundle's reader does not have, which is the class of
+    # defect `_not_mirrored_reason` exists to stop one layer out: a confident sentence about
+    # the flow's own structure that is false on the machine it is printed on.
+    home = _self_path("templates/dev-flow/").rstrip("/\\")
     nseeds = 0
     if code == "ok" and station in _V39_FAMILY:
         listing = _v39_listing(path)
@@ -11509,8 +11566,11 @@ def selftest():
     # rev and was added to two of the three sites that name them -- so the child, which
     # takes the third, emitted a census the parent's own registry arm then reported as
     # claiming a label nobody prints. One list, three call sites (`C-50`).
+    # rev93 adds the fourth, and it is the same `C-50` lesson a second time: `THIRD-MACHINE`
+    # stages a bundle INTO a fake canon home, so it too has no subject in a bundle and no
+    # subject in a child, and all three sites that name this list take it from here.
     _BUNARMS85 = ("SKIPS-named", "BUNDLE-ONLY-reds", "SELFTEST-exits-0",
-                  "NO-CATALOG-says-so")
+                  "NO-CATALOG-says-so", "THIRD-MACHINE")
     # ⚠ ONE PREDICATE FOR *AM I A BUNDLE* -- the independent review's `F6`. `_bundle_home()`
     # can answer the `_ENV_NEITHER` SENTINEL, which is TRUTHY and is not a bundle, so every
     # gate below read it as one while the resolver (which excludes the sentinel) read the run
@@ -11566,6 +11626,15 @@ def selftest():
             "`docs/diagrams/**`, which the canon repository holds and the bundle does not "
             "ship — illustration rather than instruction, and outside what a consumer "
             "receives",
+        # rev93. The FIFTH, and it is minted rather than borrowed for the reason
+        # `_not_mirrored_reason` was split in the first place: this arm walks no skill
+        # directory, so the `publication` sentence would have described it wrongly in the one
+        # transcript a bundle's reader actually holds -- this rev's own argument, broken in
+        # this rev's own commit until the review caught it.
+        "publish-recipe":
+            "the export RECIPE and the workflow it copies -- `docs/analysis/publish/` on the "
+            "canon home, which no bundle ships. The CI a consumer's pull request runs is "
+            "checked where it is AUTHORED, not where it lands",
         "changelog":
             "the canon manifest's changelog prose. The bundle's manifest is DERIVED and "
             "carries the table rather than the narrative, so the id-gap sentences this arm "
@@ -12931,20 +13000,70 @@ def selftest():
     for label, rel, want in (
             ("why-local", "hooks/flow-guard.py", "Claude Code-specific"),
             ("why-ci", ".github/workflows/flow-selftest.yml", "CI for the canon repository"),
+            ("why-pubci", "docs/analysis/publish/workflows/flow-selftest.yml",
+             "CI for the PUBLISHED repository"),
             ("why-native", "dev-flow-lessons/SKILL.md", "agent-skills is its only home")):
         got = _not_mirrored_reason(rel)
         good = got.startswith(want)
         ok &= good
         print(f"  V15 {label:<17} expected {want[:34]:<34} · {'ok' if good else 'FAIL'}")
-    # Three categories, three sentences, and all three must differ. Two of them collapsing
+    # Four categories, four sentences, and all four must differ. Two of them collapsing
     # would print something confidently false about the flow's own structure — which is the
     # defect this function was split out of sync_bundle to fix in the first place.
+    # rev93 adds the fourth, and the two CI sentences are the reason the count matters: one
+    # workflow runs on the canon repository and one on the PUBLISHED one, and a single "CI,
+    # not where the mirror runs" would have been true of both and useful about neither.
     reasons = {_not_mirrored_reason(r) for r in
-               ("hooks/flow-guard.py", ".github/workflows/flow-selftest.yml", "x/y.md")}
-    good = len(reasons) == 3
+               ("hooks/flow-guard.py", ".github/workflows/flow-selftest.yml",
+                "docs/analysis/publish/workflows/flow-selftest.yml", "x/y.md")}
+    good = len(reasons) == 4
     ok &= good
-    print(f"  V15 {'WHY-differs':<17} expected 3 distinct reasons          · "
+    print(f"  V15 {'WHY-differs':<17} expected 4 distinct reasons          · "
           f"{'ok' if good else 'FAIL got ' + str(len(reasons))}")
+
+    # ---- rev93. THE CI A CONSUMER'S PULL REQUEST RUNS IS A TABLED FILE, AND A RULE READS IT.
+    #
+    # The independent review's second note, and it is `C-50` in its plainest form. The
+    # published repository's workflow was authored at `docs/analysis/publish/workflows/` and
+    # copied into the export by `make-repo.sh`, and from rev87 to rev92 NOTHING held the two
+    # ends together: the file was outside the manifest table, outside `flow_hash`, and read by
+    # no rule, so weakening the one CI a consumer ever triggers moved no hash and reddened
+    # nothing. The canon's own workflow has been tabled since rev21 for exactly this argument
+    # -- an unhashed executor is rev13's `F-2` -- and this is that argument one repository out.
+    #
+    # THE COPY IS DERIVED FROM `make-repo.sh`, NEVER TYPED HERE. A path written twice is two
+    # inventories, and the one that drifts is the one nobody reads: if the recipe stops
+    # copying this file, or copies a different one, this arm goes red instead of asserting a
+    # relationship that ended.
+    if _bundle85:
+        ok &= _nosub92("PUB", "CI-published-tabled", "publish-recipe", 28)
+    else:
+        _PUBCI93 = "docs/analysis/publish/workflows/flow-selftest.yml"
+        _pubci93 = _read(os.path.join(_FH0, _PUBCI93.replace("/", os.sep))) or ""
+        _recipe93 = _read(os.path.join(_FH0, "docs", "analysis", "publish",
+                                       "make-repo.sh")) or ""
+        _cited93 = sorted(set(re.findall(
+            r"docs/analysis/publish/workflows/[A-Za-z0-9._-]+", _recipe93)))
+        # BOTH STEPS the acceptance of every flow rev names, read off the file rather than
+        # trusted: the bundle-mode selftest, and the gate over an empty tree. A workflow that
+        # has quietly lost one of them is a green that sizes to less than the reader thinks.
+        _steps93 = ("--selftest" in _pubci93, "--brief" in _pubci93,
+                    "working-directory: dev-flow" in _pubci93)
+        good = bool(_pubci93 and _PUBCI93 in (_canon(_FH0) or {})
+                    and _cited93 == [_PUBCI93]
+                    and _bundle_path(_PUBCI93) is None
+                    and all(_steps93)
+                    and _not_mirrored_reason(_PUBCI93).startswith("CI for the PUBLISHED"))
+        ok &= good
+        print(f"  PUB {'CI-published-tabled':<28} expected the workflow the EXPORT runs to be "
+              f"a tabled canon file — in the manifest, inside `flow_hash`, unmirrored with "
+              f"its own reason — and to be the very file `make-repo.sh` copies, DERIVED from "
+              f"the recipe's own text so a path that stops being copied reddens here, "
+              f"carrying both steps a rev's acceptance names · tabled "
+              f"{_PUBCI93 in (_canon(_FH0) or {})} · recipe cites "
+              f"{_shown(set(_cited93)) if _cited93 else '{}'} · steps "
+              f"(selftest, brief-gate, bundle-cwd) {_steps93} · "
+              f"{'ok' if good else 'FAIL'}")
 
     # ---- rev76 (`dev-flow-invocable-by-any-llm`). THE BUNDLE IS A FOLDER UNTIL IT CARRIES A
     # `SKILL.md`, AND THE ADAPTER THAT MAKES IT A SKILL MUST SAY WHAT DOES NOT TRAVEL WITH IT.
@@ -13204,9 +13323,13 @@ def selftest():
     # and derived into no bundle, because the bundle would be a second copy of a file
     # its only consumer already has. The member is named rather than the count widened:
     # a SIXTH row falling outside a bundle still reddens.
+    # rev93: SIX. The published repository's workflow joined the table, and it falls outside a
+    # bundle for a reason of its own -- it is the export's CI, not the mirror's. Named, not
+    # counted: a SEVENTH row falling outside a bundle still reddens.
     _WANT79 = {"hooks/flow-guard.py", "hooks/install.py",
                ".github/workflows/flow-selftest.yml", "dev-flow-lessons/SKILL.md",
-               "dev-flow-lessons/REFERENCE.md"}
+               "dev-flow-lessons/REFERENCE.md",
+               "docs/analysis/publish/workflows/flow-selftest.yml"}
     good = _out79 == _WANT79 and len(_canon79) - len(_out79) > 0
     ok &= good
     print(f"  V7  {'BUNDLE-subset':<17} expected exactly {len(_WANT79)} of the "
@@ -24210,10 +24333,15 @@ def selftest():
     # would have gone green over the other. So the domain is FIVE encodings, and the
     # characters are not typed here either — they are harvested from the canon the manifest
     # declares, so a new character entering any canon file enters this arm with it.
-    _enc_home = os.path.expanduser("~/.claude")
+    # rev93, the same axis as the cap census: the probe is harvested from the files THIS
+    # RUNTIME'S OWN manifest declares, through the rev92 resolver. Read off `~/.claude` it was
+    # the author's tree whenever the run came from a bundle that happened to sit beside one --
+    # a domain wider than the copy under measurement, which is a false green in the safe
+    # direction. A bundle's own 36 declared files carry the same character classes, and a
+    # subject it does not ship contributes nothing rather than raising.
     _enc_chars = {c for c in (_read(os.path.abspath(__file__)) or "") if not c.isascii()}
-    for _rel5 in (_canon(_enc_home) or {}):
-        _tc5 = _read(_live_path(_enc_home, _rel5))
+    for _rel5 in _self_canon():
+        _tc5 = _self_read(_rel5)
         if _tc5:
             _enc_chars |= {c for c in _tc5 if not c.isascii()}
     _enc_probe = "".join(sorted(_enc_chars))
@@ -27177,25 +27305,27 @@ def selftest():
     # parsed out of the manifest rather than recited here.
     _man84 = _self_read("docs/FLOW-VERSION.md") or ""
     _rows84 = sorted(_self_canon())
-    # NOT MIRRORED means one of three DECLARED things -- see `_not_mirrored_reason`, which
-    # gives each its own sentence: the Claude Code hooks, the canon repository's CI, and the
-    # sibling catalog, which ships BESIDE the bundle as its own skill folder and not in it.
+    # NOT MIRRORED means one of FOUR DECLARED things (rev93) -- see `_not_mirrored_reason`,
+    # which gives each its own sentence: the Claude Code hooks, the canon repository's CI, the
+    # PUBLISHED repository's CI, and the sibling catalog, which ships BESIDE the bundle as its
+    # own skill folder and not in it.
     # The adapter is `_BUNDLE_NATIVE` too and DOES ship, which is exactly the distinction a
     # membership test on that set would lose.
     _notship84 = sorted(_r84 for _r84 in _rows84
-                        if _r84 in (_BUNDLE_LOCAL | _BUNDLE_CI)
+                        if _r84 in (_BUNDLE_LOCAL | _BUNDLE_CI | _BUNDLE_PUBCI)
                         or _r84.startswith("dev-flow-lessons/"))
     _ship84 = [_r84 for _r84 in _rows84 if _r84 not in _notship84]
     _m84 = re.search(r"\*\*(\d+) ship inside the bundle and (\d+) do not\*\*", _man84)
     _said84 = (int(_m84.group(1)), int(_m84.group(2))) if _m84 else (None, None)
     good = (bool(_m84) and _said84 == (len(_ship84), len(_notship84))
             and len(_rows84) == len(_ship84) + len(_notship84)
-            and len(_notship84) == 5)
+            and len(_notship84) == 6)
     ok &= good
     print(f"  FV  {'SHIPPED-count-derived':<28} expected the rev79 paragraph's split to equal "
           f"the one the file table itself yields \u00b7 {len(_ship84)} shipped, "
-          f"{len(_notship84)} not (the two hook executors, the CI workflow, and the sibling "
-          f"catalog's TWO rows, which the prose counted as one item for five revisions) \u00b7 "
+          f"{len(_notship84)} not (the two hook executors, the canon repository's CI "
+          f"workflow, the PUBLISHED repository's CI workflow, and the sibling catalog's TWO "
+          f"rows, which the prose counted as one item for five revisions) \u00b7 "
           f"got {_said84[0]}/{_said84[1]} in the prose over {len(_rows84)} tabled file(s) "
           f"\u00b7 {'ok' if good else 'FAIL'}")
 
@@ -28277,7 +28407,13 @@ def selftest():
     # machine does not have installed, and that is stated in the arm's own sentence.
     _SELFSKILLS85 = {_p85.split("/")[0] for _p85 in _BUNDLE_NATIVE}
     _selfcmd85 = {_c85[:-3] for _c85 in _self_names("commands") if _c85.endswith(".md")}
-    _selfdir85 = os.path.join(_flow_home(), "skills")
+    # rev93: THIS RUNTIME'S OWN home, never `~/.claude`. A bundle has no `skills/` of its own,
+    # so the vocabulary is empty there and the arm prints its own `NOT ASKED here` sentence --
+    # which is what a bundle with no canon home in reach already did. Reading the author's
+    # installed skills because a canon home happened to be beside the bundle made the same run
+    # answer a question on one machine and decline it on another, for no reason a reader of
+    # either transcript could see.
+    _selfdir85 = os.path.join(_self_home()[0], "skills")
     _SELFVOCAB85 = tuple(sorted(
         _n85 for _n85 in (os.listdir(_selfdir85) if os.path.isdir(_selfdir85) else [])
         if os.path.isdir(os.path.join(_selfdir85, _n85))
@@ -31517,22 +31653,47 @@ def selftest():
     # skill this rev moved.
     # A hand list went short both times because a hand list is a second inventory (`C-50`),
     # and the fix for a second inventory is never a longer one.
-    _capsrc67 = list(_pop67)
-    _capsrc67.append(("CLAUDE.md", _read(os.path.join(_fh67, "CLAUDE.md")) or ""))
+    # ⚠ rev93. EVERY MEMBER OF THIS POPULATION IS RESOLVED THROUGH `_self_*`, AND THE CENSUS
+    # IS KEYED BY NAME. See `_census93`. `CLAUDE.md` joins the list through the resolver for
+    # the same reason the rest do: read through `_flow_home()` it was the AUTHOR'S private
+    # file, read from a bundle standing on somebody else's machine -- a cross-machine read
+    # that changed nothing on the canon home and was never the bundle's to make.
+    _selfh67, _selfb67 = _self_home()
+
+    def _capat93(_rel93):
+        """Where a census member was actually READ from -- `_census93`'s third field.
+
+        The review's `F6`: three of the five member groups passed the flow-relative NAME as
+        their source, so a collision among them would have printed `X read at X and at X` --
+        a control whose message says nothing on the day it fires. The resolver already knows
+        the answer; a subject this layout has no place for keeps the name.
+        """
+        try:
+            return _self_path(_rel93)
+        except _NotShipped:
+            return _rel93
+
+    _capmem67 = [(_r67, _t67, _capat93(_r67)) for _r67, _t67 in _pop67]
+    _capmem67.append(("CLAUDE.md", _self_read("CLAUDE.md") or "", _capat93("CLAUDE.md")))
     for _fn67 in (_self_names("agents") if _self_ships("agents/") else []):
         if _fn67.endswith(".md"):
-            _capsrc67.append(("agents/" + _fn67,
-                              _self_read("agents/" + _fn67) or ""))
+            _capmem67.append(("agents/" + _fn67, _self_read("agents/" + _fn67) or "",
+                              _capat93("agents/" + _fn67)))
     # rev92: a bundle has no `skills/` directory of its own -- the population below is the
     # AUTHORING home's whole installed skill set, which is canon-only by construction. What a
     # bundle DOES have beside it is the catalog, so that much is read through the resolver and
     # the arms that need the rest of the population SKIP by name.
-    _sk67 = os.path.join(_fh67, "skills")
-    if _self_home()[1]:
+    # rev93: AND THE WALK'S ROOT IS THIS RUNTIME'S OWN HOME, never `_flow_home()`. That one
+    # word is the whole defect: from a bundle installed beside a canon home the walk reached
+    # `~/.claude/skills` and read the catalog a SECOND time, after the resolver had already
+    # read the bundle's sibling. From a bundle the directory below does not exist, so the walk
+    # contributes nothing and the explicit pair is the single read under either layout.
+    _sk67 = os.path.join(_selfh67, "skills")
+    if _selfb67:
         for _cf67 in ("SKILL.md", "REFERENCE.md"):
             _cr67 = "skills/dev-flow-lessons/" + _cf67
             if _self_ships(_cr67):
-                _capsrc67.append((_cr67, _self_read(_cr67) or ""))
+                _capmem67.append((_cr67, _self_read(_cr67) or "", _self_path(_cr67)))
     for _dn67 in sorted(os.listdir(_sk67) if os.path.isdir(_sk67) else []):
         # rev80's review, HIGH-1: this walk was keyed on the FILENAME `SKILL.md`, so the
         # forensic half of the catalog -- tabled, hashed, and full of the cap's own
@@ -31555,7 +31716,74 @@ def selftest():
                 continue
             _sp67 = os.path.join(_dir67, _fn67)
             if os.path.isfile(_sp67):
-                _capsrc67.append(("skills/%s/%s" % (_dn67, _fn67), _read(_sp67) or ""))
+                _capmem67.append(("skills/%s/%s" % (_dn67, _fn67),
+                                  _read(_sp67) or "", _sp67))
+    _capsrc67, _capdup67 = _census93(_capmem67)
+
+    # ---- rev93. THE CENSUS READ EACH NAME ONCE, AND A COLLISION NAMES BOTH PATHS.
+    #
+    # This arm is the control for the defect the external review found on 2026-09-24 and the
+    # orchestrator reproduced the same day: `python scripts/devflow-validate.py --selftest`
+    # from the published bundle, on a machine that also holds a canon home -- the shape every
+    # Claude Code user produces by following the README's own install line -- exited 1 on
+    # `CMD BUDGET-derivation-consistent`, which declares exactly 3 files and saw 5. The two
+    # extra were the catalog's own pair, read once through the rev92 resolver and once off
+    # `~/.claude/skills`. CI could not see it (no `~/.claude` on a runner) and this suite could
+    # not see it (no bundle beside the canon home): rev92 armed two machines and the defect
+    # lived on the third.
+    #
+    # THE CONTROL IS THE DUPLICATE, NOT THE COUNT. An arm asserting `len(_capsrc67) == N`
+    # would have been satisfied by a `set()` that swallowed the second read, and the census
+    # would then be silently one file short the day a walk stopped finding something. So the
+    # population is built by `_census93`, which KEEPS collisions, and the red control drives a
+    # planted one through the same function: delete the branch that records it and the plant
+    # goes unreported and this arm reddens.
+    #
+    # ⚠ AND A DISAPPEARANCE IS THE OTHER WAY A NAME-KEYED CENSUS GOES WRONG -- the review's
+    # `F4`. `CMD BUDGET-one-variable` pins the vector EXACTLY and it SKIPs on both bundle
+    # machines, so without the floor below this arm would print `duplicates {}` over a census
+    # that had collapsed to a handful of members: measured, 71 reads on a canon home and 32 on
+    # a bundle, and the 32 was asserted by nothing.
+    #
+    # THE FLOOR IS 32 -- the count a bundle actually yields -- and the re-review is why it is
+    # not 28. A `>=` floor is NEVER moved by an addition (33 clears 32 exactly as readily as
+    # it clears 28), so slack below the live figure buys nothing in the direction the first
+    # cut's comment claimed and buys tolerance in the ONE direction this clause exists to
+    # catch: a removal. Measured, 28 would have let all four `templates/fast-dev-flow/` files
+    # -- or four agents -- vanish while this arm printed `duplicates {}` and passed, on the
+    # only two machines where it is the census's sole guard. It is a RATCHET, like
+    # `live_floor`: raising it is what a bigger bundle does and lowering it is a deliberate
+    # act in a diff. It is typed and not derived, because a floor derived from the population
+    # it guards measures the same thing twice.
+    #
+    # The three DECLARED GROUPS are required non-empty beside it, because a count alone is
+    # satisfied by one group swallowing another's share: deleting the catalog append below
+    # zeroes group 3 while the total still clears any floor the other two can carry.
+    _CENFLOOR93 = 32
+    _cengrp93 = (len([1 for _r93, _t93, _s93 in _capmem67
+                      if _r93.startswith(("commands/", "templates/"))]),
+                 len([1 for _r93, _t93, _s93 in _capmem67 if _r93.startswith("agents/")]),
+                 len([1 for _r93, _t93, _s93 in _capmem67 if _r93.startswith("skills/")]))
+    _CDRED93 = (("a/b.md", "x", "first/a/b.md"), ("a/b.md", "x", "second/a/b.md"),
+                ("c.md", "y", "c.md"))
+    _cdrows93, _cddup93 = _census93(_CDRED93)
+    good = bool(not _capdup67
+                and len(_capmem67) >= _CENFLOOR93 and all(_cengrp93)
+                and _cdrows93 == [("a/b.md", "x"), ("c.md", "y")]
+                and _cddup93 == [("a/b.md", "first/a/b.md", "second/a/b.md")])
+    ok &= good
+    print(f"  CMD {'BUDGET-census-deduped':<28} expected the cap census over "
+          f"{len(_capmem67)} read(s) to hold each flow-relative name EXACTLY ONCE — a "
+          f"duplicate is a FAIL naming BOTH paths and never a silent collapse, which is why "
+          f"the planted collision is REPORTED rather than dropped — and to stand at or above "
+          f"the floor of {_CENFLOOR93} with all three declared groups non-empty "
+          f"{_cengrp93}, because the arm that pins this vector EXACTLY has no subject in a "
+          f"bundle and a census that SHRANK would otherwise print no duplicates and pass · "
+          f"duplicates "
+          f"{_shown({'%s read at %s and at %s' % _d93 for _d93 in _capdup67}) if _capdup67 else '{}'}"
+          f" · plant {_shown({'%s|%s' % (_d93[1], _d93[2]) for _d93 in _cddup93}) if _cddup93 else '{} — CONTROL DID NOT FIRE'}"
+          f" · {'ok' if good else 'FAIL'}")
+
     _skill67 = dict(_capsrc67).get(
         "skills/supervised-incremental-development/SKILL.md")
 
@@ -33153,7 +33381,17 @@ def selftest():
                            "increments": "repo:.dev-flow/%s/03-increments/" % _b90,
                            "evidence": "repo:.dev-flow/%s/evidence/" % _b90,
                            "backlog": "repo:.dev-flow/BACKLOG.md"}}, _fh90)
-        _subj90 = ((_toy90d, "a fast tree"), (_flow_home(), "the flow's own home"))
+        # ⚠ rev93, THE SITE THE FIRST CENSUS PASS MISSED, and the independent review found it
+        # by reading two of this rev's own acceptance logs side by side: on a bundle installed
+        # beside a canon home this arm measured `50 n/a · 4 asking`, and on the same bundle
+        # with no canon home in reach `49 n/a · 5 asking`. Same arm, same revision, two
+        # different subjects, decided by whether somebody else's tree happened to be within
+        # reach -- which is `C-60` exactly, one arm over from where rev92 closed it and inside
+        # the rev whose argument is that the AXIS gets censused and not the line (`C-65`).
+        # The subject is THIS RUNTIME'S OWN flow home now: from a bundle that is the bundle, a
+        # real tree a consumer has, and a better subject than the author's canon tree.
+        _subj90 = ((_toy90d, "a fast tree"),
+                   (_self_home()[0], "this runtime's own flow home"))
         _bad90, _measured90 = [], []
         for _root90, _name90 in _subj90:
             _ft90, _frc90, _bt90, _brc90 = _both90(_root90)
@@ -33503,7 +33741,7 @@ def selftest():
                 _bskip85 = tuple(sorted(set(_bskiplines85)))
                 _adapt85 = _self_read(("dev-flow/SKILL.md")) or ""
                 _sent85 = "".join(re.findall(
-                    r"TWENTY-EIGHT of its arms have no subject in a bundle.*?real bundle run",
+                    r"THIRTY of its arms have no subject in a bundle.*?real bundle run",
                     _adapt85, re.S)[:1])
                 # ⚠ rev92, SECOND AXIS: THE CENSUS IS PLATFORM-DEPENDENT AND THE PAGE SAYS SO.
                 # Four arms have no subject where there are no named volumes, so a single
@@ -33551,6 +33789,67 @@ def selftest():
                     _nocases85.append((_nolab85, _nocp85,
                                        _nocp85.stdout.decode("utf-8", "replace")
                                        + _nocp85.stderr.decode("utf-8", "replace")))
+                # ⚠ rev93. THE THIRD MACHINE, AND IT IS THE ONE THE README TELLS PEOPLE TO
+                # BUILD.
+                #
+                # rev92 armed two: the canon home this process stands in, and a bundle run
+                # with an EMPTY home beside it. Between them sits the shape the published
+                # README's own install line produces -- copy `dev-flow/` and
+                # `dev-flow-lessons/` into `~/.claude/skills/`, then run the `--selftest` the
+                # same README asks for -- and nothing had ever executed it. It was RED: one
+                # population was read twice, once through the rev92 resolver and once off the
+                # canon home sitting beside the bundle, and the arm asserting exact counts
+                # exited 1. Both green machines were honest; the defect lived exactly where
+                # neither of them could look. Two fixtures are not a domain, which is the
+                # sentence `ENC VERDICT-live` was minted for, one axis over.
+                #
+                # THE HOME IS BUILT TO THE README'S SHAPE AND THE SHAPE IS MEASURED ON DISK
+                # AFTER THE RUN. A repair by deleting the staging would make this machine
+                # EQUAL the clean one -- rc 0, same skips, green -- and the arm would report a
+                # third machine it never had. `C-40`'s question asked of a green: what would
+                # this look like if the fixture had been removed?
+                # The sibling is staged above only when this canon home HAS one; without it
+                # there is no reader install shape to build and the arm says so by name
+                # rather than accusing the tree (rev85's MED-4).
+                _cat93 = os.path.join(_btmp85, "dev-flow-lessons")
+                _shape93 = _cp93 = _verd93 = _skip93 = None
+                if os.path.isdir(_cat93):
+                    _fh93 = os.path.join(_btmp85, "reader-home")
+                    _sk93 = os.path.join(_fh93, ".claude", "skills")
+                    os.makedirs(_sk93)
+                    shutil.copytree(_bdst85, os.path.join(_sk93, "dev-flow"))
+                    shutil.copytree(_cat93, os.path.join(_sk93, "dev-flow-lessons"))
+                    # ⚠ THE SHAPE IS READ BACK AT THE PATH THE CHILD WILL RESOLVE, spelled
+                    # here and not taken from `_sk93`. Reusing the staging variable would
+                    # measure *what did I write* instead of *what is under the HOME I am
+                    # about to hand over*, and those are the same sentence only while nothing
+                    # is wrong: point the staging at any other directory and the child becomes
+                    # the CLEAN machine again — rc 0, same skips, green — with a `_shape93`
+                    # read off the staging still reporting a canon home. Instrument and
+                    # subject, separated, which is the whole of `C-60`.
+                    try:
+                        _shape93 = tuple(sorted(os.listdir(
+                            os.path.join(_fh93, ".claude", "skills"))))
+                    except OSError:
+                        # `()` AND NOT `None`: `None` is the *no catalog to stage* sentinel
+                        # above, which prints a named SKIP. A staging that VANISHED must reach
+                        # the ASSERTION instead, or deleting the fixture would be reported as
+                        # a missing subject and read green (the review's `F7`).
+                        _shape93 = ()
+                    _env93 = dict(_benv85)
+                    _env93["HOME"] = _env93["USERPROFILE"] = _fh93
+                    _cp93 = subprocess.run(
+                        [sys.executable, os.path.join(_sk93, "dev-flow", "scripts",
+                                                      "devflow-validate.py"), "--selftest"],
+                        capture_output=True, env=_env93,
+                        cwd=os.path.join(_sk93, "dev-flow"), timeout=1800)
+                    _t93 = _cp93.stdout.decode("utf-8", "replace")
+                    _verd93 = [_l93 for _l93 in _t93.splitlines()
+                               if _l93.startswith("SELFTEST ")]
+                    _sl93 = [_m93.group(1) for _m93 in
+                             re.finditer(r"^ {2}\S+ +(\S+) +SKIP: ", _t93, re.M)
+                             if _m93.group(1) not in _CHILDONLY85]
+                    _skip93 = tuple(sorted(set(_sl93)))
             finally:
                 shutil.rmtree(_btmp85, ignore_errors=True)
             # TWO ARMS OVER ONE CHILD RUN, AND THE SPLIT IS THE WHOLE POINT OF IT. An exit
@@ -33572,9 +33871,38 @@ def selftest():
             _bcount85 = {}
             for _n85 in _bskiplines85:
                 _bcount85[_n85] = _bcount85.get(_n85, 0) + 1
+            # ⚠ rev93's re-review, `R2`. THE GROUP COUNT IS COMPARED TOO, because minting a
+            # fifth canon-only class in this very rev made the page's "in six groups" false
+            # and NOTHING said so: the names were derived, the two line counts were derived,
+            # and the one figure between them was hand-kept -- `FV SHIPPED-count-derived`'s
+            # exact shape, in the consumer-facing adapter, inside the rev correcting it.
+            # The truth is the run's own closing census, which groups the skips by subject.
+            # TWO SUBTRACTIONS AND ONE ADDITION, each because the page and the census count
+            # different things and the difference is DECLARED rather than absorbed. The
+            # PLATFORM classes belong to the addendum paragraph, not to this sentence, so they
+            # come out or the base figure would be wrong on exactly one of the two platforms
+            # -- rev92's second axis, which this rev is not going to re-open. And the page
+            # carries ONE group the census cannot: the arms that skip for want of a canon tree
+            # beside this copy take `_nosubject85` with a reason of their own and never a
+            # `_NOSUBJ92` class, so they are a group a reader counts and not a class the run
+            # groups by.
+            # AND THE CLASSES ARE READ OFF THE CHILD, not off this process. The page
+            # describes a BUNDLE run; on a canon home `_skipsub92` is empty, because the
+            # canon-only classes are exactly the ones that never fire here. The child prints
+            # its own closing census grouped by subject, which is the figure a reader of that
+            # transcript counts, so that is the figure the page is held to.
+            _PLATCLS93 = {"platform-volumes", "platform-separator"}
+            _GROUPW93 = {"six": 6, "seven": 7, "eight": 8, "nine": 9, "ten": 10}
+            _saidg93 = [_GROUPW93[_w93] for _w93 in
+                        re.findall(r"in (six|seven|eight|nine|ten) groups", _sent85)]
+            _bycls93 = "".join(re.findall(r"by class: ([^.]*)\.", _btext85)[:1])
+            _classes93 = len({_c93.strip().rsplit(" ", 1)[0]
+                              for _c93 in _bycls93.split(";") if _c93.strip()}
+                             - _PLATCLS93) + 1
             good = bool(_WANT85 and _bskip85 == _WANT85 and len(_PLATN85) == 4
-                        and len(_WANT85) == (28 if _HAS_VOLUMES else 32)
-                        and _WANTLINES85 and len(_bskiplines85) == _WANTLINES85)
+                        and len(_WANT85) == (30 if _HAS_VOLUMES else 34)
+                        and _WANTLINES85 and len(_bskiplines85) == _WANTLINES85
+                        and _saidg93 == [_classes93])
             ok &= good
             print(f"  BUN {'SKIPS-named':<17} expected the arm(s) with no subject in a mirror "
                   f"to SKIP BY NAME in a CHILD --selftest run FROM a staged bundle, started "
@@ -33587,6 +33915,10 @@ def selftest():
                   f"{len(_bskiplines85)} line(s) · published {len(_WANT85)} name(s) / "
                   f"{_WANTLINES85} line(s) "
                   f"{_shown(set(_WANT85)) if _WANT85 else '{} — SENTENCE NOT FOUND'} · "
+                  f"groups said {_saidg93 or 'NOT STATED'} vs {_classes93} — the "
+                  f"platform-independent canon-only subject class(es) this run grouped by, "
+                  f"plus the ONE group whose arms skip for want of a canon tree and carry no "
+                  f"class · "
                   f"{'ok' if good else 'FAIL'}")
             # ---- rev92. THE DIFFERENTIAL: WHICH ARMS ARE RED IN THE CHILD AND NOT HERE.
             #
@@ -33680,6 +34012,40 @@ def selftest():
                   f"{_bverd85 or ['NO VERDICT LINE']} after {_barms85} arms (this run so far: "
                   f"{_bhere85}) · "
                   f"{'ok' if good else 'FAIL'}")
+
+            # THE THIRD MACHINE'S VERDICT. Three declared machines, and the set is printed
+            # here because a machine nobody names is a machine nobody arms: (1) THE CANON
+            # HOME this process is standing on; (2) A BUNDLE WITH NO CANON HOME beside it,
+            # `SELFTEST-exits-0` above, which is what CI runs; (3) A BUNDLE INSTALLED UNDER A
+            # CANON HOME, this arm, which is what the README's install recipe produces and
+            # what every Claude Code reader actually has. The equality with (2)'s skip census
+            # is the load-bearing half: a bundle beside a canon home must measure the SAME
+            # things a bundle alone does — reaching further because a canon tree happens to be
+            # in range is exactly the shared fixture (`C-60`) rev92 closed one level out.
+            if _shape93 is None:
+                ok &= _nosubject85(
+                    "BUN", "THIRD-MACHINE",
+                    "no catalog beside this canon home, so the reader's install shape — a "
+                    "bundle AND its sibling under one `.claude/skills/` — could not be "
+                    "staged, and the machine most readers run on was NOT measured here")
+            else:
+                good = (_cp93.returncode == 0 and _verd93 == [_VERDICT]
+                        and _skip93 == _bskip85
+                        and _shape93 == ("dev-flow", "dev-flow-lessons"))
+                ok &= good
+                print(f"  BUN {'THIRD-MACHINE':<17} expected `{_VERDICT}` and rc 0 from a bundle "
+                      f"INSTALLED UNDER A CANON HOME — the published README's own recipe, "
+                      f"`skills/dev-flow` + `skills/dev-flow-lessons` under a `.claude/` — "
+                      f"with the SAME named SKIP set a bundle with no canon home in reach "
+                      f"gets — the exit code and the SKIP census, which is what this arm "
+                      f"enforces and not *the same everything*; the "
+                      f"three declared machines are this canon home, a bundle alone, and a "
+                      f"bundle beside a home · got rc={_cp93.returncode}, "
+                      f"{_verd93 or ['NO VERDICT LINE']} · skip delta "
+                      f"{_shown(set(_skip93) ^ set(_bskip85)) if set(_skip93) ^ set(_bskip85) else '{}'}"
+                      f" · home staged as "
+                      f"{_shown(set(_shape93)) if _shape93 else '{} — NO CANON HOME WAS STAGED'}"
+                      f" · {'ok' if good else 'FAIL'}")
     else:
         for _l85 in _BUNARMS85:
             print(f"  BUN {_l85:<17} SKIP: this IS a child run, which is how the "
