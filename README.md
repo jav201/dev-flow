@@ -13,7 +13,7 @@
 
 Most agent workflows tell the model *what to write*. dev-flow also governs *how the work is recorded and checked*, the way software engineering has done it for decades: a V-model of stations, requirements traced to acceptance tests, increments with review packets, independent review, evidence that names its source, and a close with a post-mortem. That artifact structure is the control surface — the same one that regulated software practice relies on — carried over to agent-driven development and enforced rather than recommended.
 
-Every batch leaves that record (requirements, increments, evidence, close), a validator reads it back, and the validator is itself tested by mutation — 1,594 self-test arms at the current revision, each proven able to fail. If a claim in the record has no reader, the flow treats it as a paragraph, not a control.
+Every batch leaves that record (requirements, increments, evidence, close), a validator reads it back, and the validator is itself tested by mutation — every self-test arm proven able to fail; `scripts/devflow-validate.py --selftest` prints the current count and the manifest carries the revision it belongs to. If a claim in the record has no reader, the flow treats it as a paragraph, not a control.
 
 It works from **Claude Code, Codex, Kimi Code CLI or any runtime that can read a skill folder and run Python**. Outside Claude Code it runs *unguarded* — no named reviewer roles, no hooks — and the adapter says so rather than implying parity.
 
@@ -74,7 +74,7 @@ A green with no subject is reported as *no subject*, never as a pass. That sente
 1. Open `dev-flow/SKILL.md` and follow its routing: the fast flow is `commands/fast-dev-flow.md`; its **reader's map** lists, for every step, the one file and section that holds the rule.
 2. Pre-checks: run the gate on the project (it will pass with most rules *not applicable* — the batch does not exist yet).
 3. Phase A: write `.fast-dev-flow/spec.md` from `templates/fast-dev-flow/spec-template.md`; the flow seeds a five-key `.dev-flow/state.json` so the gate can see the batch.
-4. Phase B: implement in increments of at most four source files; each increment gets the short packet (`templates/fast-dev-flow/increment-template.md`, nine rows — exactly the fields a rule reads) with a RED counterfactual whose restore is proven by file hash.
+4. Phase B: implement in increments of at most four source files; each increment gets the short packet (`templates/fast-dev-flow/increment-template.md` — exactly the fields a rule reads, and an arm keeps the two sets equal) with a RED counterfactual whose restore is proven by file hash.
 5. Phase C: record the closing gate's decision (`C`) first, then run the gate again; it now reads the batch (`V41` re-hashes every cited evidence file, `V55` sees every gate recorded), reconcile the backlog, close.
 
 Fresh readers on Codex and Kimi ran exactly this on a toy repository with no other context; their reports shaped revisions 84–86 of the flow.

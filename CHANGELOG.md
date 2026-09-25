@@ -2,6 +2,9 @@
 
 One entry per flow revision shipped to this repository. The flow's full revision log stays in the private canonical repository; this file records what a user of the published skill receives.
 
+## README hygiene (2026-09-25)
+- The README no longer states a self-test arm count: the figure had been written at rev87 (1,594) and never re-derived (1,633 at rev93). A figure nothing reads is a paragraph, not a control; the count now comes from running `--selftest`. Found by an external adversarial review.
+
 ## 2026-09-24-rev93 — the selftest passes on the machine this README tells you to build
 - `scripts/devflow-validate.py --selftest` now exits 0 when this bundle is installed the way the README says to install it — `dev-flow/` and `dev-flow-lessons/` copied into a `.claude/skills/` folder. It did not before. On a machine that also holds an authoring tree, one population was read twice — once from this bundle and once from the tree beside it — and the arm that counts it exited 1. Continuous integration could not see it, because a runner has no such tree; the previous revision's own checks could not see it, because they measured a bundle with nothing beside it. The defect lived exactly between the two machines that were armed.
 - Three machines are declared and all three are now run by the suite on every change: an authoring tree, a bundle with nothing beside it (what CI runs), and a bundle installed beside an authoring tree (what a reader has). The third is required to produce the same exit code and the same named SKIP set as the second. An independent review then found one more check still reading the tree beside the bundle rather than the bundle — the same defect one check over, caught by reading the two machines' transcripts side by side — and it is fixed here too.
