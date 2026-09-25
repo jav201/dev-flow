@@ -42,11 +42,11 @@
 
 ## 4 · Test results
 
-One complete run: the exit code and the tail come from THAT run's own output, never stitched across partial runs or inferred from a backgrounded call.
+One complete run: the exit code and the tail come from THAT run's own output, never stitched across partial runs or inferred from a backgrounded call. **Every figure in this section owes that run's transcript as an evidence file** — §*Evidence files* below is that rule's one home and states what `V56` reads.
 
 | Layer | Nodes | Result |
 |---|---|---|
-| **black-box** — `AC-<n>` ↔ criterion, through the shipped surface | `<nodes>` | `<N passed>` |
+| **black-box** — `AC-<n>` ↔ criterion, through the shipped surface | `<nodes>` | <N passed> |
 
 | Field | Value |
 |---|---|
@@ -71,6 +71,8 @@ Bytes at the home `artifact_homes.evidence` declares, verbatim, hash-verified. *
 
 *(Delete the row above when the field reads `none` — a placeholder beside a declared empty is the one contradiction this page can still print.)*
 
+✗ **A CLAIMED RUN OWES ITS TRANSCRIPT, AND THIS PARAGRAPH IS THAT RULE'S ONE HOME FOR `fast` (flow rev94; `core` and `full` read the same rule in `templates/increment-template.md` §*Evidence files*, and the rule the validator applies is identical in all three modes).** Wherever §4 above reports a run — any `N passed` / `N failed` figure, or the §4c row `Tests/type checks/lint pass` marked `✓` — **that run's own transcript is an evidence file**: store the runner's output under `artifact_homes.evidence`, cite it in the table above with its SHA-256, and let `devflow-evidence.py` print the row. `none — this increment cites no evidence file` stays legal **only while this packet claims no run**; beside a claimed run it is a `V56` BLOCK naming the claiming line. **And the count is READ, not trusted:** `V56` parses `N passed` / `N failed` out of the cited bytes and BLOCKs a packet claiming more passes than its own evidence holds, printing both numbers. ⚠ **A failure count in a cited transcript is a NOTICE and never a refusal** — the evidence home legitimately holds deliberately failing captures — so say which transcript the failures came from rather than expecting a block. A per-layer figure under a whole-suite transcript is fine: the comparison is against each cited artifact's own highest figure and their sum. ⚠ **A figure inside a code span is read as GUIDANCE and not as a claim** — that is how the long template's own `` `3 passed` `` example escapes the rule — so write the Result cell's number bare, as this template now does. ⚠ **Declared bound:** a transcript regenerated from tests that assert nothing hashes and reads correctly. Only a mutation battery sees that, and this mode does not owe one — so what this page can promise is *a record a tool can check*, never *a record that cannot be faked*.
+
 | Field | Value |
 |---|---|
 | **Evidence files** | `<N artifacts, each at the declared home and cited with the digest of its stored bytes — or: none — this increment cites no evidence file>` |
@@ -89,7 +91,13 @@ In `fast` the reviewer is the author, and that is DECLARED — not omitted and n
 
 | Check | ✓/✗ | Evidence |
 |---|:--:|---|
-| `<the check, from that role's list>` | | `<file:line · command output · finding link>` |
+| Tests/type checks/lint pass | | `<file:line · command output · finding link>` |
+| No secrets in code or output | | `<…>` |
+| No destructive commands run without approval | | `<…>` |
+| File count within cap | | `<…>` |
+| Review packet attached | | `<…>` |
+
+⚠ **The five labels above are written out rather than left as a placeholder, and `Tests/type checks/lint pass` is RESERVED** — `V56` reads that row: ticked, it is a claim that a run happened, and the run's transcript is then owed exactly as a `N passed` figure owes one (§*Evidence files* below is that rule's home in this mode). A row minted nowhere is a rule that passes by never matching anything, which is the defect the sibling arm for `V57`'s own row was written to prevent. Keep the label in the first cell unbackticked; put your evidence in the third.
 
 ## 5 · Risks
 

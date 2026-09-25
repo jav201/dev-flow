@@ -5749,9 +5749,9 @@
    "origin": "rev74",
    "target": "rev74 (c) / commands/dev-flow.md §Severity: the rule count",
    "file": "commands/dev-flow.md",
-   "old": "**53** registered rules",
+   "old": "**55** registered rules",
    "new": "**34** registered rules",
-   "why": "THE STALENESS ITSELF, replayed with the exact figure the paragraph actually carried from rev63 to rev73. If this survives, the arm is reading something other than the published sentence and `C-58` is not discharged for this file. ⚠ RE-ANCHORED AT rev87, value only: the published population moved 52 -> 53 when `V55` was registered, so the figure the paragraph carries moved with it. The mutation is unchanged -- restore the stale figure the paragraph really carried from rev63 to rev73 -- and the arm that kills it is the same one.",
+   "why": "THE STALENESS ITSELF, replayed with the exact figure the paragraph actually carried from rev63 to rev73. If this survives, the arm is reading something other than the published sentence and `C-58` is not discharged for this file. ⚠ RE-ANCHORED AT rev87 and again at rev94, value only: the published population moved 52 -> 53 when `V55` was registered and 53 -> 55 when `V56` and `V57` were, so the figure the paragraph carries moved with it. The mutation is unchanged -- restore the stale figure the paragraph really carried from rev63 to rev73 -- and the arm that kills it is the same one.",
    "expect": "KILLED",
    "expect_arms": [
     "FV SEVERITY-census"
@@ -6969,8 +6969,8 @@
    "origin": "rev83",
    "file": "templates/dev-flow/close-template.md",
    "target": "rev83 / `close-template.md` §Reserved field names",
-   "old": "`Conditional-gate discharge` · `New controls` · `Human perimeter` · `Human review ledger` · `⏸ DEFER`",
-   "new": "`Conditional-gate discharge` · `New controls` · `Human perimeter` · `⏸ DEFER`",
+   "old": "`Conditional-gate discharge` · `New controls` · `Human perimeter` · `Human review ledger` · `Gated tree` · `⏸ DEFER`",
+   "new": "`Conditional-gate discharge` · `New controls` · `Human perimeter` · `Gated tree` · `⏸ DEFER`",
    "why": "rev77'S TRAP, REPLAYED ON THIS REV'S OWN LABEL: a literal a rule reads on the TRANSLATED plane must be declared reserved, or a batch generated in another language writes a translated label, the reader reports ABSENT, and the gate prints a true-sounding silence. The flow ships no alias table, so an unreserved field name is a rule that will pass by never matching anything.",
    "expect": "KILLED",
    "expect_arms": [
@@ -8282,8 +8282,219 @@
    "expect_arms": [
     "BUN THIRD-MACHINE"
    ]
+  },
+  {
+   "subject": "devflow-validate",
+   "id": "r94-M01-declared-empty-excuses-a-claimed-run",
+   "origin": "rev94",
+   "file": null,
+   "target": "rev94 / `_v56_outcome`, the branch that refuses a claim citing nothing",
+   "old": "            out.append((BLOCK, name, _V56_NOTRANSCRIPT",
+   "new": "            out.append((NOTICE, name, _V56_NOTRANSCRIPT",
+   "why": "THE DEFECT ITSELF, ONE SEVERITY DOWN. `T-record` was not invisible because nothing was printed; it was invisible because nothing REFUSED. A notice beside a packet that reports a run and cites no transcript is the `0 block` the benchmark measured, wearing an extra line. The arm asserts the SEVERITY and not the sentence for exactly this reason.",
+   "expect": "KILLED",
+   "expect_arms": [
+    "V56 CLAIM-owes-a-transcript"
+   ]
+  },
+  {
+   "subject": "devflow-validate",
+   "id": "r94-M02-count-compared-but-never-refused",
+   "origin": "rev94",
+   "file": null,
+   "target": "rev94 / `_v56_outcome`, the `passed` comparison",
+   "old": "            if word == \"passed\" and max(mine) > max(held + [total]):",
+   "new": "            if word == \"passed\" and max(mine) > max(held + [total]) + 1000:",
+   "why": "THE VACUOUS COMPARISON. The transcript is still read, the figures are still parsed, every line of machinery still runs -- and no packet on earth trips it. A rule that reads its subject and can no longer disagree with it is the shape `C-57` is about, and it is the one a green selftest is least able to notice: the only thing that can is a fixture whose two numbers actually differ.",
+   "expect": "KILLED",
+   "expect_arms": [
+    "V56 COUNT-is-read-not-trusted"
+   ]
+  },
+  {
+   "subject": "devflow-validate",
+   "id": "r94-M03-code-spans-read-as-claims",
+   "origin": "rev94",
+   "file": null,
+   "target": "rev94 / `_v56_claims`, the span blanking",
+   "old": "    body = _V56_SPAN.sub(lambda m: \" \" * len(m.group(0)), _md_uncomment(text or \"\"))",
+   "new": "    body = _md_uncomment(text or \"\")",
+   "why": "THE FALSE-FAIL THIS RULE WOULD OTHERWISE SHIP, put back. The long increment template carries `3 passed` inside a code span as guidance ABOUT an unread transcript, so a reader that does not blank spans BLOCKS every packet generated from this flow's own scaffold -- the placeholder setting the flag it is a placeholder for. `C-53`, at the one tree the flow builds from its own words.",
+   "expect": "KILLED",
+   "expect_arms": [
+    "V56 SPANS-are-guidance"
+   ]
+  },
+  {
+   "subject": "devflow-validate",
+   "id": "r94-M04-two-transcripts-cannot-be-added",
+   "origin": "rev94",
+   "file": null,
+   "target": "rev94 / `_v56_outcome`, the SUM inside the accepted set",
+   "old": "            if word == \"passed\" and max(mine) > max(held + [total]):",
+   "new": "            if word == \"passed\" and max(mine) > max(held):",
+   "why": "THE OTHER FALSE-FAIL. A packet citing two suites and reporting their total is reporting the truth, and a comparison against each artifact's own figure alone calls it an inflation. The sum is not decoration: without it the rule refuses the honest multi-suite packet and teaches its author to cite less evidence, which is the incentive `C-47` is about pointed at a different field.",
+   "expect": "KILLED",
+   "expect_arms": [
+    "V56 DIRECTIONAL-no-false-fail"
+   ]
+  },
+  {
+   "subject": "devflow-validate",
+   "id": "r94-M05-a-ticked-checklist-is-not-a-claim",
+   "origin": "rev94",
+   "file": null,
+   "target": "rev94 / `_v56_outcome`, the two ways a packet claims a run",
+   "old": "        if not claims and not ticked:",
+   "new": "        if not claims:",
+   "why": "THE CLAIM WITH NO NUMBER IN IT. `Tests/type checks/lint pass ✓` says a run happened as plainly as a figure does, and a reader keyed on digits alone passes it while citing nothing. Two spellings of one claim, and dropping either leaves the rule true about the half it still reads.",
+   "expect": "KILLED",
+   "expect_arms": [
+    "V56 TICK-is-a-claim"
+   ]
+  },
+  {
+   "subject": "devflow-validate",
+   "id": "r94-M06-gated-tree-refuses-instead-of-saying-so",
+   "origin": "rev94",
+   "file": null,
+   "target": "rev94 / `_v57_outcome`, the severity of the predates finding",
+   "old": "            out.append((NOTICE, rel, _V57_PREDATES % (behind, ref[:12], head[:12])))",
+   "new": "            out.append((BLOCK, rel, _V57_PREDATES % (behind, ref[:12], head[:12])))",
+   "why": "THE OVER-CORRECTION, WHICH IS ITS OWN DEFECT. A closed batch is ALLOWED to be followed by work -- the commit that carries the close record is itself one such commit -- so a BLOCK here refuses the normal case and every batch in the record the day it lands. `C-53` written as a gate, and the arm that catches it is the one asserting that NO fixture of this rule produces a block. ⚠ The declared killers are the two arms that actually REACH the distance branch: the states arm drives an open batch, a placeholder and a cell naming no commit, none of which compares a ref, so declaring it here was a claim the mutation could not meet.",
+   "expect": "KILLED",
+   "expect_arms": [
+    "V57 PREDATES-says-the-distance",
+    "V57 CORE-and-FULL-are-read"
+   ]
+  },
+  {
+   "subject": "devflow-validate",
+   "id": "r94-M07-porcelain-sliced-at-a-fixed-offset",
+   "origin": "rev94",
+   "file": null,
+   "target": "rev94 / `v57_gated_tree`, the dirty-file names",
+   "old": "    dirty = ([(_V57_PORCELAIN.match(l).group(1).strip()\n                if _V57_PORCELAIN.match(l) else l.strip())\n               for l in porcelain.splitlines() if l.strip()]\n             if porcelain is not None else None)",
+   "new": "    dirty = ([l[3:].strip() for l in porcelain.splitlines() if l.strip()]\n             if porcelain is not None else None)",
+   "why": "THE FIRST CUT'S BUG, PUT BACK. `_git` strips its output, so the FIRST porcelain line arrives without its leading status space and a `[3:]` slice reports `.txt` where the file is `a.txt` -- while every later line reads correctly, which is what makes it survive a casual look. A notice that names the wrong file is worse than a count: the reader goes and checks something that did not change.",
+   "expect": "KILLED",
+   "expect_arms": [
+    "V57 DIRTY-names-the-files"
+   ]
+  },
+  {
+   "subject": "devflow-validate",
+   "id": "r94-M08-close-signal-is-the-artifact-existing",
+   "origin": "rev94",
+   "file": null,
+   "target": "rev94 / `v57_gated_tree`, the `core`/`full` close signal",
+   "old": "        shut = bool((stations and cur and cur == stations[-1])\n                    or _v57_record(m.group(1) if m else None)[0] == \"ok\")",
+   "new": "        shut = True",
+   "why": "THE SCAFFOLD ACCUSED OF NOT RECORDING A TREE IT HAS NOT YET GATED. `05-postmortem.md` is SEEDED at `/dev-flow-init`, so reading its existence as closure charges a `mode: full` batch sitting at `current_station: P0` with every row still a placeholder. Measured on this suite's own scaffold fixture before the repair, which is why that fixture is this mutant's declared killer.",
+   "expect": "KILLED",
+   "expect_arms": [
+    "DFI SCAFFOLD-clean"
+   ]
+  },
+  {
+   "subject": "devflow-validate",
+   "id": "r94-M09-gated-tree-row-unminted",
+   "origin": "rev94",
+   "file": "templates/fast-dev-flow/spec-template.md",
+   "target": "rev94 / the fast spec header's `Gated tree` row",
+   "old": "| Gated tree | `<the 40-hex HEAD at the gate · clean — or: dirty — the files>` |",
+   "new": "| Gate note | `<the 40-hex HEAD at the gate · clean — or: dirty — the files>` |",
+   "why": "A ROW NOTHING MINTS IS A RULE THAT PASSES BY NEVER MATCHING ANYTHING. `V41`'s `TEMPLATE-mints-the-heading` bought this lesson at rev66: guarding the reader and not the template leaves every packet minted from that template citing nothing, with the rule green over all of them. Renaming rather than deleting, because a deleted row is the easy case and a renamed one is the real one.",
+   "expect": "KILLED",
+   "expect_arms": [
+    "V57 TEMPLATE-mints-the-row"
+   ]
+  },
+  {
+   "subject": "devflow-validate",
+   "id": "r94-M10-failure-polarity-taken-from-the-lowest-row",
+   "origin": "rev94",
+   "file": null,
+   "target": "rev94 / `_v56_outcome`, the `failed` aggregate",
+   "old": "            elif word == \"failed\" and max(mine) < max(held):",
+   "new": "            elif word == \"failed\" and min(mine) < max(held):",
+   "why": "THE FIRST CUT OF THIS LIMB, PUT BACK. Reading the packet's LOWEST failure figure refuses the ordinary per-layer table, where the rows that had no failures truthfully say `0 failed` -- a rule that punishes the more detailed record and teaches its author to write less. `C-53` wearing a correct-sounding sentence, which is why the arm drives a decomposed table and not only the two-number case.",
+   "expect": "KILLED",
+   "expect_arms": [
+    "V56 FAILED-runs-the-other-way"
+   ]
+  },
+  {
+   "subject": "devflow-validate",
+   "id": "r94-M11-close-signal-never-fires-in-core-or-full",
+   "origin": "rev94",
+   "file": null,
+   "target": "rev94 / `v57_gated_tree`, the `core`/`full` close signal",
+   "old": "        shut = bool((stations and cur and cur == stations[-1])\n                    or _v57_record(m.group(1) if m else None)[0] == \"ok\")",
+   "new": "        shut = False",
+   "why": "THE SILENT HALF, AND THE INVERSE OF `r94-M08`. That mutant makes the signal always TRUE and the scaffold fixture catches it; this one makes it always FALSE, so `V57` says nothing at all in `core` and `full` while every fast arm stays green. ⚠ THE FIRST CUT OF THIS MUTANT DID NOT DIE, and the pass-2 review measured it: negating only the FIRST disjunct left `bool((False and A) or B)`, and `B` -- the row is already filled -- was true in every fixture, so `shut` never moved. The repair is the ARM, not the mutant text: a fixture closed by the STATION alone, with the row still a placeholder.",
+   "expect": "KILLED",
+   "expect_arms": [
+    "V57 CORE-and-FULL-are-read"
+   ]
+  },
+  {
+   "subject": "devflow-validate",
+   "id": "r94-M12-close-record-filenames-point-at-nothing",
+   "origin": "rev94",
+   "file": null,
+   "target": "rev94 / `_V57_CLOSE_FILES`",
+   "old": "_V57_CLOSE_FILES = (\"05-close.md\", \"05-postmortem.md\")",
+   "new": "_V57_CLOSE_FILES = (\"05-closing.md\", \"05-post-mortem.md\")",
+   "why": "THE RULE LOOKS FOR A FILE THE FLOW DOES NOT WRITE. `V57 TEMPLATE-mints-the-row` proves the three TEMPLATES mint the row and says nothing about whether the reader opens the artifact those templates become; a rule reading the wrong basename reports *no gate record was found* on every `core` batch on earth and is green in a suite whose only fixtures are `fast`. Found by the independent review as a plantable edit, not by a failing arm.",
+   "expect": "KILLED",
+   "expect_arms": [
+    "V57 CORE-and-FULL-are-read"
+   ]
+  },
+  {
+   "subject": "devflow-validate",
+   "id": "r94-M13-an-english-sentence-is-a-test-count-again",
+   "origin": "rev94",
+   "file": null,
+   "target": "rev94 / `_v56_claims`, the countable-noun exclusion",
+   "old": "            if _V56_BEFORE.search(line[:mm.start()]):",
+   "new": "            if False and _V56_BEFORE.search(line[:mm.start()]):",
+   "why": "THE FALSE BLOCK THE INDEPENDENT REVIEW FOUND IN THE LIVE RECORD. `passed` and `failed` are ordinary English verbs: without the exclusion, *Increment 2 passed the gate* and a record row reading *the item rev 1 failed* are scored as reported figures, and one prose number above the real count refuses an honest, fully-cited packet while the finding quotes the wrong row back as the claim. A rule that names the wrong subject is worse than one that says nothing. ⚠ The opposite cut -- demanding a runner token beside every figure -- is the defect `N1` measured, and the arm drives BOTH directions for that reason.",
+   "expect": "KILLED",
+   "expect_arms": [
+    "V56 PROSE-is-not-a-claim"
+   ]
+  },
+  {
+   "subject": "devflow-validate",
+   "id": "r94-M14-failure-under-report-refuses-the-RED-capture",
+   "origin": "rev94",
+   "file": null,
+   "target": "rev94 / `_v56_outcome`, the severity of the `failed` limb",
+   "old": "                out.append((NOTICE, name, _V56_UNDER % (max(mine), max(held))))",
+   "new": "                out.append((BLOCK, name, _V56_UNDER % (max(mine), max(held))))",
+   "why": "THE FALSE REFUSAL THIS REV SHIPPED INTO REVIEW, PUT BACK. `increment-template.md` tells the author to store the RED counterfactual's transcript under the evidence home and cite it in the same table as the suite's; a RED capture fails BY CONSTRUCTION, so the packet that did exactly what its own template asked was refused for reporting `0 failed` beside it. `C-53` produced by obeying the flow's own instructions.",
+   "expect": "KILLED",
+   "expect_arms": [
+    "V56 FAILED-runs-the-other-way"
+   ]
+  },
+  {
+   "subject": "devflow-validate",
+   "id": "r94-M15-tick-matched-as-a-substring-again",
+   "origin": "rev94",
+   "file": null,
+   "target": "rev94 / `_v56_claims`, the checklist tick",
+   "old": "    ticked = bool(m) and bool(_V56_TICK.match(m.group(1) or \"\"))",
+   "new": "    ticked = bool(m) and \"pass\" in (m.group(1) or \"\").lower()",
+   "why": "THE SPELLING READER. A substring test over the captured cell scores the honest refusal *skipped -- the suite cannot pass without Docker* as a satisfied check, so the row that is supposed to say a run happened says it for a run that did not, and the transcript obligation fires on a batch that truthfully declined to run one. Keyed on the mark, the cell has to BE the mark.",
+   "expect": "KILLED",
+   "expect_arms": [
+    "V56 TICK-is-a-claim"
+   ]
   }
  ],
- "live_floor": 574,
+ "live_floor": 589,
  "live_floor_why": "The number of NON-RETIRED mutants this registry must still hold. `MUT REGISTRY-anchors-live` asserts it. It is a RATCHET: lowering it is a deliberate act that says a battery got smaller, and it belongs here -- in the diff a reviewer reads -- rather than as a constant buried in the validator."
 }

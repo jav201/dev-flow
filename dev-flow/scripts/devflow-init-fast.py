@@ -359,9 +359,18 @@ def main(argv: list[str] | None = None) -> int:
     # relative spelling is true in one of those and a dead path in the other -- the same
     # defect class as the root that was never echoed.
     _here = Path(__file__).resolve().parent
-    print("next: fill the spec's sections 1-4 (objective, stories, acceptance "
-          "criteria, validation strategy), then the scanner and the gate — these run "
-          "from anywhere:")
+    # ⚠ THIS HINT USED TO PUBLISH AN ORDER, AND THE ORDER IT PUBLISHED WAS WRONG.
+    # It read *fill the spec's sections 1-4 ... then the scanner and the gate*, while
+    # `commands/fast-dev-flow.md` pre-check 6 -- the step that comes next, and that page's
+    # own numbering -- says to run the gate BEFORE Phase A, which is before any of those
+    # sections exist. Two documents ordering the same four acts differently, and a reader
+    # who trusted this one skipped a refusal. The page is the order's ONE home, so this
+    # script names the page and states no order at all; the two commands stay, because a
+    # reader still needs their absolute spelling on this machine. (flow rev94, benchmark
+    # round 1, `init-fast-next-hint-contradicts-gate-order`.)
+    print("next: open `commands/fast-dev-flow.md` §Pre-checks and continue from there; "
+          "it is the one home for what comes next and in what order. The two commands it "
+          "names run from anywhere:")
     print(f"  python {(_here / 'devflow-scan-spec.py').as_posix()} "
           f"{(root / '.fast-dev-flow' / 'spec.md').as_posix()}")
     print(f"  python {(_here / 'devflow-validate.py').as_posix()} {root.as_posix()}")

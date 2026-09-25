@@ -6,6 +6,24 @@
 > **Owed in.** `fast` — · `core` — · `full` ✓
 > **Source:** `/dev-flow-init` step 4's seed-by-mode table, which is this fact's one home (flow rev72, `T05`). A mode marked `—` **does not owe this artifact, and its absence is not an omission**; `by trigger` means the station exists only when the `triggers` block fired, and `stations_active` in `state.json` is the authority for *this* batch. Where a SECTION or a gate row is owed more narrowly than the artifact, it says so on the row.
 
+> **Reserved field names.** The **field names and block keywords below are language-independent** — the
+> validator parses them literally and they are never translated:
+> `Gated tree` · `⏸ DEFER`
+> Everything else on this page — headings, guidance, the prose in every cell — is translated with the batch.
+> **One strategy, not two:** the flow ships no alias table, so a translated label is read as an ABSENT one and the rule keyed on it reports a true-sounding silence.
+
+## 0 · Gate record — which tree this close gated
+
+| Field | Value |
+|---|---|
+| Gate record | `<the validator command, its exit code, and 0 block · date>` |
+| Gated tree | `<the 40-hex HEAD at the gate · clean — or: dirty — the files>` |
+
+> **This is `full`'s copy of the two rows `close-template.md` §0 carries for `core`, and that
+> file's §0 note is the rule's one home** — `full` is not seeded `05-close.md`, so `V57` reads
+> the record here instead. Write it at the close gate from that run's own `git rev-parse HEAD`
+> and `git status --porcelain`.
+
 ## 🔑 At a glance (read first)
 
 - **Outcome:** closed clean  /  closed with carry-over  /  needed `<N>` iterations

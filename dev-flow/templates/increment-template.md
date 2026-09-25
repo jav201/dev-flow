@@ -88,13 +88,15 @@
 ## 4 · Test results
 
 **One complete run. The exit code and the tail are read from THAT run's own output — never stitched
-across partial runs, never inferred from a killed or backgrounded call (C-19).**
+across partial runs, never inferred from a killed or backgrounded call (C-19).** **Every figure in
+this section owes that run's transcript as an evidence file** — §*Evidence files* below is that
+rule's one home and states what `V56` reads.
 
 | Layer | Owed in | Nodes | Result |
 |---|---|---|---|
-| **0 · unit** (cyclomatic ≥3, or crosses a declared module boundary) | `core` · `full` | `<nodes>` | `<N passed>` |
-| **A · white-box** `TC-NNN` ↔ LLR | `core` · `full` | `<nodes>` | `<N passed>` |
-| **B · black-box** `AT-NNN` ↔ story, through the shipped surface — **in `fast`, `AC-<n>` ↔ criterion** | `fast` · `core` · `full` | `<nodes>` | `<N passed>` |
+| **0 · unit** (cyclomatic ≥3, or crosses a declared module boundary) | `core` · `full` | `<nodes>` | <N passed> |
+| **A · white-box** `TC-NNN` ↔ LLR | `core` · `full` | `<nodes>` | <N passed> |
+| **B · black-box** `AT-NNN` ↔ story, through the shipped surface — **in `fast`, `AC-<n>` ↔ criterion** | `fast` · `core` · `full` | `<nodes>` | <N passed> |
 
 **The `Owed in` column is read exactly as the gate checklist's is**: a mode this row does not name
 writes `n/a — not owed in fast` in its Result cell and nothing else. In `fast` that is rows 0 and A;
@@ -241,6 +243,8 @@ against a recorded `e103af29…`. The commit looked healthy. See dev-flow-lesson
 | Field | Value |
 |---|---|
 | **Evidence files** | `<N artifacts, each at the declared home and cited with the digest of its stored bytes — or: none — this increment cites no evidence file>` |
+
+✗ **A CLAIMED RUN OWES ITS TRANSCRIPT, AND THIS PARAGRAPH IS THAT RULE'S ONE HOME FOR `core` AND `full` (flow rev94; `fast` reads the same rule in `templates/fast-dev-flow/increment-template.md` §*Evidence files*).** Wherever §4 above reports a run — any `N passed` / `N failed` figure in a Result cell or in prose — **that run's own transcript is an evidence file**: store the runner's output under `artifact_homes.evidence`, cite it in the table above with its SHA-256, and let `devflow-evidence.py` print the row. `none — this increment cites no evidence file` stays legal **only while this packet claims no run**; beside a claimed run it is a `V56` BLOCK naming the claiming line. **And the count is READ, not trusted:** `V56` parses `N passed` / `N failed` out of the cited bytes and BLOCKs a packet claiming more passes than its own evidence holds, printing both numbers. **`V56` also reads a ticked evidence-checklist row as a claim, and that row exists only in the `fast` packet's §4c** — this mode's gate checklist mints no such row, so here the figures are the whole of what it reads. A per-layer figure under a whole-suite transcript is fine: the comparison is against each cited artifact's own highest figure and their sum. **`core` and `full` are not exempt and were never stricter here** — the same `none` was legal on this page, and the origin project's last eight batches cited zero evidence files, so the rule that hashes them had never had a subject. ⚠ **A figure inside a code span is read as GUIDANCE and not as a claim** — that is how the `` `3 passed` `` example in §4's RED table escapes the rule — so write the Result cells' numbers bare, as this template now does. ⚠ **A failure count in a CITED transcript is a NOTICE and never a refusal**, because the RED counterfactual's own capture fails by construction and is cited in this very table; say which transcript the failures came from. ⚠ **Declared bound:** a transcript regenerated from tests that assert nothing hashes and reads correctly; only the mutation battery §4 already owes can see that.
 
 - ✗ A digest taken from the file you handed the store proves the wrong plane. Re-read it from where it landed — for git, from the index blob.
 - ✗ The corruption is **bidirectional and half of it is invisible at commit time**: a CRLF file normalises to LF going in, and an LF file converts to CRLF coming out at the next checkout, so its blob matches and its checkout does not.

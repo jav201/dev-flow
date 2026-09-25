@@ -10330,6 +10330,511 @@ def v55_guided_gates(root, art):
         out.append(_v55_standing(mode, code, rel, state, cell, standing, asked))
     return [F("V55", s, w, m) for s, w, m in out]
 
+# ------------------------------------------- V56: rev94. A CLAIMED RUN OWES ITS TRANSCRIPT,
+# AND THE COUNT IS READ RATHER THAN TRUSTED.
+#
+# THE MEASUREMENT. Competitor benchmark round 1, 2026-09-25: on a CLOSED fast toy three
+# tampers left `--brief` at `0 block · 2 notice`, byte-identical to the clean run. The one
+# this rule answers is `T-record` -- the packet's `4 passed` edited to `9 passed` on both
+# lines that carried it, with code and tests untouched, so `pytest` itself still passed and
+# no oracle anywhere disagreed with the document. `V41` had no subject: the packet declared
+# `none -- this increment cites no evidence file`, which is a LEGAL empty, and the tool that
+# re-hashes evidence exited 2 for want of a file to check.
+#
+# THE ROBUST PATH IS NOT EXEMPT AND THIS RULE DOES NOT MAKE `fast` STRICTER. The long
+# `increment-template.md` admits the same `none` in `core`/`full`, and the origin project's
+# last eight batches cite zero evidence files -- so `V41` has never had a subject there
+# either. The obligation is the same in every mode: a packet that CLAIMS a run owes the
+# run's transcript at `artifact_homes.evidence`, and the declared empty stays legal exactly
+# while the packet claims no run.
+#
+# TWO OBLIGATIONS UNDER ONE ID, because they are one question asked twice. O1 -- IS THERE A
+# TRANSCRIPT -- and O2 -- DOES IT SAY WHAT THE PACKET SAYS. Splitting them would let a batch
+# discharge the first and cite it for the second, which is `V41`'s own argument for keeping
+# `Q5` and `Q19` together one rule over.
+#
+# WHAT COUNTS AS A CLAIM, and the narrowing is what keeps this off `C-53`'s false-fail list.
+# A claim is a bare `N passed` / `N failed` figure, or the evidence-checklist row
+# `Tests/type checks/lint pass` marked `✓`. INLINE CODE SPANS ARE BLANKED FIRST: the
+# shipped long template carries `` `3 passed` `` inside a span, as GUIDANCE about a
+# transcript nobody read, and a reader that scored it would BLOCK every packet generated
+# from the flow's own template -- the placeholder setting the flag it is a placeholder for,
+# which is the scanner's bracket hole two rules over. FENCES ARE KEPT: a transcript pasted
+# into a fence is a claim about a run, and blanking it would publish a one-line dodge.
+#
+# THE COMPARISON IS DIRECTIONAL, AND THE BOUND IS DECLARED. `passed` blocks only when the
+# packet claims MORE than its transcripts hold, and `failed` only when it claims FEWER;
+# claiming less success or more failure than the evidence shows is not the lie a gate exists
+# to refuse, and scoring it would refuse every packet that cites a whole-suite transcript
+# beside a per-layer table. The ACCEPTED set is each cited transcript's own highest figure
+# PLUS their sum, so a packet citing two suites and reporting the total is not false-failed.
+#
+# AND THE BOUND THIS RULE CANNOT CROSS, written here because the public claim is built on it:
+# a transcript REGENERATED from vacuous tests hashes correctly and reads correctly. `T-test`
+# -- every assertion rewritten to `assert True` -- survives this rule, and only a mutation
+# battery reads that. The claim after rev94 is *a record a tool can check against the tree*,
+# never *a record that cannot be faked*.
+_V56_WHERE = ".dev-flow/<active batch>/03-increments/"
+_V56_SPAN = re.compile(r"`[^`\n]*`")
+_V56_COUNT = re.compile(r"(?<![\w.])(\d+)\s+(passed|failed)\b", re.I)
+# A FIGURE IS A CLAIM UNLESS IT IS COUNTING SOMETHING THAT IS NOT A TEST, and the polarity
+# of that sentence is the pass-2 review's `N1`. The first cut went the other way -- a figure
+# counted only beside a RUNNER token or in a counts-only cell -- and measured over the origin
+# record it SILENCED 38 of the 205 claiming packets and 339 of the 933 claiming lines, because
+# the record's dominant idiom is a narrative bullet: `- **180 passed** (was 179 in increment 1
+# with 1 failure; net +1).` · `Lean suite -> **681 passed, 0 failures** (678 + 3).` · `Full
+# non-slow: **964 -> 968 collected (+4)**; 936 passed / 0 failed.` Under that reader `T-record`
+# -- the tamper this whole revision answers -- came back in three of the record's own
+# spellings, and the benchmark toy escaped only because its one line happens to say `exit
+# code`. A narrowing that has to anticipate every way a runner's output can be quoted is the
+# alias table this flow refuses to ship.
+#
+# SO THE DEFAULT IS WIDE AND THE EXCEPTIONS ARE ENUMERATED. `passed` and `failed` are ordinary
+# English verbs, and the way they get a number in front of them WITHOUT reporting a run is by
+# counting a countable noun: *Increment 2 passed the gate*, *the item rev 1 failed*, *the 200
+# passed cases*. Both neighbours are read, and the lists are closed and small. Measured over
+# the same 246 packets: the 205 claiming packets all still claim, and the ONE false instance
+# the review found in 933 lines is silent.
+_V56_BEFORE = re.compile(
+    r"(?i)\b(?:increment|batch|phase|rev|revision|item|row|gate|step|round|wave|arm|node|"
+    r"case|control|finding|criterion|story|lane|station|attempt|iteration|pass)\s+$")
+_V56_AFTER = re.compile(
+    r"(?i)^\s+(?:cases?|nodes?|arms?|items?|rows?|gates?|reviews?|criteria|stories|"
+    r"increments?|batches|controls?|findings?|steps?)\b")
+_V56_CHECK = re.compile(r"(?mi)^\|[^|\n]*\bTests?\s*/\s*type\s*checks?\s*/\s*lint\b"
+                        r"[^|\n]*\|([^|\n]*)\|")
+# THE TICK CELL IS MATCHED WHOLE, NEVER AS A SUBSTRING -- the review's `L1`. `"PASS"`
+# inside a three-column row captured the EVIDENCE cell, so an honest refusal reading
+# *skipped -- the suite cannot pass without Docker* was scored a tick while a bare `OK`
+# was not, which is a reader keyed on spelling and position rather than on the mark.
+_V56_TICK = re.compile(r"(?i)^[\s*`]*(?:✓|✔|\[x\]|pass(?:ed)?|ok|yes)[\s*`.]*$")
+_V56_TICKROW = "the evidence-checklist row `Tests/type checks/lint pass`, marked ✓"
+_V56_ABSENT = ("no `.dev-flow/state.json`, so no packet population is defined and no claimed "
+               "run was read; this is not a pass")
+_V56_UNREADABLE = ("`.dev-flow/state.json` could not be read, so the evidence home is "
+                   "undeclared and no claimed run was checked; this is not a pass")
+_V56_NOPACKETS = {
+    "nobatch": "`state.json` names no batch on disk, so no increment packet was read for a "
+               "claimed run; this is not a pass",
+    "nodir": "the active batch holds no `03-increments/` yet, so no packet could claim a "
+             "run; this is not a pass",
+    "nopackets": "the active batch's `03-increments/` holds no `increment-NNN.md`, so no "
+                 "packet could claim a run; this is not a pass",
+}
+_V56_NOTRANSCRIPT = ("this packet CLAIMS a run -- %s -- and its `%s` section cites no "
+                     "artifact, so the claim is checked by nothing. The run's transcript is "
+                     "evidence: store it at the home `artifact_homes.evidence` declares and "
+                     "cite it with its SHA-256. `none — this increment cites no evidence "
+                     "file` stays legal only while the packet claims no run")
+_V56_OVER = ("this packet claims `%d passed` and the transcript(s) it cites hold at most "
+             "`%d passed` each, `%d passed` across all of them. THE COUNT IS READ, NOT "
+             "TRUSTED: the figures are parsed out of the bytes `V41` verified, and a packet "
+             "may not report more passes than its own evidence shows")
+_V56_UNDER = ("the highest failure count this packet reports is `%d failed` and the "
+              "transcript(s) it cites hold `%d failed`. THIS IS A NOTICE AND NOT A REFUSAL: "
+              "the evidence home legitimately holds DELIBERATELY FAILING transcripts -- a "
+              "`RED counterfactual` capture is a failure by construction and a mutation "
+              "battery records one per KILLED mutant, both cited in this same table because "
+              "the template says to cite them here -- so a failure count in the evidence is "
+              "not by itself a contradiction of the packet. Say which transcript the "
+              "failures came from")
+_V56_NOFIGURE = ("this packet claims a `%s` count and none of the %d cited artifact(s) "
+                 "carries such a figure, so the number is verified by nothing; cite the "
+                 "run's own transcript rather than a derived summary")
+_V56_UNREAD = ("this packet claims a run and none of its %d cited artifact(s) could be read "
+               "here (%s), so the count was compared against nothing; this is not a pass")
+_V56_NOCLAIM = ("%d packet(s) read and none claims a run, so the declared empty `none — "
+                "this increment cites no evidence file` is the truthful answer for all of "
+                "them")
+_V56_OK = ("%d packet(s) claim a run and every claimed figure is backed by a cited "
+           "transcript's own bytes")
+
+
+def _v56_claims(text):
+    """A packet -> ([(n, word)], the lines that claim, the checklist row ticked?). PURE.
+
+    Inline code spans are BLANKED and fences are KEPT -- see the block comment; the two
+    choices are what separate a claim from the template's own guidance about one.
+
+    AND A FIGURE COUNTING SOMETHING THAT IS NOT A TEST IS NOT A CLAIM (`H2`, re-cut at `N1`).
+    The default is WIDE -- any `N passed` / `N failed` reports a run -- and the exceptions are
+    a closed list of countable nouns on either side of the figure. Going the other way, and
+    demanding a runner token beside every figure, silenced 38 of the record's 205 claiming
+    packets; see the block comment.
+    """
+    body = _V56_SPAN.sub(lambda m: " " * len(m.group(0)), _md_uncomment(text or ""))
+    claims, lines = [], []
+    for line in body.split("\n"):
+        hit = []
+        for mm in _V56_COUNT.finditer(line):
+            if _V56_BEFORE.search(line[:mm.start()]):
+                continue
+            if _V56_AFTER.match(line[mm.end():]):
+                continue
+            hit.append((int(mm.group(1)), mm.group(2).lower()))
+        if hit:
+            claims += hit
+            lines.append(" ".join(line.split())[:160])
+    m = _V56_CHECK.search(body)
+    ticked = bool(m) and bool(_V56_TICK.match(m.group(1) or ""))
+    return claims, lines, ticked
+
+
+def _v56_figures(blobs):
+    """[(path, text)] -> {word: (each artifact's own highest figure, their sum)}. PURE.
+
+    Per artifact and then summed, because a packet citing two suites and reporting the total
+    is reporting the truth; taking a flat maximum over the pooled text would refuse it.
+    """
+    per = {"passed": [], "failed": []}
+    for _p, t in blobs:
+        best = {}
+        for n, w in _V56_COUNT.findall(t or ""):
+            w = w.lower()
+            best[w] = max(best.get(w, 0), int(n))
+        for w in per:
+            if w in best:
+                per[w].append(best[w])
+    return {w: (sorted(v), sum(v)) for w, v in per.items()}
+
+
+def _v56_outcome(code, packets, pcode, read_of):
+    """Pure decision core of V56 -> [(sev, where, msg)], never the empty list.
+
+    `read_of` is INJECTED: `(cited path) -> (state, text)`, `state` in `ok` / `missing` /
+    `outside` / `unverifiable`. Injected for the reason `V41`'s `digest_of` is -- the arms
+    drive every branch over a fixture, including the ones no corpus contains.
+    """
+    if code == "absent":
+        return [(SKIP, _V56_WHERE, _V56_ABSENT)]
+    if code != "ok":
+        return [(SKIP, _V56_WHERE, _V56_UNREADABLE)]
+    if pcode != "ok":
+        return [(SKIP, _V56_WHERE, _V56_NOPACKETS[pcode])]
+    out, claiming = [], 0
+    for name, text in packets:
+        claims, lines, ticked = _v56_claims(text)
+        if not claims and not ticked:
+            continue
+        claiming += 1
+        cited, _bad = _v41_rows(text)
+        if not cited:
+            out.append((BLOCK, name, _V56_NOTRANSCRIPT
+                        % (lines[0] if lines else _V56_TICKROW, _V41_HEADING)))
+            continue
+        blobs, why = [], []
+        for _art, path, _dig in cited:
+            state, body = read_of(path)
+            if state == "ok":
+                blobs.append((path, body))
+            else:
+                why.append("%s: %s" % (path, state))
+        if not blobs:
+            out.append((NOTICE, name, _V56_UNREAD % (len(cited), "; ".join(sorted(why)))))
+            continue
+        per = _v56_figures(blobs)
+        for word in ("passed", "failed"):
+            mine = [n for n, w in claims if w == word]
+            if not mine:
+                continue
+            held, total = per[word]
+            if not held and word == "failed":
+                held, total = [0], 0     # no failure line IS the zero-failure transcript
+            if not held:
+                out.append((NOTICE, name, _V56_NOFIGURE % (word, len(blobs))))
+                continue
+            # TWO POLARITIES AND TWO DIFFERENT AGGREGATES, and the second is the one the
+            # first cut got wrong. `passed` compares the packet's HIGHEST figure against the
+            # accepted set -- each artifact's own highest, plus their SUM, so a two-suite
+            # total is not read as an inflation. `failed` compares the packet's highest
+            # against each artifact's own highest and NOT against the sum: a packet that
+            # decomposes failures per layer writes `0 failed` on the rows that had none, so a
+            # reader taking the packet's MINIMUM refuses an honest table, and one demanding
+            # the SUM refuses a packet that reports the worst suite rather than the total.
+            # Both were `C-53` with a sentence attached; the weaker bound is the honest one.
+            # AND THE TWO POLARITIES CARRY TWO SEVERITIES, which is the independent review's
+            # `H1` and the one false BLOCK this rev shipped into review.
+            # `increment-template.md` tells the author to store the RED counterfactual's
+            # transcript under `artifact_homes.evidence` and cite its digest in this very
+            # table; a RED capture FAILS by construction and a mutation battery records one
+            # failure per KILLED mutant. So the honest `core` packet that did exactly what its
+            # own template asked -- `4 passed, 0 failed` beside a cited `1 failed` RED
+            # transcript -- was refused, measured end to end through the REGISTERED rule
+            # before this line was written. The under-report is now a NOTICE naming both
+            # figures; the over-report of PASSES, where no such legitimate shape exists,
+            # stays a BLOCK.
+            if word == "passed" and max(mine) > max(held + [total]):
+                out.append((BLOCK, name, _V56_OVER % (max(mine), max(held), total)))
+            elif word == "failed" and max(mine) < max(held):
+                out.append((NOTICE, name, _V56_UNDER % (max(mine), max(held))))
+    if not claiming:
+        out.append((SKIP, _V56_WHERE, _V56_NOCLAIM % len(packets)))
+    elif not out:
+        out.append((SKIP, _V56_WHERE, _V56_OK % claiming))
+    return out
+
+
+def v56_claimed_run_transcript(root, art):
+    """A packet that claims a run cites the run's transcript, and the count is read (rev94)."""
+    doc, code = _state_json(root)
+    packets, pcode = _v60_packets(root)
+    homes = (doc or {}).get(_V41_HOMES)
+    hstate, home = _v41_home(homes)
+    folds, _why = _casefold_probe(root)
+
+    def read_of(cited):
+        if hstate not in ("repo", "vault"):
+            return "the evidence home is not declared as a path", ""
+        where, rel = _v41_resolve(cited, home, folds)
+        if where != "under":
+            return where, ""
+        if hstate != "repo":
+            return "unverifiable -- a `vault:` home this repository cannot read", ""
+        try:
+            with open(os.path.join(root, *rel.split("/")), "rb") as fh:
+                return "ok", fh.read().decode("utf-8", "replace")
+        except OSError:
+            return "missing", ""
+
+    return [F("V56", s, w, m) for s, w, m in
+            _v56_outcome(code, packets, pcode, read_of)]
+
+
+# ------------------------------------------------- V57: rev94. THE CLOSE BINDS THE GATED TREE.
+#
+# THE MEASUREMENT, same benchmark, tamper `T-code`: `multiply` rewritten to return `a + b`
+# AFTER the gate had run and the batch had closed. `--brief` printed the same
+# `0 block · 2 notice` it printed on the clean tree, and it was RIGHT to -- no rule read
+# the gated tree at all. The close cell recorded the BASE ref, which is where the batch
+# STARTED; nothing recorded what was under the gate when it passed, so no later run had
+# anything to compare against and every later run was silent.
+#
+# A NOTICE AND NEVER A BLOCK, and the reason is the whole design. A closed batch is ALLOWED
+# to be followed by work -- that is what a repository is for -- so a rule that refused a
+# moved HEAD would refuse the normal case, which is `C-53` written as a gate. What the gate
+# owes is not a refusal; it is to STOP BEING SILENT. `record predates this tree by N
+# commit(s)` and a dirty-tree line naming the files are the two things a reader needs in
+# order to know that the verdict they are looking at was taken over different bytes.
+#
+# ONE ROW, THREE HOMES, BECAUSE THE MODES KEEP THEIR RECORD IN DIFFERENT PLACES. In `fast` the
+# gate record is the spec's §0 header (`artifact_homes.spec`); in `core` it is
+# `05-close.md`, and a `full` batch writes `05-postmortem.md`. The row is `Gated tree` in all
+# of them and it is RESERVED in the templates that mint it, because the artifact is generated
+# in the batch's language and the flow ships no alias table.
+#
+# SCOPED TO A CLOSED BATCH. Before the close gate the row is legitimately unfilled, and a
+# rule that accused every in-progress batch of not having recorded its close would be noise
+# with a sentence attached. `_v55_closed`'s cell and the ledger's `C` entry are the two
+# witnesses already defined for that question, REUSED rather than re-minted (`C-50`).
+_V57_LABEL = "Gated tree"
+_V57_WHERE = "the batch's gate record"
+_V57_ROW = re.compile(r"(?mi)^\|\s*(?:\*\*)?Gated tree(?:\*\*)?\s*\|([^|\n]*)\|")
+# A DIGIT IS REQUIRED, and the review's `L2` is why: `[0-9a-f]{7,40}` matches ordinary
+# English words -- `defaced`, `cabbage`, `feedbac` -- so a cell reading *gated at `defaced`
+# tree* was reported as a commit this repository does not hold instead of taking the `noref`
+# sentence written for exactly that cell. A real object name essentially always carries one.
+_V57_SHA = re.compile(r"\b(?=[0-9a-f]*[0-9])([0-9a-f]{7,40})\b")
+# THE PORCELAIN LINE IS PARSED, NEVER SLICED AT A FIXED OFFSET. `_git` STRIPS its output, so
+# the first line of `git status --porcelain` arrives with its leading status space already
+# gone while every later line keeps it -- a `[3:]` slice then reports `.txt` for the first
+# changed file and the right name for the second. Measured on this rev's own dirty-tree arm,
+# which is why that arm asserts the FILENAME and never a count.
+_V57_PORCELAIN = re.compile(r"^\s*[A-Z?!]{1,2}\s+(.*)$")
+_V57_CLOSE_FILES = ("05-close.md", "05-postmortem.md")
+_V57_ABSENT = ("no `.dev-flow/state.json`, so no batch is declared and no gate record was "
+               "read; this is not a pass")
+_V57_OPEN = ("this batch is not closed (%s), and the gated tree is recorded AT the close "
+             "gate; there is nothing here to compare yet")
+_V57_NOFILE = ("this batch is closed and no gate record was found at %s, so nothing records "
+               "which tree the gate passed over; this is not a pass")
+_V57_STATES = {
+    "norow": "this batch is closed and its gate record carries no `%s` row, so no later run "
+             "can say whether the record still describes this tree. The row is "
+             "`` `<the 40-hex HEAD at the gate>` · clean `` (or `· dirty — "
+             "<the files>`)" % _V57_LABEL,
+    "blank": "this batch is closed and its `%s` row is empty. An empty cell is a question "
+             "nobody asked; write the gate's `git rev-parse HEAD` and `clean`/`dirty`"
+             % _V57_LABEL,
+    "empty": "this batch is closed and its `%s` row still carries the template's own "
+             "placeholder, so no tree was recorded" % _V57_LABEL,
+    "noref": "this batch's `%s` row names no commit (`%%s`), so there is no ref to compare "
+             "this tree against" % _V57_LABEL,
+}
+_V57_NOHEAD = ("this batch records the gated tree as `%s` and this project's own `HEAD` "
+               "could not be read (no git checkout, or git is absent), so the comparison "
+               "was not made; this is not a pass")
+_V57_UNKNOWN = ("this batch records the gated tree as `%s` and that commit is not in this "
+                "repository's history, so the record describes a tree this checkout does "
+                "not hold")
+_V57_PREDATES = ("record predates this tree by %d commit(s) — the gate passed over `%s` "
+                 "and `HEAD` is `%s`. The verdict recorded at the close was taken over "
+                 "different bytes; this is a NOTICE and not a refusal, because a closed "
+                 "batch is allowed to be followed by work")
+# TWO MORE SHAPES, AND THE FIRST CUT PRINTED *predates this tree by 0 commit(s)* FOR BOTH --
+# the review's `M2`. `<ref>..HEAD` counts one side only, so an older checkout, a worktree or a
+# bisect (where `HEAD` is an ANCESTOR of the record) came out as zero, and a diverged branch
+# was described as merely behind. `--left-right` answers both sides at once.
+_V57_POSTDATES = ("the gate record is AHEAD of this tree by %d commit(s) — it names `%s` "
+                  "and `HEAD` is `%s`, an ancestor of it. You are standing on an older "
+                  "checkout than the one the close gated")
+_V57_DIVERGED = ("the gate record and this tree have DIVERGED — %d commit(s) on the "
+                 "record's side (`%s`) and %d on this tree's (`%s`), with neither containing "
+                 "the other. The verdict recorded at the close was taken on a different line "
+                 "of history")
+# ⚠ THIS SENTENCE NAMES `HEAD`, NOT THE RECORDED REF, AND THAT IS THE REVIEW'S `M1`.
+# `git status --porcelain` is relative to `HEAD`; while the two differ, a sentence claiming
+# dirt "against the recorded tree" names files that did not exist at that ref and stays
+# silent about files it held differently. The honest claim is the one the command makes, and
+# the predates line above already carries the other half.
+_V57_DIRTY = ("the working tree is dirty against `HEAD` (%s files below), while the gate "
+              "recorded `%s`: %s. The verdict recorded at the close was taken over different "
+              "bytes")
+_V57_OK = ("the gate record names this tree (`%s`) and the working tree is clean against it")
+
+
+def _v57_record(cell):
+    """The `Gated tree` cell -> (state, ref, the cleanliness word it recorded). PURE.
+
+    `_v41_cell` IS reused here and the reason is the opposite of `_v55_standing_cell`'s: the
+    legal value ENDS in a ref and a word, never in a parenthetical, so stripping emphasis and
+    code spans is exactly what this needs and nothing it needs is lost.
+    """
+    if cell is None:
+        return "norow", "", ""
+    c = _v41_cell(cell).strip()
+    if not c:
+        return "blank", "", ""
+    if c.startswith("<") and c.endswith(">"):
+        return "empty", "", ""
+    m = _V57_SHA.search(c.lower())
+    if not m:
+        return "noref", c, ""
+    low = c.casefold()
+    return "ok", m.group(1), ("dirty" if "dirty" in low else
+                              "clean" if "clean" in low else "")
+
+
+def _v57_outcome(code, closed, why, rel, cell, head, dirty, behind, ahead=None):
+    """Pure decision core of V57 -> [(sev, where, msg)], never the empty list. NEVER BLOCKs.
+
+    `head` is this tree's `HEAD` or None; `dirty` is the porcelain paths or None when the
+    question could not be asked; `behind` and `ahead` are the two sides of
+    `<ref>...HEAD` -- commits this tree has that the record does not, and commits the record
+    has that this tree does not -- or None when the ref is not in this repository's history.
+    """
+    if code == "absent":
+        return [(SKIP, _V57_WHERE, _V57_ABSENT)]
+    if not closed:
+        return [(SKIP, _V57_WHERE, _V57_OPEN % why)]
+    if code == "nofile":
+        return [(NOTICE, _V57_WHERE, _V57_NOFILE % rel)]
+    state, ref, said = _v57_record(cell)
+    if state != "ok":
+        return [(NOTICE, rel, _V57_STATES[state] % ref if state == "noref"
+                 else _V57_STATES[state])]
+    out = []
+    if not head:
+        return [(NOTICE, rel, _V57_NOHEAD % ref[:12])]
+    if not (head.startswith(ref) or ref.startswith(head)):
+        if behind is None:
+            out.append((NOTICE, rel, _V57_UNKNOWN % ref[:12]))
+        elif ahead and behind:
+            out.append((NOTICE, rel, _V57_DIVERGED
+                        % (ahead, ref[:12], behind, head[:12])))
+        elif ahead:
+            out.append((NOTICE, rel, _V57_POSTDATES % (ahead, ref[:12], head[:12])))
+        else:
+            out.append((NOTICE, rel, _V57_PREDATES % (behind, ref[:12], head[:12])))
+    if dirty:
+        shown = ", ".join("`%s`" % p for p in dirty[:8])
+        if len(dirty) > 8:
+            shown += " and %d more" % (len(dirty) - 8)
+        out.append((NOTICE, rel, _V57_DIRTY % (len(dirty), ref[:12], shown)))
+    if not out:
+        out.append((SKIP, rel, _V57_OK % ref[:12]))
+    return out
+
+
+def _v57_gate_record(root, doc, mode):
+    """(the record's text, its repo-relative path, code). NOT pure.
+
+    `fast` reads the spec `artifact_homes.spec` declares -- `_fast_spec`, reused; every other
+    mode reads the batch's close artifact, and the two filenames are tried in order because
+    `core` writes the first and `full` writes the second.
+    """
+    if mode == "fast":
+        text, rel, code = _fast_spec(root, doc)
+        return text, rel, ("ok" if code == "ok" else "nofile" if code == "nofile" else "ok")
+    active = _active_batch_dir(root)
+    if not active:
+        return None, "`.dev-flow/<batch>/`", "nofile"
+    for name in _V57_CLOSE_FILES:
+        p = os.path.join(active, name)
+        if os.path.isfile(p):
+            return _read(p) or "", os.path.relpath(p, root).replace("\\", "/"), "ok"
+    return None, " or ".join("`%s`" % n for n in _V57_CLOSE_FILES), "nofile"
+
+
+def v57_gated_tree(root, art):
+    """The close records the tree it gated, and a later run says so out loud (rev94)."""
+    doc, code = _state_json(root)
+    if code == "absent":
+        return [F("V57", SKIP, _V57_WHERE, _V57_ABSENT)]
+    doc = doc or {}
+    mode = str(doc.get("mode") or "") or None
+    spec, _srel, _scode = _fast_spec(root, doc) if mode == "fast" else (None, None, None)
+    shut, cell_said = _v55_closed(spec) if mode == "fast" else (False, None)
+    ledger = any(_v55_gatename(e).upper() == "C" for e in (_v27_log(root) or []))
+    text, rel, rcode = _v57_gate_record(root, doc, mode)
+    m = _V57_ROW.search(text or "") if text else None
+    if mode == "fast":
+        why = ("the `Current phase` cell reads `%s` and `decisions_log` records no `C` gate"
+               % (cell_said or "—"))
+    else:
+        # `core`/`full` HAVE NO `C` GATE AND NO CLOSE CELL -- their gates are STATIONS, and
+        # the close artifact is SEEDED at `/dev-flow-init`, so its mere existence says
+        # nothing. Measured on this suite's own scaffold fixture: `mode: full` at
+        # `current_station: P0` ships `05-postmortem.md` with every row a placeholder, and a
+        # rule reading existence as closure accused it of not recording a tree it had not yet
+        # gated -- `C-53`'s false fail, at the one tree this flow builds from its own words.
+        # The signal is the LAST DECLARED STATION being the current one, or the row already
+        # being filled; both are facts the batch wrote about itself.
+        stations = [str(x) for x in (doc.get("stations_active") or [])]
+        cur = str(doc.get("current_station") or "")
+        # AND A FILLED ROW IS ITSELF A CLOSE SIGNAL HERE, in the modes that have no other:
+        # somebody wrote a gated ref, which is an act only the close gate performs. It is
+        # DELIBERATELY NOT a disjunct in `fast`, where `_v55_closed`'s cell and the ledger's
+        # `C` entry already answer the question -- a spec at Phase B carrying a ref from an
+        # earlier run would otherwise be judged closed by the very row under examination,
+        # which is this rev's own arm (j) measuring its first cut.
+        shut = bool((stations and cur and cur == stations[-1])
+                    or _v57_record(m.group(1) if m else None)[0] == "ok")
+        why = ("`state.json` declares `current_station: %s` against a last station of `%s`, "
+               "and the `Gated tree` row is not filled"
+               % (cur or "—", stations[-1] if stations else "—"))
+    closed = bool(shut or ledger)
+    head = _git(root, "rev-parse", "HEAD")
+    porcelain = _git(root, "status", "--porcelain")
+    dirty = ([(_V57_PORCELAIN.match(l).group(1).strip()
+                if _V57_PORCELAIN.match(l) else l.strip())
+               for l in porcelain.splitlines() if l.strip()]
+             if porcelain is not None else None)
+    _st57, ref, _said57 = _v57_record(m.group(1) if m else None)
+    # ONLY AN `ok` CELL REACHES GIT (the review's `L3`). For a `noref` cell `_v57_record`
+    # hands back the WHOLE CELL TEXT, and the first cut passed that to `git rev-list` -- an
+    # unbounded subprocess over unvalidated document text whose answer the outcome then
+    # discards, because `noref` returns before the comparison.
+    behind = ahead = None
+    if head and ref and _st57 == "ok":
+        n = _git(root, "rev-list", "--count", "--left-right", "%s...HEAD" % ref)
+        parts = (n or "").split()
+        if len(parts) == 2 and all(p.isdigit() for p in parts):
+            ahead, behind = int(parts[0]), int(parts[1])
+    return [F("V57", s, w, msg) for s, w, msg in
+            _v57_outcome(rcode, closed, why, rel, m.group(1) if m else None,
+                         head, dirty, behind, ahead)]
+
+
 CHECKS = [("V1", v1_live_placeholder), ("V2", v2_at_without_node),
           ("V4", v4_method_without_verification), ("V5", v5_ledger),
           ("V6", v6_modal_in_statement), ("V7", v7_flow_hash),
@@ -10362,7 +10867,8 @@ CHECKS = [("V1", v1_live_placeholder), ("V2", v2_at_without_node),
           ("V50", v50_conditional_gate_discharge), ("V51", v51_new_controls),
           ("V52", v52_forward_applicability), ("V53", v53_symbol_anchors),
           ("V54", v54_human_review_ledger),
-          ("V55", v55_guided_gates)]
+          ("V55", v55_guided_gates),
+          ("V56", v56_claimed_run_transcript), ("V57", v57_gated_tree)]
 
 
 # ------------------------------------------------- the severity census (C-58's own instance)
@@ -10608,6 +11114,8 @@ _RULE_COVERS = {
     "V50": "the ACTIVE batch's `05-close.md` declares its conditional-gate discharge roll-up — a count with its per-condition verdict, or the legal empty `none — no gate closed conditionally` (rev71, `C-44`: its own rule says a conditional gate verdict is not a merge authorisation, and nothing read the table the template mints for it; the FIELD is absent from 5 of 5 close artifacts and the section heading present in 2, both measured case-sensitively as this reader is. The GATE-side half of the same question is `C-14`/`V32`'s and is not this rule)",
     "V51": "the ACTIVE batch's `05-close.md` declares how many controls it minted and their catalog ids, or the legal empty `none — <why this batch minted none>` (rev71, `C-45`: the landings TABLE has shipped since rev5 and nothing COUNTED the controls, which is how the catalog debt reached four consecutive batches at zero before anybody wrote the number down. A count alone is refused — `V45`'s fold applied at authoring time — because `3 controls remain unencoded` names a number while saying the landing did not happen. ⚠ It reads whether the batch ANSWERED and is never an approval: the control-encode sitting is the operator's)",
     "V54": "the ACTIVE batch's `05-close.md` declares its HUMAN review ledger and its HUMAN perimeter \u2014 the roll-up naming a reviewer in `V36`'s identity grammar reused, and the perimeter field declaring what the flow does NOT cover; `none \u2014 <reason>` is the legal empty on both (rev83, `C-48`'s class on the human side: the gates record every MACHINE verdict and nothing recorded the DEPTH of a human reading or a reading DECLINED. Measured before the rule was written, through this file's own grammars and case-sensitively as the reader is \u2014 the field is absent from **5 of 5** close artifacts and either string stands in **0 of 952** record files, while the same reader scores `Result` declared 10 and `Evidence checklist` declared 12 on the same corpus. \u26a0 WHO and WHEN are `V36`/`V48`/`decisions_log`'s and are NOT re-minted here; what is new is depth and the declared non-review. \u26a0 It never judges the review's QUALITY \u2014 a reviewer can write `rigorous` and have skimmed)",
+    "V56": "a packet that CLAIMS a test run cites the run's TRANSCRIPT as evidence, and the claimed count is READ out of those bytes rather than trusted (rev94, the competitor tamper round: `4 passed` edited to `9 passed` in a closed fast packet left `--brief` byte-identical to the clean run, because `Evidence files: none` is a legal empty and `V41` had no subject. TWO obligations under one id — the transcript is owed wherever a run is claimed, in EVERY mode, and the figure is compared against the cited artifact's own bytes. The declared empty stays legal exactly while the packet claims no run. ⚠ DIRECTIONAL, AND THE TWO POLARITIES CARRY TWO SEVERITIES: `passed` BLOCKS on claiming more than the evidence shows, while an under-reported `failed` is a NOTICE, because the evidence home legitimately holds captures that fail by construction — the `RED counterfactual`'s own transcript, cited in the same table because the template says to cite it there. ⚠ AND A FIGURE IS A CLAIM UNLESS IT COUNTS A COUNTABLE NOUN: *Increment 2 passed the gate* is not a test count, and going the other way — demanding a runner token beside every figure — was measured silencing 38 of the origin record's 205 claiming packets. ⚠ DECLARED BOUND: a transcript REGENERATED from vacuous tests hashes and reads correctly — only a mutation battery sees that, and the public claim is *a record a tool can check*, never *a record that cannot be faked*)",
+    "V57": "the close records the TREE it gated — `git rev-parse HEAD` plus `clean`/`dirty` — and every later run says out loud when the record no longer describes this tree (rev94, same tamper round: `multiply` rewritten AFTER the gate left the verdict unchanged, because the record held the BASE ref and nothing held the GATED one). NOTICE and never BLOCK: a closed batch is ALLOWED to be followed by work, so the gate's job here is to stop being silent, not to refuse. `record predates this tree by N commit(s)` and a dirty-tree line naming the files are what it prints. Scoped to a CLOSED batch — before the close gate the row is legitimately unfilled)",
     "V55": "a batch whose `state.json` declares `guided: true` records EVERY gate its mode owes in `decisions_log`, with `guided: true` on the entry and the gate named in `gate` or `station` \u2014 the owed set derived from the mode (`stations_active` in `core`/`full`, the three gates `/fast-dev-flow` owns in `fast`), never typed; `guided: false` or absent \u2192 n/a with its reason (rev87, the guided first run: two fresh readers of the publication test could not tell what was owed NEXT at a gate \u2014 *no line says run the gate again at close*, *the operative rule for a step is split across five files*. \u26a0 It reads the RECORD of the guidance and never the guidance: an agent that printed nothing and wrote the entry passes here. \u26a0 It prints the fade-out streak over the ACTIVE batch ALONE, because `state.json` is single-slot, and it NEVER edits state. rev91 adds a FOURTH obligation in `fast`: the spec header's `Standing authorization` cell and the ledger cannot give different accounts of who closed the gates — the `none — every gate is asked` form beside a ledger closing gates under a standing authorization, or a declared commission beside a gate the ledger records as asked, is one batch claiming both, which is one of the two ambiguities the measurement run on the published rev90 left a newcomer to resolve alone)",
     "V53": "every `path::symbol` anchor in the record RESOLVES against the working tree — the file exists and the symbol is BOUND in it, by an AST binding walk for Python and a word-boundary search otherwise, with every finding NAMING the resolver it used (rev78, `C-14`'s *census the claims* limb, made executable). ⚠ SEVERITY IS SPLIT BY CORPUS: a wrong anchor in the ACTIVE batch is a BLOCK, because it is a false assertion at the station that wrote it and is the same question `V14` already blocks over the IFC; the CLOSED record is a CENSUS — a count, never a block, because those batches are sealed and re-anchoring them to satisfy a later rule is editing the past. Line anchors (`file.py:NNN`) are deliberately OUT: 0 of the 1815 that resolve point past their file's end, which is the weakest possible staleness test. Ambiguous basenames and glob/ellipsis abbreviations are counted APART and never scored (`C-53`)",
     "V52": "the ACTIVE batch's staged design proposal fills `C-49`'s `## 7 · Forward-applicability table` — every row names a CONSUMER, and at least one row says WHERE that consumer will read the output (rev77, `C-49`: its first reader of any kind. The control is realised in four places — the design-proposal template §7, the design-review gate row 3, `phase-checklists.md` row 3 and `commands/dev-flow.md` §THE FORWARD-APPLICABILITY RULE — and was cited by NO rule; measured read-only before the rule was written, **0 of 949** files in the record carry the string at all, against **109** design/review artifacts subject to it. TWO LIMBS, because the shipped template PRE-FILLS the consumer column: a consumer-only reader would score the untouched template DECLARED, which is the vacuous check `C-57` is about. Scoped by the seed-by-mode table — `stations_active` naming `PDR`, OR `mode: full`, the one column that owes the artifact unconditionally; a batch that owes no design proposal is a SKIP with its reason (`C-53`). It reads the LOCAL STAGING under `design/`, because the sealed vault record is out of every rule's reach, and the two literals it keys on are RESERVED in the template's own block, because the artifact is generated in the batch's language and the flow ships no alias table)",
@@ -10664,6 +11172,8 @@ _RULE_SELECTOR = {
     "V53": "S3 (the WHOLE project record — every `.md` under `.dev-flow/`, resolved against the working tree outside it. The ACTIVE batch's slice of that corpus is what can BLOCK; the rest is a census, and the partition is the rule's whole design rather than a scoping detail)",
     "V52": "S1 (the active batch's staged design proposals — every `# Design proposal` document under `.dev-flow/<batch_id>/design/`, the one home a rule can reach. ⚠ The CANONICAL copy in `full` is the vault one and no rule will ever read it; this reads the staged INPUT `/dev-flow-sync` publishes from, and says so in its own sentences)",
     "V51": "S1 (the active batch's `05-close.md` as ONE DOCUMENT — `V50`'s corpus and `V50`'s `mode: core` limit, which is stated once there and not restated as a second claim here)",
+    "V56": "S1 (`state.json` for `artifact_homes.evidence`, the active batch's `03-increments/` — `V41`'s packet selector, reused — and the BYTES of every artifact those packets cite, read at the path the containment test resolved. `V41` hashes those bytes; this rule reads them)",
+    "V57": "S1 (the batch's gate record as ONE DOCUMENT — the spec `artifact_homes.spec` declares in `fast`, `05-close.md` or `05-postmortem.md` in the other modes) + S4-adjacent: this project repository's own `HEAD`, `git status --porcelain` and the commit distance from the recorded ref. Declared here rather than folded into S1: a rule that asks git what the tree is now is not reading a document)",
 }
 
 _MAP_UNCHECKED = [
@@ -19367,6 +19877,479 @@ def selftest():
           f"\u00b7 template cell {_tplstate91} \u00b7 absences "
           f"{_shown(set(_abs91.values()))} \u00b7 {'ok' if good else 'FAIL'}")
 
+    # ---- rev94. V56 / V57: THE RECORD IS BOUND TO THE TRANSCRIPT, THE COUNT AND THE TREE.
+    #
+    # Every fixture here is a REAL tree -- a `state.json`, a packet, an evidence file and, for
+    # `V57`, a git repository with commits in it. The rules' whole subject is the relation
+    # between a document and bytes outside it, so a pure-core arm alone would prove the
+    # arithmetic and leave the reading unproven, which is the shape the tamper round found.
+    def _mk94(root, packet, evidence=None, mode="fast", batch="2026-09-25-fast-01",
+              homes=None, state=None):
+        """A synthetic batch: the declaration, one packet, and the evidence bytes."""
+        os.makedirs(os.path.join(root, ".dev-flow", batch, "03-increments"), exist_ok=True)
+        os.makedirs(os.path.join(root, ".dev-flow", batch, "evidence"), exist_ok=True)
+        doc = {"mode": mode, "batch_id": batch,
+               "artifact_homes": homes if homes is not None else {
+                   "evidence": "repo:.dev-flow/%s/evidence/" % batch,
+                   "increments": "repo:.dev-flow/%s/03-increments/" % batch}}
+        doc.update(state or {})
+        with open(os.path.join(root, ".dev-flow", "state.json"), "w",
+                  encoding="utf-8") as _f94:
+            json.dump(doc, _f94)
+        with open(os.path.join(root, ".dev-flow", batch, "03-increments",
+                               "increment-001.md"), "w", encoding="utf-8") as _f94:
+            _f94.write(packet)
+        for _n94, _b94 in (evidence or {}).items():
+            with open(os.path.join(root, ".dev-flow", batch, "evidence", _n94), "w",
+                      encoding="utf-8") as _f94:
+                _f94.write(_b94)
+
+    def _run94(packet, evidence=None, **kw):
+        """The REGISTERED `V56` over a synthetic tree -> [(severity, message)]."""
+        with tempfile.TemporaryDirectory() as _d94:
+            _mk94(_d94, packet, evidence, **kw)
+            return [(_f.sev, _f.msg) for _f in reg["V56"](_d94, _artifacts(_d94))]
+
+    def _pkt94(body, rows="", field="none — this increment cites no evidence file"):
+        return ("# Increment 001\n\n## 4 · Test results\n\n%s\n\n"
+                "### Evidence files\n\n"
+                "| Evidence artifact | Path | SHA-256 |\n|---|---|---|\n%s\n\n"
+                "| Field | Value |\n|---|---|\n| **Evidence files** | `%s` |\n"
+                % (body, rows, field))
+
+    _ROW94 = ("| `transcript` | `.dev-flow/2026-09-25-fast-01/evidence/t.txt` | "
+              "`%s` |" % ("a" * 64))
+    _TRANS94 = "============ 4 passed in 0.02s ============\n"
+
+    # (a) O1 -- A CLAIMED RUN OWES ITS TRANSCRIPT, AND A PACKET THAT CLAIMS NOTHING OWES
+    # NOTHING. Both directions on one fixture pair, because the whole risk of this rule is
+    # `C-53`: a reader that cannot tell a claim from a packet with no test results would
+    # refuse every documentation increment in the record.
+    _claim94 = _run94(_pkt94("One complete run: exit code 0, 4 passed."))
+    _quiet94 = _run94(_pkt94("This increment changes prose only; no suite was run."))
+    good = (any(s == BLOCK and "cites no artifact" in m and "4 passed" in m
+                for s, m in _claim94)
+            and not any(s == BLOCK for s, m in _quiet94)
+            and any("none of them" in m or "none claims a run" in m for _s, m in _quiet94))
+    ok &= good
+    print(f"  V56 {'CLAIM-owes-a-transcript':<30} expected a packet reporting `4 passed` "
+          f"beside `Evidence files: none` to BLOCK with the CLAIMING LINE quoted back, and "
+          f"the same packet with no run reported to raise no block at all — the "
+          f"declared empty is the truthful answer exactly while nothing was claimed · "
+          f"got {len([1 for s, _m in _claim94 if s == BLOCK])} block(s) claiming / "
+          f"{len([1 for s, _m in _quiet94 if s == BLOCK])} quiet · "
+          f"{'ok' if good else 'FAIL'}")
+
+    # (b) O2 -- THE COUNT IS READ OUT OF THE CITED BYTES. This is the tamper verbatim: the
+    # transcript is untouched, the packet's figure is edited, and the two are compared.
+    _agree94 = _run94(_pkt94("One complete run: exit code 0, 4 passed.", _ROW94,
+                             "1 artifact, cited with its digest"),
+                      {"t.txt": _TRANS94})
+    _lie94 = _run94(_pkt94("One complete run: exit code 0, 9 passed.", _ROW94,
+                           "1 artifact, cited with its digest"),
+                    {"t.txt": _TRANS94})
+    good = (not any(s == BLOCK for s, _m in _agree94)
+            and any(s == BLOCK and "9 passed" in m and "4 passed" in m
+                    for s, m in _lie94))
+    ok &= good
+    print(f"  V56 {'COUNT-is-read-not-trusted':<30} expected a packet whose figure AGREES "
+          f"with its cited transcript to pass, and the SAME packet with `4 passed` edited to "
+          f"`9 passed` — transcript untouched, tests still green — to BLOCK with "
+          f"BOTH numbers printed · got agree {len([1 for s, _m in _agree94 if s == BLOCK])} "
+          f"block(s), tampered {len([1 for s, _m in _lie94 if s == BLOCK])} · "
+          f"{'ok' if good else 'FAIL'}")
+
+    # (c) THE PER-LAYER TABLE IS NOT A LIE, AND THE TWO-SUITE SUM IS NOT EITHER -- the two
+    # false-fails this rule would otherwise ship. A packet decomposing 4 into 3 + 1 under one
+    # transcript, and a packet citing two transcripts and reporting their total, both pass;
+    # one more than the sum blocks.
+    _layer94 = _run94(_pkt94("| black-box | x | 3 passed |\n| regression | y | 1 passed |",
+                             _ROW94, "1 artifact"), {"t.txt": _TRANS94})
+    _ROW2_94 = _ROW94 + ("\n| `transcript2` | "
+                         "`.dev-flow/2026-09-25-fast-01/evidence/u.txt` | `%s` |" % ("b" * 64))
+    _sum94 = _run94(_pkt94("Totals across both suites: 7 passed in 0.2s.", _ROW2_94,
+                           "2 artifacts"),
+                    {"t.txt": _TRANS94, "u.txt": "3 passed in 0.01s\n"})
+    _over94 = _run94(_pkt94("Totals across both suites: 8 passed in 0.2s.", _ROW2_94,
+                            "2 artifacts"),
+                     {"t.txt": _TRANS94, "u.txt": "3 passed in 0.01s\n"})
+    good = (not any(s == BLOCK for s, _m in _layer94)
+            and not any(s == BLOCK for s, _m in _sum94)
+            and any(s == BLOCK and "8 passed" in m for s, m in _over94))
+    ok &= good
+    print(f"  V56 {'DIRECTIONAL-no-false-fail':<30} expected a per-layer 3 + 1 under a "
+          f"`4 passed` transcript and a two-suite total of 7 under 4 + 3 to raise NO block "
+          f"— the comparison is each artifact's own highest figure AND their sum — "
+          f"while 8 over the same two blocks · got layer "
+          f"{len([1 for s, _m in _layer94 if s == BLOCK])}, sum "
+          f"{len([1 for s, _m in _sum94 if s == BLOCK])}, over "
+          f"{len([1 for s, _m in _over94 if s == BLOCK])} · "
+          f"{'ok' if good else 'FAIL'}")
+
+    # (d) `failed` RUNS THE OTHER WAY, and a transcript with no failure line IS the
+    # zero-failure transcript rather than an unanswerable question.
+    _hid94 = _run94(_pkt94("One complete run: 3 passed, 0 failed in 0.05s.", _ROW94,
+                           "1 artifact"),
+                    {"t.txt": "3 passed, 1 failed in 0.05s\n"})
+    _honest94 = _run94(_pkt94("One complete run: 3 passed, 1 failed in 0.05s.", _ROW94,
+                              "1 artifact"),
+                       {"t.txt": "3 passed, 1 failed in 0.05s\n"})
+    _zero94 = _run94(_pkt94("One complete run: 4 passed, 0 failed in 0.02s.", _ROW94,
+                            "1 artifact"),
+                     {"t.txt": _TRANS94})
+    _split94 = _run94(_pkt94("| black-box | x | 0 failed |\n| regression | y | 1 failed |",
+                             _ROW94, "1 artifact"), {"t.txt": "3 passed, 1 failed in 0.05s\n"})
+    # THE RED-COUNTERFACTUAL SHAPE THE TEMPLATE ITSELF MANDATES: a green suite transcript
+    # beside the RED capture that FAILS by construction, both cited in the one table the
+    # template says to cite them in. The independent review measured the first cut REFUSING
+    # exactly this, which is why the fixture is here and why the under-report is a NOTICE.
+    _redshape94 = _run94(_pkt94("One complete run: exit code 0, 4 passed, 0 failed.",
+                                _ROW2_94, "2 artifacts"),
+                         {"t.txt": _TRANS94, "u.txt": "3 passed, 1 failed in 0.09s\n"})
+    good = (any(s == NOTICE and "0 failed" in m and "1 failed" in m for s, m in _hid94)
+            and not any(s == BLOCK for s, _m in _hid94 + _redshape94)
+            and any(s == NOTICE for s, _m in _redshape94)
+            and not any(s == BLOCK or s == NOTICE for s, _m in _honest94)
+            and not any(s == BLOCK or s == NOTICE for s, _m in _zero94)
+            and not any(s == BLOCK or s == NOTICE for s, _m in _split94))
+    ok &= good
+    print(f"  V56 {'FAILED-runs-the-other-way':<30} expected a packet reporting `0 failed` "
+          f"over a transcript holding `1 failed` to raise a NOTICE and NEVER a block — "
+          f"the evidence home legitimately holds the RED capture, which fails by "
+          f"construction — the honest packet to say nothing at all, and "
+          f"`0 failed` over a transcript with NO failure line to pass — a run that "
+          f"printed no failures is the zero, not an unanswered question — and a "
+          f"PER-LAYER table writing `0 failed` on the row that had none to pass as well, "
+          f"because the aggregate read here is the packet's HIGHEST and never its lowest "
+          f"· got hidden {len([1 for s, _m in _hid94 if s == BLOCK])}, honest "
+          f"{len([1 for s, _m in _honest94 if s == BLOCK])}, zero "
+          f"{len([1 for s, _m in _zero94 if s == BLOCK])}, per-layer "
+          f"{len([1 for s, _m in _split94 if s == BLOCK])}, RED-shape "
+          f"{_shown({s for s, _m in _redshape94})} · "
+          f"{'ok' if good else 'FAIL'}")
+
+    # (e) A CODE SPAN IS GUIDANCE AND NOT A CLAIM, AND THE SHIPPED TEMPLATES PROVE IT. This
+    # is the arm that stops the rule from blocking every packet generated from this flow's
+    # own scaffold: `increment-template.md` carries `` `3 passed` `` inside a span, as a
+    # sentence ABOUT a transcript nobody read. Driven both ways -- the span raises nothing,
+    # the same three words outside a span do.
+    _tpl94 = {p: (_self_read((p)) or "")
+              for p in ("templates/dev-flow/increment-template.md",
+                        "templates/fast-dev-flow/increment-template.md")}
+    _asclaim94 = {p: _v56_claims(t)[0] for p, t in _tpl94.items()}
+    _bare94 = _v56_claims("3 passed in 0.01s, unread in a transcript")[0]
+    _spanned94 = _v56_claims("`3 passed` in 0.01s, unread in a transcript")[0]
+    _tplblock94 = {p: [1 for s, _m in _run94(t) if s == BLOCK] for p, t in _tpl94.items()}
+    _tplnames94 = sorted(p.rsplit("/", 1)[-1] + ":" + str(len(c))
+                         for p, c in _asclaim94.items())
+    good = (all(bool(t) for t in _tpl94.values())
+            and not any(_asclaim94.values())
+            and _bare94 == [(3, "passed")] and _spanned94 == []
+            and not any(_tplblock94.values()))
+    ok &= good
+    print(f"  V56 {'SPANS-are-guidance':<30} expected NEITHER shipped increment template to "
+          f"read as a packet claiming a run — both carry `N passed` placeholders and one "
+          f"carries a backticked `3 passed` as guidance — and the same three words "
+          f"OUTSIDE a span to be a claim, so the exemption is the SPAN and not the words "
+          f"· got claims {_shown(set(_tplnames94))} "
+          f"· bare {_bare94} · spanned {_spanned94} · "
+          f"{'ok' if good else 'FAIL'}")
+
+    # (f) THE TICK IS A CLAIM WITH NO NUMBER IN IT. The evidence checklist's own row says a
+    # run happened; a packet that ticks it and cites nothing is the same defect wearing no
+    # figure, and a reader keyed on digits alone would pass it.
+    _CHK94 = "| Tests/type checks/lint pass | ✓ | the suite is green |"
+    _tick94 = _run94(_pkt94(_CHK94))
+    _cross94 = _run94(_pkt94("| Tests/type checks/lint pass | ✗ | not run here |"))
+    # AND THE REFUSAL THAT CONTAINS THE WORD `pass` IS NOT A TICK -- the review's `L1`. The
+    # first cut tested the substring `PASS` against the whole captured cell, so *the suite
+    # cannot pass without Docker* scored as satisfied while a bare `OK` did not.
+    _excuse94 = _run94(_pkt94("| Tests/type checks/lint pass |  | skipped — the suite "
+                              "cannot pass without Docker |"))
+    good = (any(s == BLOCK and "Tests/type checks/lint pass" in m for s, m in _tick94)
+            and not any(s == BLOCK for s, _m in _cross94)
+            and not any(s == BLOCK for s, _m in _excuse94)
+            and bool(_v56_claims(_CHK94)[2]) and not _v56_claims(
+                "| Tests/type checks/lint pass |  | it cannot pass without Docker |")[2])
+    ok &= good
+    print(f"  V56 {'TICK-is-a-claim':<30} expected the evidence-checklist row "
+          f"`Tests/type checks/lint pass` marked ✓ with no figure anywhere to BLOCK for "
+          f"want of a transcript, and the same row marked ✗ to raise nothing · got "
+          f"tick {len([1 for s, _m in _tick94 if s == BLOCK])}, cross "
+          f"{len([1 for s, _m in _cross94 if s == BLOCK])}, excused "
+          f"{len([1 for s, _m in _excuse94 if s == BLOCK])} · "
+          f"{'ok' if good else 'FAIL'}")
+
+    # (g) EVERY STATE CARRIES A TYPED SENTENCE AND THE UNVERIFIABLE ONES ARE NOT PASSES --
+    # `_v60_outcome`'s posture at this rule. A `vault:` home, a cited file that is not there,
+    # and a citation outside the home each say what was NOT measured.
+    _vault94 = _run94(_pkt94("4 passed.", _ROW94, "1 artifact"),
+                      homes={"evidence": "vault:.dev-flow/2026-09-25-fast-01/evidence/"})
+    _gone94 = _run94(_pkt94("4 passed.", _ROW94, "1 artifact"))
+    good = (any("unverifiable" in m for _s, m in _vault94)
+            and any("missing" in m for _s, m in _gone94)
+            and all(any("this is not a pass" in m for _s, m in v)
+                    for v in (_vault94, _gone94))
+            and not any(s == BLOCK for s, _m in _vault94 + _gone94))
+    ok &= good
+    print(f"  V56 {'UNVERIFIABLE-is-not-a-pass':<30} expected a `vault:` home this repository "
+          f"cannot read and a cited file that is NOT on disk each to produce a NOTICE saying "
+          f"in its own words that the count was compared against nothing — never a "
+          f"BLOCK, because an unreadable artifact is not a false claim · got "
+          f"{_shown({s for s, _m in _vault94 + _gone94})} · "
+          f"{'ok' if good else 'FAIL'}")
+
+    # (h) AN ENGLISH SENTENCE IS NOT A TEST COUNT -- the independent review's `H2`, which
+    # found a LIVE instance in the origin record: `passed` and `failed` are ordinary verbs, so
+    # *Increment 2 passed the gate* was read as a reported figure and one prose number above
+    # the real one BLOCKED an honest, fully-cited packet with the rule quoting the wrong row
+    # back as the claim. Both directions on one fixture set, because a narrowing that also
+    # stops reading the REAL shapes has only moved the defect.
+    _PROSE94 = ("Increment 2 passed the gate with no findings.",
+                "| - | Record agreement | OK | The item rev 1 failed. Guard quoted from |",
+                "the 200 passed cases in the legacy suite are untouched",
+                "Phase 3 passed review before this increment opened.")
+    # THE SECOND HALF IS THE RECORD'S OWN IDIOM, and it is here because the first cut of this
+    # narrowing LOST IT: demanding a runner token beside every figure silenced 38 of the 205
+    # claiming packets in the origin record and brought `T-record` back in three of that
+    # record's own spellings. These five are quoted from it, shape for shape.
+    _REAL94 = ("One complete run: exit code 0, 4 passed.",
+               "| **black-box** | `test_x` | 3 passed |",
+               "python -m pytest -q -> 4 passed in 0.02s",
+               "===== 12 passed, 1 skipped =====",
+               "- **180 passed** (was 179 in increment 1 with 1 failure; net +1).",
+               "- **0 failed.** Green CI restored.",
+               "Lean suite -> **681 passed, 0 failures** (678 + 3).",
+               "Full non-slow: **964 -> 968 collected (+4)**; 936 passed / 0 failed.",
+               "- Full suite: **6 passed** (5 pre-existing + 1 new), 3.83 s.")
+    _pros94 = {p: _v56_claims(p)[0] for p in _PROSE94}
+    _real94 = {r: _v56_claims(r)[0] for r in _REAL94}
+    _live94 = _run94(_pkt94("One complete run: exit code 0, 4 passed.\n"
+                            "Increment 7 passed the gate with no findings.",
+                            _ROW94, "1 artifact"), {"t.txt": _TRANS94})
+    good = (not any(_pros94.values()) and all(_real94.values())
+            and not any(s == BLOCK for s, _m in _live94))
+    ok &= good
+    print(f"  V56 {'PROSE-is-not-a-claim':<30} expected the {len(_PROSE94)} sentence(s) that "
+          f"merely USE the English verb — one of them a row this flow's own record "
+          f"really holds — to claim nothing, the {len(_REAL94)} shape(s) a runner "
+          f"actually prints to claim their figures, and an honest packet carrying one such "
+          f"sentence beside a cited transcript to raise NO block · prose "
+          f"{sum(len(v) for v in _pros94.values())} figure(s), real "
+          f"{sum(len(v) for v in _real94.values())} · live "
+          f"{_shown({s for s, _m in _live94})} · {'ok' if good else 'FAIL'}")
+
+    # ---- V57. THE GATED TREE, OVER REAL REPOSITORIES.
+    def _repo94(root, files):
+        """A git repository with one commit per `files` entry -> the list of HEADs."""
+        subprocess.run(["git", "-C", root, "init", "-b", "main"],
+                       capture_output=True, timeout=60)
+        for _a94 in (("config", "user.email", "t@t"), ("config", "user.name", "t"),
+                     ("config", "commit.gpgsign", "false")):
+            subprocess.run(["git", "-C", root] + list(_a94), capture_output=True, timeout=60)
+        # THE FLOW'S OWN DIRECTORIES ARE IGNORED IN THIS FIXTURE, and that is not a
+        # convenience: without it every write below is an untracked file, `git status
+        # --porcelain` never comes back empty, and the arm that asserts *clean* would be
+        # measuring the fixture's bookkeeping instead of the property. The dirt under test
+        # is planted deliberately, one file, by `dirty=True`.
+        with open(os.path.join(root, ".gitignore"), "w", encoding="utf-8") as _f94:
+            _f94.write(".dev-flow/\n.fast-dev-flow/\n")
+        heads = []
+        for _n94, _b94 in files:
+            with open(os.path.join(root, _n94), "w", encoding="utf-8") as _f94:
+                _f94.write(_b94)
+            subprocess.run(["git", "-C", root, "add", "-A"], capture_output=True, timeout=60)
+            subprocess.run(["git", "-C", root, "commit", "-m", _n94],
+                           capture_output=True, timeout=60)
+            heads.append(_git(root, "rev-parse", "HEAD"))
+        return heads
+
+    _SPEC94 = ("# Quick Spec\n\n## 0. Batch header\n\n| Field | Value |\n|---|---|\n"
+               "| Batch | `2026-09-25-fast-01` |\n| Gated tree | %s |\n\n"
+               "## 7. Status\n\n| Field | Value |\n|---|---|\n| Current phase | %s |\n")
+
+    _CLOSE94 = ("# Batch close\n\n## 0 · Gate record\n\n| Field | Value |\n|---|---|\n"
+                "| Gated tree | %s |\n")
+
+    def _run57(gated, phase="closed", dirty=False, files=(("a.txt", "one"), ("b.txt", "two")),
+               mode="fast", station=None):
+        """The REGISTERED `V57` over a real repository -> [(severity, message)].
+
+        `mode` IS A PARAMETER AND NOT A CONSTANT, which is the independent review's `H3`: the
+        first cut hard-coded `fast` in every fixture, so `core`/`full` -- a different close
+        signal, a different artifact, a different filename list -- was measured by nothing,
+        and two planted edits (the close signal always false, the close filenames renamed to
+        files that do not exist) kept all four arms green.
+        """
+        _d94 = tempfile.mkdtemp()
+        try:
+            heads = _repo94(_d94, list(files))
+            _bd94 = os.path.join(_d94, ".dev-flow", "2026-09-25-fast-01")
+            os.makedirs(os.path.join(_d94, ".fast-dev-flow"), exist_ok=True)
+            os.makedirs(os.path.join(_bd94, "03-increments"), exist_ok=True)
+            _doc94 = {"mode": mode, "batch_id": "2026-09-25-fast-01",
+                      "artifact_homes": {"spec": "repo:.fast-dev-flow/spec.md"}}
+            if mode != "fast":
+                _doc94["stations_active"] = ["P0", "P1", "P5"]
+                _doc94["current_station"] = station or "P5"
+            with open(os.path.join(_d94, ".dev-flow", "state.json"), "w",
+                      encoding="utf-8") as _f94:
+                json.dump(_doc94, _f94)
+            cell = gated(heads) if callable(gated) else gated
+            with open(os.path.join(_d94, ".fast-dev-flow", "spec.md"), "w",
+                      encoding="utf-8") as _f94:
+                _f94.write(_SPEC94 % (cell, phase))
+            if mode != "fast":
+                _cn94 = "05-close.md" if mode == "core" else "05-postmortem.md"
+                with open(os.path.join(_bd94, _cn94), "w", encoding="utf-8") as _f94:
+                    _f94.write(_CLOSE94 % cell)
+            if dirty:
+                with open(os.path.join(_d94, "a.txt"), "w", encoding="utf-8") as _f94:
+                    _f94.write("tampered after the gate")
+            return [(_f.sev, _f.msg) for _f in reg["V57"](_d94, _artifacts(_d94))]
+        finally:
+            shutil.rmtree(_d94, ignore_errors=True)
+
+    # (h) THE HAPPY PATH AND THE TAMPER, ON ONE PAIR OF TREES. The record naming HEAD over a
+    # clean tree says so and asks nothing; the same record after one commit prints the
+    # distance, and never a BLOCK -- a closed batch is allowed to be followed by work.
+    _now94 = _run57(lambda h: "`%s` · clean" % h[-1])
+    _old94 = _run57(lambda h: "`%s` · clean" % h[0])
+    good = (not any(s == BLOCK for s, _m in _now94 + _old94)
+            and any(s == SKIP and "clean against it" in m for s, m in _now94)
+            and any(s == NOTICE and "record predates this tree by 1 commit(s)" in m
+                    for s, m in _old94))
+    ok &= good
+    print(f"  V57 {'PREDATES-says-the-distance':<30} expected a gate record naming this very "
+          f"`HEAD` over a clean tree to ask nothing, and the SAME record naming the commit "
+          f"before it to print `record predates this tree by 1 commit(s)` as a NOTICE — "
+          f"never a block · got current {_shown({s for s, _m in _now94})}, moved "
+          f"{_shown({s for s, _m in _old94})} · {'ok' if good else 'FAIL'}")
+
+    # (i) THE DIRTY TREE IS THE `T-code` TAMPER, and the finding NAMES the file: a count would
+    # tell a reader that something moved and not what, which is the difference between a
+    # notice somebody acts on and one they scroll past.
+    _dirty94 = _run57(lambda h: "`%s` · clean" % h[-1], dirty=True)
+    good = (not any(s == BLOCK for s, _m in _dirty94)
+            and any(s == NOTICE and "working tree is dirty" in m and "a.txt" in m
+                    for s, m in _dirty94))
+    ok &= good
+    print(f"  V57 {'DIRTY-names-the-files':<30} expected a file edited AFTER the gate — "
+          f"committed nowhere, `HEAD` unmoved, which is the tamper this rule was written for "
+          f"— to raise a NOTICE NAMING that file rather than a count · got "
+          f"{_shown({s for s, _m in _dirty94})} · {'ok' if good else 'FAIL'}")
+
+    # (j) THE FOUR UNRECORDED STATES ARE FOUR SENTENCES, and an OPEN batch is asked nothing at
+    # all. A rule that accused every in-progress batch of not having recorded its close would
+    # be `C-53` written as a gate.
+    _none94 = _run57(lambda h: "`%s` · clean" % h[-1], phase="B")
+    _empty94 = _run57("`<the 40-hex HEAD at the gate · clean — or: dirty — "
+                      "the files>`")
+    _noref94 = _run57("recorded at the gate")
+    good = (all(s == SKIP for s, _m in _none94)
+            and any("not closed" in m for _s, m in _none94)
+            and any(s == NOTICE and "placeholder" in m for s, m in _empty94)
+            and any(s == NOTICE and "names no commit" in m for s, m in _noref94)
+            and not any(s == BLOCK for s, _m in _none94 + _empty94 + _noref94)
+            and len({_m for _s, _m in _empty94} | {_m for _s, _m in _noref94}) == 2)
+    ok &= good
+    print(f"  V57 {'STATES-are-distinct-and-never-block':<30} expected an OPEN batch to be "
+          f"asked nothing, the template's own placeholder and a cell naming no commit to get "
+          f"their own sentences rather than share one, and NO fixture of this rule to produce "
+          f"a BLOCK at all · got open {_shown({s for s, _m in _none94})} · "
+          f"severities {_shown({s for s, _m in _empty94 + _noref94})} · "
+          f"{'ok' if good else 'FAIL'}")
+
+    # (k) THE ROW HAS A HOME IN EVERY MODE'S CLOSE RECORD, and the three templates that mint
+    # it are read rather than trusted -- `V41 TEMPLATE-mints-the-row`'s discipline at this
+    # rule. A row nothing mints is a rule that will pass by never matching anything.
+    _MINTS94 = ("templates/fast-dev-flow/spec-template.md",
+                "templates/dev-flow/close-template.md",
+                "templates/dev-flow/postmortem-template.md")
+    _mints94 = {p: bool(_V57_ROW.search(_self_read((p)) or "")) for p in _MINTS94}
+    _plant94 = bool(_V57_ROW.search("| Gate record | x |\n"))
+    good = all(_mints94.values()) and not _plant94
+    ok &= good
+    print(f"  V57 {'TEMPLATE-mints-the-row':<30} expected all {len(_MINTS94)} close record(s) "
+          f"this flow ships — the fast spec header, `core`'s close and `full`'s "
+          f"post-mortem — to mint the `{_V57_LABEL}` row the rule reads, and a table "
+          f"carrying only the neighbouring `Gate record` row to mint none · got "
+          f"{_shown({p.split('/')[-1] for p, v in _mints94.items() if v})} · plant "
+          f"{_plant94} · {'ok' if good else 'FAIL'}")
+
+    # (l) THE OTHER TWO MODES, WHERE THE RECORD IS A DIFFERENT FILE AND THE CLOSE SIGNAL IS A
+    # DIFFERENT FACT -- the independent review's `H3`, which measured `V57` speaking in NO
+    # non-fast mode anywhere in this suite while two plantable edits kept every arm green.
+    # `core` closes in `05-close.md` and `full` in `05-postmortem.md`; both are read, both at
+    # the last declared station, and a batch still at its FIRST station is asked nothing.
+    _core94 = _run57(lambda h: "`%s` · clean" % h[0], mode="core")
+    _full94 = _run57(lambda h: "`%s` · clean" % h[0], mode="full")
+    _early94 = _run57("`<the 40-hex HEAD at the gate>`", mode="core", station="P0")
+    # AND THE STATION DISJUNCT IS DRIVEN APART FROM THE ROW -- the pass-2 review's `N2`. The
+    # close signal here is *the last declared station is the current one* OR *the row is
+    # already filled*, and every fixture above fills the row, so the first disjunct could be
+    # deleted outright with all six arms green: the review measured exactly that, and the
+    # mutant that was supposed to catch it SURVIVED. This fixture is closed by the STATION
+    # alone, with the row still carrying the template's own placeholder, so the finding it
+    # produces exists only if that disjunct fires.
+    _station94 = _run57("`<the 40-hex HEAD at the gate>`", mode="core", station="P5")
+    good = (all(any(_s == NOTICE and "predates this tree by 1 commit(s)" in _m
+                    for _s, _m in _v) for _v in (_core94, _full94))
+            and not any(_s == BLOCK for _s, _m in _core94 + _full94 + _early94 + _station94)
+            and all(_s == SKIP for _s, _m in _early94)
+            and any("not closed" in _m for _s, _m in _early94)
+            and any(_s == NOTICE and "placeholder" in _m for _s, _m in _station94))
+    ok &= good
+    print(f"  V57 {'CORE-and-FULL-are-read':<30} expected the `core` close record "
+          f"(`05-close.md`) and the `full` one (`05-postmortem.md`) to be OPENED and their "
+          f"`{_V57_LABEL}` row compared — both printing the distance — while a "
+          f"`core` batch still at its FIRST declared station is asked nothing at all, and "
+          f"one closed by the STATION ALONE — its row still the placeholder — to be "
+          f"judged closed by that disjunct rather than by the row under examination "
+          f"· got core {_shown({_s for _s, _m in _core94})}, full "
+          f"{_shown({_s for _s, _m in _full94})}, early "
+          f"{_shown({_s for _s, _m in _early94})}, station-only "
+          f"{_shown({_s for _s, _m in _station94})} · {'ok' if good else 'FAIL'}")
+
+    # (m) THE STATES NO TREE ON THIS MACHINE PRODUCES, DRIVEN AGAINST THE PURE CORE. The
+    # review's line-trace found six typed sentences unreached by the whole suite, which is
+    # `_v60_outcome`'s *six states, six sentences* posture claiming coverage it did not have.
+    # A record AHEAD of this tree and a DIVERGED one are this rev's own `M2` repair and have
+    # no fixture anywhere else.
+    _S94 = "a1" * 20
+    _H94 = "b2" * 20
+    _pure94 = {
+        "absent": _v57_outcome("absent", True, "", "x", None, None, None, None),
+        "nofile": _v57_outcome("nofile", True, "", "`05-close.md`", None, None, None, None),
+        "nohead": _v57_outcome("ok", True, "", "x", "`%s` · clean" % _S94,
+                               None, None, None),
+        "unknown": _v57_outcome("ok", True, "", "x", "`%s` · clean" % _S94,
+                                _H94, None, None),
+        "postdates": _v57_outcome("ok", True, "", "x", "`%s` · clean" % _S94,
+                                  _H94, None, 0, 3),
+        "diverged": _v57_outcome("ok", True, "", "x", "`%s` · clean" % _S94,
+                                 _H94, None, 2, 5),
+        "many": _v57_outcome("ok", True, "", "x", "`%s` · clean" % _S94, _S94,
+                             ["f%d.txt" % _i for _i in range(11)], 0, 0),
+    }
+    _words94 = {"absent": "no `.dev-flow/state.json`", "nofile": "no gate record was found",
+                "nohead": "could not be read", "unknown": "not in this repository's history",
+                "postdates": "AHEAD of this tree by 3", "diverged": "DIVERGED",
+                "many": "and 3 more"}
+    _miss94 = sorted(_k for _k, _w in _words94.items()
+                     if not any(_w in _m for _s, _w2, _m in _pure94[_k]))
+    good = (not _miss94
+            and not any(_s == BLOCK for _v in _pure94.values() for _s, _w, _m in _v)
+            and len({_m for _v in _pure94.values() for _s, _w, _m in _v}) >= 7)
+    ok &= good
+    print(f"  V57 {'STATES-no-tree-here-produces':<30} expected the {len(_words94)} outcome(s) "
+          f"no fixture on this machine can build — no `state.json`, no close record, an "
+          f"unreadable `HEAD`, a ref outside this history, a record AHEAD of the tree, a "
+          f"DIVERGED pair, and more dirty files than the finding prints — each to carry "
+          f"its OWN sentence, none of them a BLOCK · missing "
+          f"{_shown(set(_miss94)) if _miss94 else '{}'} · "
+          f"{'ok' if good else 'FAIL'}")
+
     # (o) ONE HOME FOR THE RULING, AND THE TWO COMMANDS POINT AT IT. `C-50`: the hard rule
     # that a phase never advances without explicit approval stands in both commands, and the
     # runtime that cannot deliver one is answered in the ADAPTER. A second wording in either
@@ -20808,9 +21791,16 @@ def selftest():
     # partition it did not cover -- the independent review's round-2 `F1`, measured on the
     # shipped tree with no mutation: 16 templates on disk, `unpartitioned {}`, `ok`. A member
     # spelled with a `/` resolves as written; a bare one resolves under `templates/dev-flow/`.
+    # rev94: THE EIGHTH MEMBER. `V57` reads the `Gated tree` row out of the batch's close
+    # record, and in `full` that record is `05-postmortem.md` -- so the template that mints it
+    # keys a rule on a literal and owes a block, exactly as `design-proposal-template.md` did
+    # when `V52` started reading its §7 at rev77. The declared reason it carried in
+    # `_RESERVED_NOBLOCK72` -- *carries no FIELD a rule keys on* -- stopped being true in this
+    # same revision, which is the fourth time a reason in that map has been overtaken by the
+    # rev that made it false, and the census is what says so.
     _RESERVED_TPL72 = ("req-template.md", "ifc-template.md", "increment-template.md",
                        "validation-template.md", "close-template.md",
-                       "design-proposal-template.md", _FASTINC72)
+                       "design-proposal-template.md", "postmortem-template.md", _FASTINC72)
 
     def _tplpath72(key):
         """A census key -> its flow-relative path. PURE."""
@@ -20839,6 +21829,13 @@ def selftest():
     # `_TEMPLATE_FIELDS` is the census of `_v60_field`-keyed rules and `V9` is not one.
     for _p72 in ("increment-template.md", _FASTINC72):
         _expect72[_p72].add(_V9_LABEL)
+    # AND `Gated tree` JOINS THE TWO CLOSE RECORDS, for `V9`'s reason one rule over: `V57`
+    # reads it with a LITERAL row regex in every mode, so it is as untranslatable as the
+    # labels beside it, and `_TEMPLATE_FIELDS` is the census of `_v60_field`-keyed rules,
+    # which `V57` is not. Two homes and not one, because `core` closes in `05-close.md` and
+    # `full` closes in `05-postmortem.md`.
+    for _p72 in ("close-template.md", "postmortem-template.md"):
+        _expect72[_p72].add(_V57_LABEL)
     for _p72 in _RESERVED_TPL72:                      # the flow-wide tier, in every block
         _expect72[_p72] |= set(_FLOWWIDE72)
 
@@ -20868,8 +21865,6 @@ def selftest():
         # exists to prevent.
         "review-template.md": "carries no FIELD a rule keys on; the flow-wide marker binds it "
                               "and is declared in /dev-flow §Language of artifacts",
-        "postmortem-template.md": "carries no FIELD a rule keys on; the flow-wide marker binds "
-                                  "it, declared in /dev-flow §Language of artifacts",
         "functionality-template.md": "carries no FIELD a rule keys on; the flow-wide marker "
                                      "binds it, declared in /dev-flow §Language of artifacts",
         "executive-summary-template.md": "carries no FIELD a rule keys on; the flow-wide "
@@ -20897,7 +21892,17 @@ def selftest():
         # `/fast-dev-flow`'s record. No rule reads `.fast-dev-flow/` at all.
         # rev86: keyed by PATH, like every member of this axis, so it cannot collide with a
         # `templates/dev-flow/` basename the way the packet templates just did.
-        "templates/fast-dev-flow/spec-template.md": "no rule reads `.fast-dev-flow/`",
+        # ⚠ ITS DECLARED REASON READ *no rule reads `.fast-dev-flow/`* FROM rev86 TO rev93
+        # AND WAS ALREADY FALSE: rev88 gave `V45` the spec's premise roll-up and `V55` its
+        # `Current phase` cell, and rev91 added the `Standing authorization` cell. rev94 adds
+        # `V57`'s `Gated tree`. The CONCLUSION survives -- the rows it keys on are §0 HEADER
+        # cells minted by `/dev-flow-init`'s own scaffold and filled from command output, not
+        # authored prose a translator would touch, and `_exemptblock72` forbids it a block
+        # while it is here -- and the REASON did not. A declared reason that is false is the
+        # thing this census exists to prevent, so it is restated rather than left standing.
+        "templates/fast-dev-flow/spec-template.md": "its machine-read cells are §0 header "
+                                                    "rows the scaffold mints and command "
+                                                    "output fills -- not authored prose",
     }
     # rev86: KEYED BY PATH. Until here this was a set of BASENAMES unioned across the two
     # directories, so `templates/fast-dev-flow/increment-template.md` -- the file this very
@@ -21297,10 +22302,15 @@ def selftest():
     # below scored it unread in BOTH trees and it could not move. The figure is not edited to
     # match the tool: the tool was wrong, the id shape the flow prints is the one the rule now
     # reads, and the published sentence moved because the measurement did.
-    _sent84 = "".join(re.findall(r"THIRTEEN rules[^.]*", _cmd84)[:1])
+    # rev94: THIRTEEN -> FIFTEEN. `V56` and `V57` both read the declaration -- the evidence
+    # home and the packet population for one, the gate record the other -- so both move out of
+    # *read nowhere* the moment it is written, and the census measured them moving before this
+    # sentence was edited.
+    _sent84 = "".join(re.findall(r"FIFTEEN rules[^.]*", _cmd84)[:1])
     _claim84 = set(re.findall(r"`(V\d+)`", _sent84))
-    good = bool(_claim84 and _claim84 == _moved84 and len(_claim84) == 13
-                and {"V36", "V41", "V52", "V27", "V54", "V40", "V28"} <= _moved84)
+    good = bool(_claim84 and _claim84 == _moved84 and len(_claim84) == 15
+                and {"V36", "V41", "V52", "V27", "V54", "V40", "V28",
+                     "V56", "V57"} <= _moved84)
     ok &= good
     print(f"  TPL  {'FAST-STATE-reaches-the-readers':<31} expected the {len(_claim84)} rule "
           f"id(s) `/fast-dev-flow` pre-check 3 PUBLISHES to be exactly the set that "
@@ -30481,6 +31491,9 @@ def selftest():
     # `capture_output=`, no walrus, no `match`), so the floor is still bound where it
     # is measured. A future edit that reaches for one of those in the harness reddens
     # here, which is the point: a script has no business moving the file set's floor.
+    # NINE from rev94, not eight: `V57`'s fixture builder makes a REAL repository with
+    # commits in it, because the rule's subject is the distance between a recorded ref and
+    # this tree's `HEAD` and no synthetic string can hold that. The floor does not move.
     # SEVEN `git init -b` sites from rev65, not three. An enumeration of versioned content
     # cannot be armed against a tree that has none, so three arms build REAL repositories:
     # `Q18 E2E-plant-empty` (the plant), `Q18 TRACKED-foreign-root` (rebuilt on a BUILT
@@ -30488,7 +31501,7 @@ def selftest():
     # happens to be a repo) and `Q18 UNVERSIONED-enumerated` (an ignored artifact). The
     # manifest's row moves with them; the floor does not.
     good = (_api30 == (3, 7) and _git30 == (2, 28, 0) and _d30["errors"] == []
-            and len(_d30["files"]) == 7 and len(_d30["git"]) == 8 and _labs30 == _want30
+            and len(_d30["files"]) == 7 and len(_d30["git"]) == 9 and _labs30 == _want30
             # THE CITATION MOVED AT rev90 AND THAT IS THE POINT OF PINNING IT: the file
             # set gained two shipped scripts, one of which sorts first and binds the same
             # construct, so the floor is now measured somewhere else while staying 3.7. A
@@ -30499,7 +31512,7 @@ def selftest():
     else:
         ok &= good
         print(f"  V30 {'LIVE-derived':<24} expected the real canon's 7 Python file(s) to bind API "
-              f"3.7 by exactly 2 construct kinds and git 2.28.0 at 8 sites · got API "
+              f"3.7 by exactly 2 construct kinds and git 2.28.0 at 9 sites · got API "
               f"{_vs(_api30) if _api30 else 'undetermined'} at {_cite30[0] if _cite30 else '-'}, "
               f"git {_vs(_git30) if _git30 else 'undetermined'} at "
               f"{len(_d30['git'])} site(s) · {'ok' if good else 'FAIL: ' + repr(_labs30)}")

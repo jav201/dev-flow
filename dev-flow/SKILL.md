@@ -71,6 +71,18 @@ newest changelog row.
 3. `V7` runs here for real, and it names the file whose bytes disagree with the manifest: its
    BLOCK means this copy of the flow is not the revision it claims to be. Every other rule in
    the run reads YOUR project, and its BLOCKs refuse the phase the same way.
+
+   **Two of those rules bind the RECORD to what is on disk, and both run from here (flow rev94).**
+   `V56` BLOCKs an increment packet that reports a test run — any `N passed` / `N failed`
+   figure — while citing no transcript under `artifact_homes.evidence`, and BLOCKs again when
+   the figure it reports is not the figure those cited bytes hold. `V57` NOTICEs — never
+   BLOCKs — when the tree a closed batch recorded at its gate is not the tree you are standing
+   in: `record predates this tree by N commit(s)`, or the files that are dirty against it. The
+   rows they read are minted by the increment templates and by the close record, and each
+   template states its own rule. ⚠ **What they do NOT catch, said here rather than left to be
+   assumed:** a transcript REGENERATED from tests that assert nothing hashes correctly and reads
+   correctly. What this pair gives you is **a record a tool can check against the tree**, and that
+   is a different claim from *a record that cannot be faked*.
 4. **Three rules genuinely cannot run from a bundle**, and the run SKIPs them by name with the
    reason printed: `V15` pairs a canon tree against this bundle and there is no canon tree
    here; `V16` walks the checkout table, which lives in a canon file the bundle does not ship;

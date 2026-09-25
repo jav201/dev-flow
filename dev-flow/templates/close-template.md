@@ -8,7 +8,7 @@
 
 > **Reserved field names.** The **field names and block keywords below are language-independent** — the
 > validator parses them literally and they are never translated:
-> `Conditional-gate discharge` · `New controls` · `Human perimeter` · `Human review ledger` · `⏸ DEFER`
+> `Conditional-gate discharge` · `New controls` · `Human perimeter` · `Human review ledger` · `Gated tree` · `⏸ DEFER`
 > **And the §6 DEPTH tokens — cell VALUES rather than field names, reserved for the same reason:**
 > `light` · `rigorous` · `spot-check` · `none` · `✅` · `❌`. A CLOSED set, declared closed by the first
 > revision that ships it — so the vocabulary a later promotion of `V54` to BLOCK will need already exists,
@@ -27,6 +27,29 @@
 
 > **Notice convention.** `⚠` yellow = declare and continue · `✗` red = block · `✓` green = satisfied
 > **with its citation**.
+
+---
+
+## 0 · Gate record — which tree this close gated
+
+| Field | Value |
+|---|---|
+| Gate record | `<the validator command, its exit code, and 0 block · date>` |
+| Gated tree | `<the 40-hex HEAD at the gate · clean — or: dirty — the files>` |
+
+> **`Gated tree` BINDS THE RECORD TO THE BYTES, and THIS ROW IS THAT RULE'S ONE HOME for `core`
+> and `full` (flow rev94).** Write it at the close gate, from that run's own two commands —
+> `git rev-parse HEAD` for the 40-hex ref, and `git status --porcelain` for the word after it:
+> `clean` when it printed nothing, `dirty — <the files>` when it did. **`V57` reads it at every
+> later run** and prints `record predates this tree by N commit(s)` when `HEAD` has moved — or
+> says the record is AHEAD, or that the two have diverged — and names the files that are dirty
+> against `HEAD`, which is what `git status --porcelain` measures. **It is a NOTICE and never a block:**
+> a closed batch is allowed to be followed by work — the gate's job here is to say so instead of
+> printing the same verdict over different bytes. In `full`, where this file is not seeded, the
+> same two rows go in `05-postmortem.md` and `V57` reads them there. **Expect `predates this tree by
+> 1 commit(s)` immediately after the close**, because the commit that carries this row is itself one
+> commit later than the tree it names; the figure is the record's AGE, and that is what it is for.
+> ⚠ **Declared bound:** the ref proves WHICH tree was gated, not that the tree was good.
 
 ---
 

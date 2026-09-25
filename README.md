@@ -9,7 +9,7 @@
 
 <p align="center"><a href="https://github.com/jav201/dev-flow/actions/workflows/flow-selftest.yml"><img src="https://github.com/jav201/dev-flow/actions/workflows/flow-selftest.yml/badge.svg" alt="flow selftest"></a></p>
 
-**A supervised engineering flow for AI coding agents whose record cannot be faked.**
+**A supervised engineering flow for AI coding agents whose record a tool can check.**
 
 **Status: alpha — flow rev93.** Self-test green on three declared machines; fresh readers on three runtimes close a batch with the skill alone. Expect rough edges outside Claude Code and read *Limits* before adopting.
 

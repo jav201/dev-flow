@@ -19,6 +19,7 @@
 | Standing authorization | `<the operator's own words, and what they authorize · or: <the commission, quoted or cited> (runtime cannot prompt) · or: none — every gate is asked>` |
 | Runtime absences (`SKILL.md` step 5) | `<named roles unavailable and therefore self-executed · prompts unavailable · or: none>` |
 | Gate record | `<the validator command, its exit code, and 0 block · date>` |
+| Gated tree | `<the 40-hex HEAD at the gate · clean — or: dirty — the files>` |
 
 > **`Batch` IS READ BY A RULE, and it is what keys this file to a batch.** `.fast-dev-flow/spec.md`
 > is SINGLE-SLOT — one spec at a time, the previous one archived (`/fast-dev-flow` §Pre-checks 2)
@@ -31,6 +32,22 @@
 > **Every row is a DECLARED ANSWER or a declared absence, never blank.** `not-run — <why>` is an
 > answer; an empty cell is a question nobody asked. The evidence-state vocabulary is `/dev-flow`
 > §*Evidence states* and is not re-minted here.
+>
+> **`Gated tree` BINDS THE RECORD TO THE BYTES, and THIS ROW IS THAT RULE'S ONE HOME FOR `fast` (flow rev94; `core` closes in `05-close.md` and `full` in `05-postmortem.md`, and `templates/close-template.md` §0 is the home there).**
+> Write it at the close gate, from that run's own two commands — `git rev-parse HEAD` for the
+> 40-hex ref, and `git status --porcelain` for the word after it: `clean` when it printed nothing,
+> `dirty — <the files>` when it did. `Base ref` above says where the batch STARTED; this row says
+> what the gate actually passed over, and the two are different commits whenever the batch
+> committed anything. **`V57` reads it at every later run** and prints `record predates this tree
+> by N commit(s)` when `HEAD` has moved, or names the files that are dirty against `HEAD` — which is what
+> `git status --porcelain` measures, and the two are different questions while the record and
+> `HEAD` differ. **It is a NOTICE and never a block:** a closed batch is allowed to be followed by work — the
+> gate's job here is to say so instead of printing the same verdict over different bytes. The row
+> is read only once the batch is CLOSED, so leaving it as it ships while the batch is open costs
+> nothing. **Expect `predates this tree by 1 commit(s)` immediately after the close**, because the
+> commit that carries this row is itself one commit later than the tree it names; the figure is the
+> record's AGE, and that is what it is for. ⚠ **Declared bound:** the ref proves WHICH tree was
+> gated, not that the tree was good.
 >
 > **`Standing authorization` HAS THREE LEGAL FORMS AND THE RUNTIME DECIDES WHICH ARE OPEN TO
 > YOU.** *The operator's own words* is the form a runtime that CAN ask writes when the
