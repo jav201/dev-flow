@@ -59,7 +59,7 @@ What a batch leaves behind, and what each part is for:
     .dev-flow/<batch>/evidence/          THE BYTES every digest cites
     .dev-flow/BACKLOG.md                 WHAT carries to the next batch
 
-The gate never says more than it measured. Run it on an empty repository and it passes — and tells you what a pass means here (real output, `--brief`, trimmed):
+The gate never says more than it measured. Run it on an empty repository and it passes — and tells you what a pass means here (real output at flow rev92, `--brief`, trimmed; the counts move with the revision, the shape does not):
 
     0 block · 5 notice · 49 not applicable
       [!] V18  .dev-flow/state.json: no `.dev-flow/state.json`, so nothing declares the active batch …
