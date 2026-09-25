@@ -1,6 +1,13 @@
-# dev-flow
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="brand/dev-flow-mark-dark.svg">
+    <img src="brand/dev-flow-mark-light.svg" alt="dev-flow — the V that verifies" width="160">
+  </picture>
+</p>
 
-[![flow selftest](https://github.com/jav201/dev-flow/actions/workflows/flow-selftest.yml/badge.svg)](https://github.com/jav201/dev-flow/actions/workflows/flow-selftest.yml)
+<h1 align="center">dev-flow</h1>
+
+<p align="center">[![flow selftest](https://github.com/jav201/dev-flow/actions/workflows/flow-selftest.yml/badge.svg)](https://github.com/jav201/dev-flow/actions/workflows/flow-selftest.yml)</p>
 
 **A supervised engineering flow for AI coding agents whose record cannot be faked.**
 
