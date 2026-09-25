@@ -11,6 +11,8 @@
 
 **A supervised engineering flow for AI coding agents whose record cannot be faked.**
 
+**Status: alpha — flow rev93.** Self-test green on three declared machines; fresh readers on three runtimes close a batch with the skill alone. Expect rough edges outside Claude Code and read *Limits* before adopting.
+
 Most agent workflows tell the model *what to write*. dev-flow also governs *how the work is recorded and checked*, the way software engineering has done it for decades: a V-model of stations, requirements traced to acceptance tests, increments with review packets, independent review, evidence that names its source, and a close with a post-mortem. That artifact structure is the control surface — the same one that regulated software practice relies on — carried over to agent-driven development and enforced rather than recommended.
 
 Every batch leaves that record (requirements, increments, evidence, close), a validator reads it back, and the validator is itself tested by mutation — every self-test arm proven able to fail; `scripts/devflow-validate.py --selftest` prints the current count and the manifest carries the revision it belongs to. If a claim in the record has no reader, the flow treats it as a paragraph, not a control.
