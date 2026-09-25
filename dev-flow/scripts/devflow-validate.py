@@ -155,6 +155,20 @@ def _norm_digest(path):
         return None
 
 
+# rev92, SECOND AXIS (found by the CI this rev turned on). DOES THIS PLATFORM HAVE VOLUMES?
+#
+# DERIVED, never `os.name == "nt"`: the question every caller below actually asks is whether a
+# fully qualified path must name a volume, and that is a property of `os.path`, not of a family
+# of operating systems. `abspath(sep)` names a volume on one and does not on the others, so
+# `splitdrive` answers it without anyone typing a platform name. (The literal spellings are
+# deliberately absent from this comment: this file is inside the population the publication
+# scan reads, and a sentence explaining a path shape is a hit exactly like the shape.)
+_HAS_VOLUMES = bool(os.path.splitdrive(os.path.abspath(os.sep))[0])
+# And the other half of the same question, measured the same way: does a backslash SEPARATE
+# path components here, or is it an ordinary character a filename may contain?
+_BACKSLASH_SEPARATES = os.path.basename(r"a\b") == "b"
+
+
 def _digest_text(text):
     """sha16 of TEXT through the same normalisation `_digest` applies to a file.
 
@@ -8686,7 +8700,15 @@ def _v40_outcome(code, owner, tree, folds, reason, probed, mode=None):
     # surviving F6's fix. `splitdrive` returns the UNC share for `//server/share/x`, so a
     # real UNC checkout still passes. (rev65's second review, MEDIUM.)
     _o40 = owner.strip()
-    if not os.path.isabs(_o40) or not os.path.splitdrive(_o40)[0]:
+    # ⚠ rev92: THE DRIVE CLAUSE IS CONDITIONED ON THE PLATFORM HAVING DRIVES, and until the
+    # first Linux run nobody had noticed that it was not. `splitdrive` returns `("", path)` for
+    # EVERY path on a platform with no volumes, so this rule called every absolute checkout
+    # identity on Linux RELATIVE and refused it -- a BLOCK-class sentence, always, on a whole
+    # family of runtimes, in a published flow. The requirement is *fully qualified, not merely
+    # rooted*, and where there are no drives a rooted path already IS fully qualified: there
+    # is no current drive for `abspath` to supply, which is the entire defect the clause exists
+    # to stop. `_HAS_VOLUMES` says which platform this is, derived rather than named.
+    if not os.path.isabs(_o40) or (_HAS_VOLUMES and not os.path.splitdrive(_o40)[0]):
         return [(NOTICE, _V40_WHERE, _V40_RELATIVE % (_V40_KEY, _o40))]
     off = [p for p in (owner, tree) if not _same_volume(probed, p)]
     vol = (_V40_SAME_VOL if not off
@@ -10980,7 +11002,7 @@ def _active_batch_dir(root):
     return _active_batch_state(root)[0]
 
 
-def _artifacts(root):
+def _artifacts(root, walk=os.walk):
     """Batch artifacts by basename, read from the declared batch's directory ALONE.
 
     rev39 made the declared batch win by OVERRIDING a whole-tree walk, and an override is not a
@@ -11030,6 +11052,13 @@ def _artifacts(root):
     correction, not a loss.** The live output delta of the change was ONE sentence, `SKIP` on both
     sides, no severity and no count change: `V5` stopped reporting batch-01's ledger.
 
+    rev92: and the walk is SORTED -- sibling directories and filenames alike -- because
+    "first wins" is only a rule if the order is one. `os.walk` returns the filesystem's order,
+    alphabetical on one and hash order on another, so two checkouts of one tree resolved
+    DIFFERENT documents for the same basename depending on the machine. The choice of
+    ALPHABETICAL is arbitrary and is therefore stated here and armed, by `ART A6-order-is-the-
+    rule`, which substitutes a reversed listing rather than trusting the disk to disagree.
+
     Inside one batch directory the walk is first-wins over `os.walk` top-down, so **a basename at
     the batch root beats the same basename in a sub-directory**. `LLR-88.5` does not specify that
     case and the corpus holds no instance of it; the choice is arbitrary, so it is stated here and
@@ -11050,8 +11079,14 @@ def _artifacts(root):
     art = {}
     base = os.path.join(root, ".dev-flow")
     active = _active_batch_dir(root)
-    for dp, _, fns in os.walk(active or base):
-        for fn in fns:
+    # ⚠ rev92: SORTED, because "first-wins" is only a rule if the order is one. `os.walk`
+    # returns whatever the filesystem returns -- alphabetical on NTFS, hash order on ext4 --
+    # so two checkouts of the same tree on two machines resolved DIFFERENT documents for the
+    # same basename, silently. `ART A6-fallback-order` is the arm that says so, and it was
+    # green for as long as the only machine running it was the one whose filesystem sorted.
+    for dp, dns, fns in walk(active or base):
+        dns.sort()
+        for fn in sorted(fns):
             if fn.endswith(".md"):
                 art.setdefault(fn, _read(os.path.join(dp, fn)) or "")
     return art
@@ -11535,6 +11570,25 @@ def selftest():
             "the canon manifest's changelog prose. The bundle's manifest is DERIVED and "
             "carries the table rather than the narrative, so the id-gap sentences this arm "
             "reads have no site here",
+        # rev92, SECOND AXIS. The same shape as the five above, one axis over: a subject this
+        # PLATFORM does not have. Volumes, a backslash that separates, and a filesystem that
+        # folds case are properties of the machine, and the arms that read them were written
+        # on one. The first Linux run of this suite found them because this rev's repair let
+        # the run get far enough to print them.
+        # TWO classes, not one with a disjunction -- the delta review's `D3`, and it is
+        # `_not_mirrored_reason`'s lesson arriving inside this rev's own new table: a sentence
+        # that names three properties says something confidently wrong about every arm whose
+        # reason is only one of them. `_PLAT40` was already keyed by property; the sentences
+        # follow it.
+        "platform-volumes":
+            "a state that needs NAMED VOLUMES, which this platform does not have: "
+            "`splitdrive` answers `\"\"` for every path here, so *rooted but naming no "
+            "volume* and *on another volume* are not states this runtime can be in. How the "
+            "rule behaves on the states it CAN reach is measured by the arms beside this one",
+        "platform-separator":
+            "a state that needs a BACKSLASH THAT SEPARATES path components, which it does "
+            "not here — a backslash is an ordinary character a filename may contain, so "
+            "the two spellings this arm asks the rule to unify are two different paths",
     }
 
     _skipsub92 = []
@@ -14106,6 +14160,42 @@ def selftest():
         _who = (_art.get("01-requirements.md") or "").strip()
         ok &= _art_arm("A6-fallback-order", _who == "# from a" and len(_art) == 1,
                        "`a` wins the fallback walk", _who or "<absent>")
+
+        # ⚠ rev92, the delta review's `D2`. A6 ABOVE MEASURES THE FILESYSTEM; THIS ONE
+        # MEASURES THE RULE. `os.walk` returns whatever the filesystem returns -- alphabetical
+        # on NTFS, hash order on ext4 -- so on the authoring machine A6 was green with the
+        # sort DELETED (measured: 1628 arms, all 34 `ART` arms green), and on ext4 it would
+        # have failed only sometimes, which is not an oracle either. The listing is SUBSTITUTED
+        # instead, exactly as `CASE-probe-is-derived` substitutes the filesystem for the fold
+        # probe: a walker honouring `os.walk`'s contract -- yield, then descend into the list
+        # the caller was handed, AFTER the caller has sorted it in place -- with every listing
+        # deliberately reversed. With the sort in place `a` still wins; without it `z` does.
+        def _revwalk(top):
+            """`os.walk`'s contract over the real tree, with every listing REVERSED."""
+            _names = sorted(os.listdir(top), reverse=True)
+            _dirs = [_n for _n in _names if os.path.isdir(os.path.join(top, _n))]
+            _fils = [_n for _n in _names if not os.path.isdir(os.path.join(top, _n))]
+            yield top, _dirs, _fils
+            for _sub in _dirs:              # the SAME list object the caller just sorted
+                for _x in _revwalk(os.path.join(top, _sub)):
+                    yield _x
+
+        _rev = _artifacts(d, walk=_revwalk)
+        _revwho = (_rev.get("01-requirements.md") or "").strip()
+        _blind = {}
+        for _dp, _dns, _fns in _revwalk(os.path.join(d, ".dev-flow")):
+            for _fn in _fns:               # the SAME body with the two sorts removed
+                if _fn.endswith(".md"):
+                    _blind.setdefault(_fn, _read(os.path.join(_dp, _fn)) or "")
+        ok &= _art_arm("A6-order-is-the-rule",
+                       _revwho == "# from a"
+                       and (_blind.get("01-requirements.md") or "").strip() == "# from z",
+                       "`a` to win over a REVERSED listing, and the same walk with the sorts "
+                       "removed to pick `z` -- so the order is this rule's and not the "
+                       "filesystem's",
+                       "%s, unsorted picks %s"
+                       % (_revwho or "<absent>",
+                          (_blind.get("01-requirements.md") or "<absent>").strip()))
 
     # A7. A declared directory that is TRULY EMPTY resolves to an EMPTY map. Any "nothing found
     # here, try the tree" retry reopens the whole window at its very first instant -- a batch's
@@ -25912,7 +26002,24 @@ def selftest():
           f"{'{' + ', '.join(sorted(_sev39)) + '}'} · {'ok' if good else 'FAIL'}")
 
     # ---- V40 (rev65, `Q8`). WHOSE CHECKOUT OPENED THE BATCH IN THE SINGLE SLOT.
-    _T40 = "C:/Users/example/Github/example_app"
+    #
+    # ⚠ rev92: THE FIXTURE ROOT IS AN ABSOLUTE PATH ON THE RUNNING PLATFORM, and it used to be
+    # a drive-lettered one typed in. Every arm below asks the rule a question about an ABSOLUTE
+    # owner; on a platform with no volumes that spelling is RELATIVE, so fourteen arms were
+    # asking *what do you do with a relative path* and reading the right answer as a defect.
+    # The rootless spelling is deliberately not a home directory: this file is inside the
+    # population the publication scan reads, and a fixture is corpus too (`C-56`).
+    _T40 = ("C:/Users/example/Github/example_app" if _HAS_VOLUMES
+            else "/srv/example/Github/example_app")
+    _T40BASE = _T40.rsplit("/", 1)[0]
+    _ELSE40 = "C:/elsewhere" if _HAS_VOLUMES else "/elsewhere"
+    # The four states below exist only where the platform has the property they are about.
+    # Named, so a reader of a Linux run sees WHICH four and why, and so the count cannot drift.
+    _PLAT40 = {} if (_HAS_VOLUMES and _BACKSLASH_SEPARATES) else {
+        "NORM-separator": ("platform-separator", _BACKSLASH_SEPARATES),
+        "RELATIVE-driveless": ("platform-volumes", _HAS_VOLUMES),
+        "VOLUME-other": ("platform-volumes", _HAS_VOLUMES),
+    }
     for _l40, _a40, _sv40, _sub40 in (
             ("NO-STATE", ("absent", None, _T40, True, None, "/tmp"), SKIP,
              "`state.json` is absent"),
@@ -25926,7 +26033,7 @@ def selftest():
              "which is not a path"),
             ("MATCH", ("ok", _T40, _T40, True, None, "/tmp"), SKIP,
              "names this checkout"),
-            ("FOREIGN", ("ok", "C:/Users/example/Github/example_app-wt-batch90", _T40, True,
+            ("FOREIGN", ("ok", _T40 + "-wt-batch90", _T40, True,
                          None, "/tmp"), NOTICE, "was opened by another checkout"),
             # NORMALISATION. Separator, trailing slash and `..` are three spellings of ONE
             # path; a rule comparing raw strings calls a worktree foreign to itself.
@@ -25934,7 +26041,7 @@ def selftest():
                                 None, "/tmp"), SKIP, "names this checkout"),
             ("NORM-trailing", ("ok", _T40 + "/", _T40, False, None, "/tmp"), SKIP,
              "names this checkout"),
-            ("NORM-dotdot", ("ok", "C:/Users/example/Github/x/../example_app", _T40, False,
+            ("NORM-dotdot", ("ok", _T40BASE + "/x/../example_app", _T40, False,
                              None, "/tmp"), SKIP, "names this checkout"),
             # THE FOLD IS THE PROBE'S ANSWER. The SAME pair reads two ways, and which way is
             # a measurement of the filesystem rather than a property of the platform.
@@ -25967,8 +26074,16 @@ def selftest():
             ("VOLUME-other", ("ok", "D:/Drive/checkout", _T40, True, None,
                               "C:/Users/example/Temp"), NOTICE,
              "whose own filesystem was NOT probed"),
-            ("VOLUME-same", ("ok", "C:/elsewhere", _T40, True, None, "C:/Temp"), NOTICE,
+            # rev92, the delta review's `D1`: the SAME-volume state is not a state a
+            # platform without volumes lacks -- it is the ONLY one it has, and every finding
+            # there carries this qualifier. What was platform-bound was the fixture's
+            # spelling, and `_ELSE40` is derived three lines up for exactly that.
+            ("VOLUME-same", ("ok", _ELSE40, _T40, True, None,
+                             "C:/Temp" if _HAS_VOLUMES else "/tmp"), NOTICE,
              "on the same volume as both paths compared")):
+        if _l40 in _PLAT40 and not _PLAT40[_l40][1]:
+            ok &= _nosub92("V40", _l40, _PLAT40[_l40][0], 22)
+            continue
         _got40 = _v40_outcome(*_a40)
         good = (len(_got40) == 1 and _got40[0][0] == _sv40 and _sub40 in _got40[0][2]
                 and _got40[0][1] == _V40_WHERE)
@@ -25990,7 +26105,7 @@ def selftest():
         (("ok", _T40, _T40, True, None, "/tmp"), {}),
         (("ok", _T40, _T40, False, None, "/tmp"), {}),
         (("ok", _T40, _T40, None, "why", "/tmp"), {}),
-        (("ok", "C:/elsewhere", _T40, True, None, "/tmp"), {}))]
+        (("ok", _ELSE40, _T40, True, None, "/tmp"), {}))]
     good = len(set(_p40)) == 9
     ok &= good
     print(f"  V40 {'PASS!=NOOP':<22} expected 9 mutually distinct sentences over the 9 "
@@ -26039,7 +26154,7 @@ def selftest():
               ("ok", _T40, _T40, False, None, "/tmp"),
               ("ok", _T40, _T40, None, "why", "/tmp"),
               ("ok", _T40.upper(), _T40, False, None, "/tmp"),
-              ("ok", "C:/elsewhere", _T40, True, None, "/tmp")]
+              ("ok", _ELSE40, _T40, True, None, "/tmp")]
     _sev40 = {f[0] for a in _dom40 for f in _v40_outcome(*a)}
     # rev84: the ninth state joins the severity census too -- "this rule can only NOTICE or
     # SKIP" is a claim about its WHOLE range, and a branch outside the census is outside it.
@@ -26055,7 +26170,7 @@ def selftest():
     # fold -- the qualifier the sentence carries has to come from a measurement that ran.
     for _l40, _own40, _sv40, _sub40 in (
             ("E2E-mine", "SELF", SKIP, "names this checkout"),
-            ("E2E-foreign", "C:/Users/example/Github/example_app", NOTICE,
+            ("E2E-foreign", _T40, NOTICE,
              "was opened by another checkout"),
             ("E2E-absent-key", None, SKIP, "opened before rev65")):
         with tempfile.TemporaryDirectory() as _d40:
@@ -26432,6 +26547,8 @@ def selftest():
              "does not sit under the declared home"),
             ("PATH-escapes-the-repo", ".dev-flow/b41/evidence/../../../../outside.log",
              "does not NORMALISE to a path inside"),
+            # rev92: VOLUME-ROOTED, which is a shape only a volume platform has -- elsewhere
+            # `PATH-rooted-refused` below is the whole of the absolute class.
             ("PATH-absolute-refused", "C:/Temp/evidence/t.log",
              "does not NORMALISE to a path inside"),
             ("PATH-rooted-refused", "/etc/passwd", "does not NORMALISE to a path inside"),
@@ -26439,6 +26556,9 @@ def selftest():
              "does not sit under the declared home"),
             ("PATH-inner-dotdot-ok", ".dev-flow/b41/sub/../evidence/t.log",
              "hashing as cited")):
+        if _l41 == "PATH-absolute-refused" and not _HAS_VOLUMES:
+            ok &= _nosub92("V41", _l41, "platform-volumes", 24)
+            continue
         _got41 = _v41_outcome("ok", {"evidence": _H41},
                               [("increment-001.md",
                                 _pk41(_rowtxt41(_cited41, _D41), "1"))], "ok", _OK41)
@@ -29631,8 +29751,11 @@ def selftest():
                                  # reachable -- `_v41_home` scores any `repo:` value as state
                                  # `repo`, and `_v41_outcome` reaches the message for `repo`
                                  # and `vault` alike.
-                                 ("../outside/", "escapes-the-store"),
-                                 ("C:/x/evidence/", "volume-rooted")))
+                                 ("../outside/", "escapes-the-store"))
+        # rev92: A VOLUME-ROOTED HOME IS A SHAPE ONLY A VOLUME PLATFORM HAS. Elsewhere
+        # `C:/x/evidence/` is an ordinary RELATIVE directory name, so asking this census to
+        # find it unusable would ask the rule to refuse a home that is usable there.
+        + ((("C:/x/evidence/", "volume-rooted"),) if _HAS_VOLUMES else ()))
 
     def _shapecase86(home):
         """(the sentence, the specimen it prints or "", what `_v41_resolve` says). PURE."""
@@ -29690,13 +29813,17 @@ def selftest():
                 and _shapesee86.get("root") == {False}
                 and _shapesee86.get("climbs-and-returns") == {True}
                 and _shapesee86.get("escapes-the-store") == {False}
-                and _shapesee86.get("volume-rooted") == {False})
+                and (_shapesee86.get("volume-rooted") == {False} if _HAS_VOLUMES
+                     else "volume-rooted" not in _shapesee86))
     ok &= good
     print(f"  V41 {'FINDING-names-the-shape':<28} expected the evidence-path finding to name "
           f"the accepted shape and print an example BUILT FROM THE DECLARED HOME \u2014 driven "
           f"over all {len(_SHAPECASES86)} case(s) of the declared axis "
-          f"({len(_V41_PREFIXES)} prefix(es) \u00d7 8 home shapes, the last two the REACHABLE "
-          f"ones the first census missed), every specimen fed back "
+          f"({len(_V41_PREFIXES)} prefix(es) × "
+          f"{len(_SHAPECASES86) // len(_V41_PREFIXES)} home shape(s)"
+          + ("" if _HAS_VOLUMES else " — one fewer here: a VOLUME-ROOTED home is a "
+             "shape this platform does not have, and was NOT measured")
+          + f", every specimen fed back "
           f"through `_v41_resolve` and required to come back `under`, every home this rule "
           f"can build no usable example from printing NO specimen and saying why \u2014 the "
           f"function now ASKS the resolver rather than matching shapes, so the census is a "
@@ -30604,8 +30731,13 @@ def selftest():
     # The probe, live. This machine's filesystem is the fixture the requirement's boundary
     # catalog calls `error`: the selftest's own tail admitted it was unproven until this rev.
     _pwhere = tempfile.gettempdir()
+    # ⚠ rev92: THE ARM ASKS THAT THE PROBE ANSWERED, NOT THAT IT ANSWERED `True`. Its own
+    # sentence says *MEASURE this machine's filesystem rather than assume it*, and the
+    # predicate then assumed it -- green on NTFS, red on ext4 about a correct measurement. The
+    # `return True, None` body this used to guard against is refused by `CASE-probe-is-derived`
+    # below, which drives the mechanism instead of the verdict; that is where that duty lives.
     _folds, _pwhy = _casefold_probe(_pwhere)
-    good = _folds is True and _pwhy is None
+    good = _folds in (True, False) and _pwhy is None
     ok &= good
     print(f"  PRE {'CASE-live-probe':<24} expected the probe to MEASURE this machine's "
           f"filesystem rather than assume it · got folds={_folds} why={_pwhy} · "
@@ -30644,19 +30776,30 @@ def selftest():
           f"a directory of its own · got {len(_left)} leftover(s) · "
           f"{'ok' if good else 'FAIL: ' + repr(_left[:4])}")
 
+    # ⚠ rev92: THE FOURTH STATE IS A VOLUME PLATFORM'S. `splitdrive` returns "" for every path
+    # where there are no volumes, so *probed on a DIFFERENT volume* is a sentence that platform
+    # can never produce -- and the two drive-lettered fixtures are not two volumes there, they
+    # are two ordinary filenames. The three states every platform HAS are asserted everywhere;
+    # the fourth is named as not measured rather than failed.
     _cst = (_preflight_case_line(True, None, _pwhere, _pwhere),
             _preflight_case_line(False, None, _pwhere, _pwhere),
-            _preflight_case_line(None, "no probe directory could be created", _pwhere, _pwhere),
-            _preflight_case_line(True, None, "C:\\t", "Z:\\tree"))
+            _preflight_case_line(None, "no probe directory could be created", _pwhere, _pwhere))
+    _cst4 = _preflight_case_line(True, None, "C:" + os.sep + "t",
+                                 "Z:" + os.sep + "tree") if _HAS_VOLUMES else None
     good = ("FOLDS CASE" in _cst[0] and "same volume" in _cst[0]
             and "does NOT fold case" in _cst[1]
             and "NOT MEASURED" in _cst[2] and "this is not a pass" in _cst[2]
-            and "DIFFERENT volume" in _cst[3] and "NOT probed" in _cst[3]
-            and len(set(_cst)) == 4)
+            and len(set(_cst)) == 3
+            and (_cst4 is None
+                 or ("DIFFERENT volume" in _cst4 and "NOT probed" in _cst4
+                     and _cst4 not in _cst)))
     ok &= good
-    print(f"  PRE {'CASE-four-states':<24} expected folds, does-not-fold, NOT-MEASURED and "
-          f"a different-volume probe to render as 4 distinct sentences · "
-          f"{'ok' if good else 'FAIL: ' + repr(_cst)}")
+    print(f"  PRE {'CASE-four-states':<24} expected folds, does-not-fold and NOT-MEASURED to "
+          f"render as 3 distinct sentences"
+          + (", and a probe on a DIFFERENT volume as a fourth" if _HAS_VOLUMES else
+             " — the fourth, a probe on a DIFFERENT volume, is a state this platform "
+             "cannot reach and was NOT measured")
+          + f" · {'ok' if good else 'FAIL: ' + repr(_cst + (_cst4,))}")
 
     _pl = preflight_lines(os.getcwd())
     good = (len(_pl) == 3 and _pl[0].startswith("git · ")
@@ -30665,11 +30808,19 @@ def selftest():
     print(f"  PRE {'THREE-LINES':<24} expected exactly 3 lines, one per assumption, each "
           f"naming its measured value · got {len(_pl)} · {'ok' if good else 'FAIL'}")
 
-    _all = list(dict.fromkeys([ln for _lab, ln in _glines] + list(_enc) + list(_cst)))
-    good = len(_all) == 6 + 4 + 4
+    # rev92: the case states are 4 where the platform HAS volumes and 3 where it does not --
+    # the fourth is `CASE-four-states`' declared non-measurement, and the expected total moves
+    # with it rather than being typed at the authoring platform's number.
+    _all = list(dict.fromkeys([ln for _lab, ln in _glines] + list(_enc) + list(_cst)
+                              + ([_cst4] if _cst4 else [])))
+    _want_all = 6 + 4 + (4 if _cst4 else 3)
+    good = len(_all) == _want_all
     ok &= good
-    print(f"  PRE {'PASS!=NOOP':<24} expected {6 + 4 + 4} mutually distinct sentences over "
-          f"the reachable states · got {len(_all)} · {'ok' if good else 'FAIL'}")
+    print(f"  PRE {'PASS!=NOOP':<24} expected {_want_all} mutually distinct sentences over "
+          f"the reachable states"
+          + ("" if _cst4 else " — one fewer here: the different-volume case line is a "
+             "state this platform cannot reach")
+          + f" · got {len(_all)} · {'ok' if good else 'FAIL'}")
 
     # ---- END TO END, IN A CHILD PROCESS, WITH AND WITHOUT git ON PATH. The pure arms above
     # prove the sentences; none of them proves `run()` PRINTS them, or that a real
@@ -33354,8 +33505,22 @@ def selftest():
                 _sent85 = "".join(re.findall(
                     r"TWENTY-EIGHT of its arms have no subject in a bundle.*?real bundle run",
                     _adapt85, re.S)[:1])
-                _WANT85 = tuple(sorted(set(re.findall(r"`([A-Za-z0-9-]+)`", _sent85))))
-                _WANTLINES85 = int((re.findall(r"(\d+) SKIP line\(s\)", _sent85) or [0])[0])
+                # ⚠ rev92, SECOND AXIS: THE CENSUS IS PLATFORM-DEPENDENT AND THE PAGE SAYS SO.
+                # Four arms have no subject where there are no named volumes, so a single
+                # published list would be wrong on one platform whichever one it named. The
+                # page carries the platform-independent set AND an addendum naming the four,
+                # each with its own line count; this arm takes the union or the difference
+                # according to the platform it is actually on -- still compared BOTH ways, and
+                # still a set the page has to keep true.
+                _add85 = "".join(re.findall(
+                    r"PLATFORM ADDENDUM: .*?SKIP line\(s\) in all\.", _adapt85, re.S)[:1])
+                _PLATN85 = tuple(sorted(set(re.findall(r"`([A-Za-z0-9-]+)`", _add85))))
+                _base85 = tuple(sorted(set(re.findall(r"`([A-Za-z0-9-]+)`", _sent85))))
+                _lines85 = [int(_n85) for _n85 in
+                            re.findall(r"(\d+) SKIP line\(s\)", _sent85 + _add85)]
+                _WANT85 = _base85 if _HAS_VOLUMES else tuple(sorted(set(_base85 + _PLATN85)))
+                _WANTLINES85 = ((_lines85[0] if _lines85 else 0) if _HAS_VOLUMES
+                                else (_lines85[1] if len(_lines85) > 1 else 0))
                 _bhere85 = sum(1 for l in _emitted if re.match(r"^ {2}\S", l))
                 # ⚠ rev92, the review's `F1`. THE OTHER INSTALL SHAPE, RUN. A bundle with no
                 # sibling catalog beside it is the one layout the resolver has an explicit
@@ -33407,7 +33572,8 @@ def selftest():
             _bcount85 = {}
             for _n85 in _bskiplines85:
                 _bcount85[_n85] = _bcount85.get(_n85, 0) + 1
-            good = bool(_WANT85 and _bskip85 == _WANT85 and len(_WANT85) == 28
+            good = bool(_WANT85 and _bskip85 == _WANT85 and len(_PLATN85) == 4
+                        and len(_WANT85) == (28 if _HAS_VOLUMES else 32)
                         and _WANTLINES85 and len(_bskiplines85) == _WANTLINES85)
             ok &= good
             print(f"  BUN {'SKIPS-named':<17} expected the arm(s) with no subject in a mirror "

@@ -97,7 +97,10 @@ newest changelog row.
    *No installed skills beside the flow:* `BUDGET-one-variable`. *No diagrams directory:*
    `PATHS-batch-scoped`. *A derived manifest carries the table and not the changelog:* `ID-GAP-63-64`.
    A skipped arm is counted and named, never dropped, and an arm compares this list
-   against a real bundle run. The verdict line is still `SELFTEST PASSED` or
+   against a real bundle run.
+   PLATFORM ADDENDUM: on a platform with NO NAMED VOLUMES (anything but Windows) FOUR more skip,
+   because the states they ask about do not exist there — `NORM-separator`, `RELATIVE-driveless`,
+   `VOLUME-other`, `PATH-absolute-refused` — for 32 names over 34 SKIP line(s) in all. The verdict line is still `SELFTEST PASSED` or
    `SELFTEST FAILED`, and anything but a zero exit means this copy of the tool is broken, not that the
    flow is.
 5. Name, in that same artifact, every mechanism in the first paragraph that was unavailable

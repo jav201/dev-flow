@@ -1615,7 +1615,7 @@
    "origin": "rev65",
    "target": "Q8 review F6 / _v40_outcome",
    "file": null,
-   "old": "    if not os.path.isabs(_o40) or not os.path.splitdrive(_o40)[0]:",
+   "old": "    if not os.path.isabs(_o40) or (_HAS_VOLUMES and not os.path.splitdrive(_o40)[0]):",
    "new": "    if _o40 == \"\\x00never\":",
    "why": "a RELATIVE `owner` is resolved against the GATE PROCESS's cwd, so `owner: \".\"` -- which identifies no checkout -- is normalised into whatever tree the gate ran from and printed back as a match: the rule manufactures its own pass (rev65 review, MEDIUM) -- re-anchored at rev65's second review, which added the `splitdrive` half: `os.path.isabs` is True for a ROOTED path naming no volume, so `/Users/...` still had the gate's own drive supplied and still printed a match",
    "expect": "KILLED",
