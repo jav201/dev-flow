@@ -71,6 +71,8 @@ The gate never says more than it measured. Run it on an empty repository and it 
 
 A green with no subject is reported as *no subject*, never as a pass. That sentence is the whole design.
 
+![The self-test passing from the published bundle, then the gate on an empty repository reporting no subject rather than a pass](brand/gate-voice.gif)
+
 ## Your first batch in ten minutes (fast flow)
 
 1. Open `dev-flow/SKILL.md` and follow its routing: the fast flow is `commands/fast-dev-flow.md`; its **reader's map** lists, for every step, the one file and section that holds the rule.
