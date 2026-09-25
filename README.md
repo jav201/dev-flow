@@ -7,7 +7,7 @@
 
 <h1 align="center">dev-flow</h1>
 
-<p align="center">[![flow selftest](https://github.com/jav201/dev-flow/actions/workflows/flow-selftest.yml/badge.svg)](https://github.com/jav201/dev-flow/actions/workflows/flow-selftest.yml)</p>
+<p align="center"><a href="https://github.com/jav201/dev-flow/actions/workflows/flow-selftest.yml"><img src="https://github.com/jav201/dev-flow/actions/workflows/flow-selftest.yml/badge.svg" alt="flow selftest"></a></p>
 
 **A supervised engineering flow for AI coding agents whose record cannot be faked.**
 
