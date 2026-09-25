@@ -81,13 +81,22 @@ newest changelog row.
    bundle, which ships two of the four. Nothing else is skipped silently — and zero BLOCKs is
    a green flow identity, not a green flow.
    **The same is true of `python scripts/devflow-validate.py --selftest`, which proves the TOOL rather
-   than the project and EXITS 0 from here.** **SIX of its arms have no subject in a bundle and each
-   SKIPs by name, on its own line, with the reason printed** — count them in the output and expect
-   exactly these: `BUNDLE-skips-named` (needs a canon tree to pair against), `FOUR-PLACES-agree` (the
-   hooks and their shebangs, which no bundle ships), `LIVE-two-checkouts` (two live checkouts of the
-   canonical repository), `E2E-live` (one rule run over a real canon home), and the pair
-   `SKIPS-named` + `SELFTEST-exits-0`, which stage a bundle OUT of a canon home and so have nothing to
-   stage from here. A skipped arm is counted and named, never dropped, and an arm compares this list
+   than the project and EXITS 0 from here.** **TWENTY-EIGHT of its arms have no subject in a bundle and each
+   SKIPs by name, with the reason printed — 30 SKIP line(s) in all, because three rules ask the same
+   question and each says so on its own line**, and a closing summary line counts them by subject.
+   Count them in the output and expect exactly these names, in six groups.
+   *No canon tree or checkout beside this copy:* `BUNDLE-skips-named`, `FOUR-PLACES-agree`,
+   `LIVE-two-checkouts`, `E2E-live`, and the four `SKIPS-named` + `BUNDLE-ONLY-reds` +
+   `SELFTEST-exits-0` + `NO-CATALOG-says-so`, which stage a bundle OUT of a canon home and so have
+   nothing to stage from here.
+   *No live project record (the corpus is a per-installation path a bundle cannot declare):*
+   `FLOOR-b09`, `FLOOR-b10`, `FLOOR-b11`, `FLOOR-b74`, `DISK-word-b87`, `CORPUS-reconciled`,
+   `CORPUS-no-invented`, `CORPUS-seed-declared`, `LIVE-line`, `LIVE-corpus`, `LIVE-pass`,
+   `LIVE-agree` (one line per rule that asks it), `LIVE-no-false-block` and `A12-live`.
+   *No published population to walk:* `no-leaked-shapes` and `canon-home-path-population`. *Not the whole Python file set:* `LIVE-derived`.
+   *No installed skills beside the flow:* `BUDGET-one-variable`. *No diagrams directory:*
+   `PATHS-batch-scoped`. *A derived manifest carries the table and not the changelog:* `ID-GAP-63-64`.
+   A skipped arm is counted and named, never dropped, and an arm compares this list
    against a real bundle run. The verdict line is still `SELFTEST PASSED` or
    `SELFTEST FAILED`, and anything but a zero exit means this copy of the tool is broken, not that the
    flow is.

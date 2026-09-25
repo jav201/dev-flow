@@ -420,8 +420,8 @@
    "origin": "rev62",
    "target": "the /dev-flow-init scaffold arms",
    "file": null,
-   "old": "    _req62 = _read(os.path.join(_fh62, \"templates\", \"dev-flow\", \"req-template.md\")) or \"\"\n",
-   "new": "    _req62 = _read(os.path.join(_fh62, \"templates\", \"dev-flow\", \"req-template.md\")) or \"\"\n    _init62 = _init62.replace('\"batch_id\": \"<YYYY-MM-DD>-batch-01\",', \"\", 1)\n",
+   "old": "    _req62 = _self_read(\"templates/dev-flow/req-template.md\") or \"\"\n",
+   "new": "    _req62 = _self_read(\"templates/dev-flow/req-template.md\") or \"\"\n    _init62 = _init62.replace('\"batch_id\": \"<YYYY-MM-DD>-batch-01\",', \"\", 1)\n",
    "why": "the command's block loses `batch_id` (named mutant 1)",
    "expect": "KILLED",
    "expect_arms": []
@@ -432,8 +432,8 @@
    "origin": "rev62",
    "target": "the /dev-flow-init scaffold arms",
    "file": null,
-   "old": "    _req62 = _read(os.path.join(_fh62, \"templates\", \"dev-flow\", \"req-template.md\")) or \"\"\n",
-   "new": "    _req62 = _read(os.path.join(_fh62, \"templates\", \"dev-flow\", \"req-template.md\")) or \"\"\n    _init62 = re.sub(r'\\n     \"artifact_homes\": \\{.*?\\n     \\},\\n', \"\\n\", _init62, count=1, flags=re.S)\n",
+   "old": "    _req62 = _self_read(\"templates/dev-flow/req-template.md\") or \"\"\n",
+   "new": "    _req62 = _self_read(\"templates/dev-flow/req-template.md\") or \"\"\n    _init62 = re.sub(r'\\n     \"artifact_homes\": \\{.*?\\n     \\},\\n', \"\\n\", _init62, count=1, flags=re.S)\n",
    "why": "the command's block loses `artifact_homes` -- which NO rule reads on a fresh project",
    "expect": "KILLED",
    "expect_arms": []
@@ -444,8 +444,8 @@
    "origin": "rev62",
    "target": "the /dev-flow-init scaffold arms",
    "file": null,
-   "old": "    _req62 = _read(os.path.join(_fh62, \"templates\", \"dev-flow\", \"req-template.md\")) or \"\"\n",
-   "new": "    _req62 = _read(os.path.join(_fh62, \"templates\", \"dev-flow\", \"req-template.md\")) or \"\"\n    _init62 = _init62.replace(\".dev-flow/<batch_id>/\", \".dev-flow/\")\n",
+   "old": "    _req62 = _self_read(\"templates/dev-flow/req-template.md\") or \"\"\n",
+   "new": "    _req62 = _self_read(\"templates/dev-flow/req-template.md\") or \"\"\n    _init62 = _init62.replace(\".dev-flow/<batch_id>/\", \".dev-flow/\")\n",
    "why": "the command goes back to a flat `.dev-flow/` (named mutant 2)",
    "expect": "KILLED",
    "expect_arms": []
@@ -456,8 +456,8 @@
    "origin": "rev62",
    "target": "the /dev-flow-init scaffold arms",
    "file": null,
-   "old": "    _req62 = _read(os.path.join(_fh62, \"templates\", \"dev-flow\", \"req-template.md\")) or \"\"\n",
-   "new": "    _req62 = _read(os.path.join(_fh62, \"templates\", \"dev-flow\", \"req-template.md\")) or \"\"\n    _req62 = _req62.replace(\"_No entries yet.\", \"### LED-<BATCH_ID>.1 - x\\n- **Requirement:** <HLR- must exist>\\n- **Date:** <YYYY-MM-DD>\\n\\n_No entries yet.\")\n",
+   "old": "    _req62 = _self_read(\"templates/dev-flow/req-template.md\") or \"\"\n",
+   "new": "    _req62 = _self_read(\"templates/dev-flow/req-template.md\") or \"\"\n    _req62 = _req62.replace(\"_No entries yet.\", \"### LED-<BATCH_ID>.1 - x\\n- **Requirement:** <HLR- must exist>\\n- **Date:** <YYYY-MM-DD>\\n\\n_No entries yet.\")\n",
    "why": "section 7's seed fence carries a worked entry again",
    "expect": "KILLED",
    "expect_arms": []
@@ -468,8 +468,8 @@
    "origin": "rev62",
    "target": "the /dev-flow-init scaffold arms",
    "file": null,
-   "old": "    _req62 = _read(os.path.join(_fh62, \"templates\", \"dev-flow\", \"req-template.md\")) or \"\"\n",
-   "new": "    _req62 = _read(os.path.join(_fh62, \"templates\", \"dev-flow\", \"req-template.md\")) or \"\"\n    _req62 = _req62.replace(\"`PDR-2026-09-07-batch-01#D3`\", \"`PDR-<batch>#D<n>`\")\n",
+   "old": "    _req62 = _self_read(\"templates/dev-flow/req-template.md\") or \"\"\n",
+   "new": "    _req62 = _self_read(\"templates/dev-flow/req-template.md\") or \"\"\n    _req62 = _req62.replace(\"`PDR-2026-09-07-batch-01#D3`\", \"`PDR-<batch>#D<n>`\")\n",
    "why": "the template's PDR example goes back to the bracketed form",
    "expect": "KILLED",
    "expect_arms": []
@@ -480,8 +480,8 @@
    "origin": "rev62",
    "target": "the /dev-flow-init scaffold arms",
    "file": null,
-   "old": "    _req62 = _read(os.path.join(_fh62, \"templates\", \"dev-flow\", \"req-template.md\")) or \"\"\n",
-   "new": "    _req62 = _read(os.path.join(_fh62, \"templates\", \"dev-flow\", \"req-template.md\")) or \"\"\n    _init62 = _init62.replace('\"batch_objective\": \"<short description>\",', '\"batch_objective\": \"<short description>\", \"current_phase\": 0, \"iterations_per_phase\": {},', 1)\n",
+   "old": "    _req62 = _self_read(\"templates/dev-flow/req-template.md\") or \"\"\n",
+   "new": "    _req62 = _self_read(\"templates/dev-flow/req-template.md\") or \"\"\n    _init62 = _init62.replace('\"batch_objective\": \"<short description>\",', '\"batch_objective\": \"<short description>\", \"current_phase\": 0, \"iterations_per_phase\": {},', 1)\n",
    "why": "the command seeds the deprecated pre-station pair again",
    "expect": "KILLED",
    "expect_arms": []
@@ -504,7 +504,7 @@
    "origin": "rev62",
    "target": "the /dev-flow-init scaffold arms",
    "file": null,
-   "old": "    _cmds62 = sorted(f for f in os.listdir(os.path.join(_fh62, \"commands\"))\n                     if f.endswith(\".md\"))",
+   "old": "    _cmds62 = [f for f in _self_names(\"commands\") if f.endswith(\".md\")]",
    "new": "    _cmds62 = [\"dev-flow-init.md\"]",
    "why": "the homes census looks at one command file instead of all",
    "expect": "KILLED",
@@ -3938,7 +3938,7 @@
    "origin": "rev70",
    "target": "rev70 / _CANON70, the agents half",
    "file": null,
-   "old": "    _CANON70 = _T69CANON + tuple(\n        \"agents/\" + _n for _n in sorted(os.listdir(os.path.join(_flow_home(), \"agents\")))\n        if _n.endswith(\".md\"))\n",
+   "old": "    _CANON70 = _T69CANON + tuple(\n        \"agents/\" + _n for _n in _self_names(\"agents\")\n        if _n.endswith(\".md\"))\n",
    "new": "    _CANON70 = _T69CANON\n",
    "why": "THE REVIEW'S M1, AND IT IS THIS REV COMMITTING ITS OWN RECORDED DEFECT EIGHTY LINES EARLIER. `r70-M13`'s `why` says `_T69CANON` holds no agent file and that a scan over it would report `discovered {}` over a site that still disagreed -- and the vocabulary census, written first, scanned exactly that. The reviewer planted a fourth verdict-vocabulary site in `agents/qa-reviewer.md`, the agent that OWNS `04-validation.md`, and the arm stayed green. The agent set is now enumerated FROM DISK, so an agent file added tomorrow is in the population without an edit. ⚠ The first claim also named `V47 LABELS-one-spelling`; the harness reported it GREEN, because no agent file carries any of the three LABELS either, so narrowing the corpus changes that census's count by nothing. Measured, not predicted.",
    "expect": "KILLED",
@@ -8141,8 +8141,79 @@
    "expect_arms": [
     "V55 STANDING-two-directions"
    ]
+  },
+  {
+   "subject": "devflow-validate",
+   "id": "r92-M01-arm-reads-the-canon-home-again",
+   "origin": "rev92",
+   "file": null,
+   "target": "rev92 / the catalog directory, resolved through the two-layout resolver",
+   "old": "    _CATSKILL80 = \"skills/dev-flow-lessons/SKILL.md\"\n    _catdir80 = (os.path.dirname(_self_path(_CATSKILL80))\n                 if _self_ships(_CATSKILL80) else \"\")\n",
+   "new": "    _CATSKILL80 = \"skills/dev-flow-lessons/SKILL.md\"\n    _catdir80 = os.path.join(_flow_home(), \"skills\", \"dev-flow-lessons\")\n",
+   "why": "ONE ARM PUT BACK ON `~/.claude`. This is the whole shape of the rev92 defect in a single site: on the author's machine the canon home is there and the arm is green, on a machine that has never held one the directory does not exist and the census reads zero files. The parent run cannot see it -- it IS a canon home -- so the kill has to come from the differential against the child, which is the arm this rev added.",
+   "expect": "KILLED",
+   "expect_arms": [
+    "BUN BUNDLE-ONLY-reds"
+   ]
+  },
+  {
+   "subject": "devflow-validate",
+   "id": "r92-M02-named-skip-becomes-a-silent-ok",
+   "origin": "rev92",
+   "file": null,
+   "target": "rev92 / `_nosub92`, the canon-only subject's named SKIP",
+   "old": "        _skipsub92.append((key, label))\n        return _nosubject85(fam, label, _NOSUBJ92[key], width)\n",
+   "new": "        _skipsub92.append((key, label))\n        return True\n",
+   "why": "THE REPAIR'S OWN FAILURE MODE. Every arm this rev exempted still counts as satisfied, and the line that says WHICH subject was not measured stops being printed -- a suite that is quietly 23 arms thinner and reads exactly as green. `C-55`'s argument is that silencing empties the population and turns everything green, and this mutant is that sentence applied to the fix rather than to the defect.",
+   "expect": "KILLED",
+   "expect_arms": [
+    "BUN SKIPS-named"
+   ]
+  },
+  {
+   "subject": "devflow-validate",
+   "id": "r92-M03-corpus-arms-fail-from-a-bundle-again",
+   "origin": "rev92",
+   "file": null,
+   "target": "rev92 / the V5 ledger arms' bundle branch",
+   "old": "        if _bundle85:\n            ok &= _nosub92(\"V5 \", _lab5, \"corpus\")\n        else:\n",
+   "new": "        if False:\n            ok &= _nosub92(\"V5 \", _lab5, \"corpus\")\n        else:\n",
+   "why": "THE ORIGINAL RED, RESTORED. Five arms demand figures off a project record a bundle cannot reach, and report FAIL about an intact copy -- rev81's ruling is that they SKIP loudly instead. Both halves of the repair are asked at once: the labels leave the published census AND the child goes red where the parent is green.",
+   "expect": "KILLED",
+   "expect_arms": [
+    "BUN SKIPS-named",
+    "BUN BUNDLE-ONLY-reds"
+   ]
+  },
+  {
+   "subject": "devflow-validate",
+   "id": "r92-M04-child-selftest-sees-the-canon-home",
+   "origin": "rev92",
+   "file": null,
+   "target": "rev92 / `BUN SKIPS-named`'s child, and its empty HOME",
+   "old": "                for _v85 in (\"HOME\", \"USERPROFILE\", \"HOMEDRIVE\", \"HOMEPATH\"):\n                    _benv85.pop(_v85, None)\n                _benv85[\"HOME\"] = _benv85[\"USERPROFILE\"] = _bhome85\n",
+   "new": "                _benv85[\"HOME\"] = _benv85[\"USERPROFILE\"] = os.path.expanduser(\"~\")\n",
+   "why": "THE INSTRUMENT PUT BACK ON THE SUBJECT'S FIXTURE. This is the state rev85 shipped and called a green: the child inherits the author's home, finds the canon tree beside the bundle it is supposed to be measuring alone, and its corpus arms stop skipping. The census shrinks by the LIVE family, which is how `C-60` is made detectable here rather than argued.",
+   "expect": "KILLED",
+   "expect_arms": [
+    "BUN SKIPS-named"
+   ]
+  },
+  {
+   "subject": "devflow-validate",
+   "id": "r92-M05-incomplete-home-runs-anyway",
+   "origin": "rev92",
+   "file": null,
+   "target": "rev92 / the flow-home probe that refuses an incomplete install once, by name",
+   "old": "    _gone92 = _home_missing92()\n    if _gone92:\n",
+   "new": "    _gone92 = _home_missing92()\n    if False:\n",
+   "why": "THE TWO FAILURE MODES THE PROBE REPLACES, BOTH RESTORED AT ONCE. Without it a bundle installed without its sibling catalog runs every arm over a population that is not there and prints twenty accusations against an intact copy, and an authoring home missing `templates/dev-flow/` dies in an unguarded `os.listdir`. The independent review measured the first; the backlog item measured the second. The arm that catches this is the one that runs the child a second time with the sibling removed.",
+   "expect": "KILLED",
+   "expect_arms": [
+    "BUN NO-CATALOG-says-so"
+   ]
   }
  ],
- "live_floor": 564,
+ "live_floor": 569,
  "live_floor_why": "The number of NON-RETIRED mutants this registry must still hold. `MUT REGISTRY-anchors-live` asserts it. It is a RATCHET: lowering it is a deliberate act that says a battery got smaller, and it belongs here -- in the diff a reviewer reads -- rather than as a constant buried in the validator."
 }

@@ -4001,8 +4001,17 @@ def _bundle_rel(rel):
     Prefix-stripped rather than folder-named, so the reading survives a runtime that installs
     the skill under another directory name -- two of the four known installs are plain copies
     and nothing stops one from being renamed. `dev-flow-lessons/SKILL.md` is the file this
-    correctly excludes: a SEPARATE skill folder BESIDE this bundle and not inside it, which a
-    runtime may install or not, and whose absence is therefore not this bundle's defect.
+    correctly excludes: a SEPARATE skill folder BESIDE this bundle and not inside it, so no
+    path INSIDE the bundle names it.
+
+    rev92 corrects what that used to say. It read *a runtime may install or not, and whose
+    absence is therefore not this bundle's defect* -- and the independent review measured the
+    consequence: with the sibling removed, twenty arms reported the catalog as EMPTY
+    ("index 0, headings 0") and not one of them skipped. It is not optional. The publication
+    ships both folders, its README says to copy both, and the flow's commands and adapter cite
+    the catalog by path. An install missing it is an INCOMPLETE INSTALL, which `selftest`
+    refuses ONCE, by name, before any arm reads it -- never as twenty accusations against an
+    intact bundle. `_self_path` resolves it as this bundle's sibling.
     """
     b = _mirror_rel(rel)
     return b[len(_BUNDLE_SELF):] if b and b.startswith(_BUNDLE_SELF) else None
@@ -4230,6 +4239,201 @@ def _live_path(home, rel):
     """Canon path -> its authoring path under ~/.claude."""
     p = "skills/" + rel if rel in _BUNDLE_NATIVE else rel
     return os.path.join(home, p.replace("/", os.sep))
+
+
+class _NotShipped(Exception):
+    """A canon subject this bundle does not ship. Carries the NAME, never a bare errno.
+
+    rev92. The type exists so the one resolver below can refuse in a way a caller can catch
+    and turn into a named SKIP. `FileNotFoundError` could not: it says a path is missing and
+    names no subject, and on a clean machine it ended the run mid-suite.
+    """
+
+    def __init__(self, rel):
+        self.rel = rel
+        Exception.__init__(self, "`%s` is canon-only and this bundle does not ship it" % rel)
+
+
+def _self_home():
+    """-> (this runtime's own flow home, is it a bundle?).
+
+    rev92. The ONE place that answers *where does this run's own flow live*. `_flow_home()`
+    answered only half of it -- `~/.claude`, the canon -- and every selftest arm that read a
+    template, a command or an agent through it was reading the AUTHOR'S machine while
+    claiming to measure the tree it shipped in. On a clean machine those reads found nothing
+    and 50 arms went red; on the author's they found the canon and went green whatever the
+    bundle held. A shared fixture between instrument and subject (`C-60`), and `--selftest`
+    from a bundle was the instrument.
+    """
+    b = _bundle_home()
+    return (b, True) if b and b != _ENV_NEITHER else (_flow_home(), False)
+
+
+def _self_path(rel):
+    """Canon relpath -> its path on THIS runtime's flow home, canon layout or bundle.
+
+    rev92, and this is the resolver clause 3 of the brief asks for: ONE function that knows
+    both layouts, reusing rev79's `_bundle_rel` translation rather than minting a second
+    table (`C-50`). Under the canon it is `_live_path` and nothing changes. Under a bundle it
+    is the mirrored path -- and when the bundle ships no counterpart it RAISES `_NotShipped`
+    with the subject's name, so the caller owes a SKIP that says what was not measured.
+    Returning a path that does not exist was the old behaviour and it produced both failure
+    modes this rev closes: a FAIL that slandered an intact copy, and a crash.
+
+    ⚠ DECLARED BOUND: this resolver answers WHERE, never WHETHER. It raises only for a subject
+    this LAYOUT has no place for; it does not stat the path it returns, because doing so would
+    cost a stat at every one of ~180 call sites and would collapse it into `_self_ships`. A
+    caller that needs the file takes `_self_read` or `_self_names`; what makes a RAW
+    `_self_path` safe -- `shutil.copyfile` is one such caller -- is that `_home_missing92` ran
+    first and refused a home whose populations are not there.
+    """
+    home, bundle = _self_home()
+    if not bundle:
+        return _live_path(home, rel)
+    # THE MIRROR-ROOTED SPELLING IS ACCEPTED TOO. The mutation registry names its targets from
+    # the agent-skills ROOT (`skills/dev-flow/scripts/...` under a canon home), and that root's
+    # `dev-flow/` IS this bundle; translating it here is what keeps those mutants anchorable
+    # from a bundle instead of being subtracted as unreachable.
+    if rel.startswith("skills/" + _BUNDLE_SELF):
+        return os.path.join(home, *rel[len("skills/" + _BUNDLE_SELF):].split("/"))
+    canon = rel[len("skills/"):] if rel.startswith("skills/") and \
+        rel[len("skills/"):] in _BUNDLE_NATIVE else rel
+    b = _bundle_rel(canon)
+    if b is not None:
+        return os.path.join(home, b.replace("/", os.sep))
+    # THE LESSONS CATALOG IS A SIBLING OF THIS BUNDLE, NOT A FILE INSIDE IT, and it is still
+    # category (i) -- shipped, so resolvable. `_bundle_rel` correctly answers None for it (a
+    # runtime MAY install the second skill folder and may not), which is why the sibling is
+    # probed on disk rather than assumed: present -> read it; absent -> `_NotShipped`, and
+    # the caller owes a named SKIP. Both flow repos and the publication install the two
+    # folders side by side, which is the layout `_mirror_rel` already describes.
+    sib = _mirror_rel(canon)
+    if sib is not None:
+        p = os.path.join(os.path.dirname(home.rstrip("/\\")), *sib.split("/"))
+        if os.path.exists(p):
+            return p
+    raise _NotShipped(rel)
+
+
+# rev92. THE POPULATIONS `--selftest` READS OUT OF ITS OWN FLOW HOME, AND THE SENTENCE IT OWES
+# WHEN ONE IS NOT THERE.
+#
+# TWO defects close here and they are one defect. (1) The backlog's `selftest-crashes-on-a-
+# partial-flow-home`: a home holding only `docs/tools/` raises `FileNotFoundError` out of an
+# unguarded `os.listdir`, and its own item says the cheap repair -- `if os.path.isdir(d) else
+# []` -- is WORSE than the crash, because every arm keyed on that population then measures
+# nothing and PASSES (`C-55`). (2) The independent review's `F1`: a bundle installed without
+# its sibling catalog produced twenty arms reporting the catalog as empty, none of them a
+# skip, all of them accusing an intact copy.
+#
+# The answer to both is the same and it is neither a crash nor a pass: probe the home FIRST,
+# and when a population is not there say so ONCE, name it, say nothing below was measured, and
+# exit non-zero. A reader gets a sentence they can act on instead of a traceback or twenty
+# false accusations, and no arm is ever run over a population that does not exist.
+#
+# ⚠ A DIRECTORY ROW ASKS FOR A POPULATION, NOT FOR A DIRECTORY -- the re-review's `N2`, and it
+# is the same crash one layer in. `os.path.exists` is satisfied by an EMPTY `commands/`, so the
+# probe stood down and the run reached `shutil.copyfile(_self_path("commands/fast-dev-flow.md"))`
+# and died there: 56 red arms, no verdict line, the CI symptom's exact shape. `_self_path`
+# answers WHERE and never WHETHER (see its docstring), and what makes a raw `_self_path` safe
+# for its ~180 callers is that this probe ran first -- which is only true if it asks whether the
+# population has members.
+#
+# ⚠ AND THE CATALOG ROWS ARE DERIVED -- the re-review's `N1`. Typed as `SKILL.md` alone, the
+# probe let a catalog missing `REFERENCE.md` through and seven arms then reported the forensic
+# half as empty: F1's accusation class, one file in. `_BUNDLE_NATIVE` is the manifest's own
+# statement of which files are authored in the skills tree, so a third catalog file joins this
+# probe by being tabled, and no hand list can go short (`C-50`).
+_HOME_POPULATIONS92 = (
+    ("commands/", "the flow's commands"),
+    ("templates/dev-flow/", "the full flow's templates"),
+    ("templates/fast-dev-flow/", "the fast flow's templates"),
+    ("agents/", "the agent roles"),
+) + tuple(
+    ("skills/" + _n, "the control catalog -- a SEPARATE skill folder that installs BESIDE this "
+                     "one, never inside it")
+    for _n in sorted(_BUNDLE_NATIVE) if _n.startswith("dev-flow-lessons/"))
+_HOME_INCOMPLETE92 = "FLOW HOME INCOMPLETE"
+
+
+def _home_incomplete92(missing):
+    """The sentence an incomplete flow home owes. Pure, so an arm can assert it."""
+    nl = chr(10)
+    return nl.join((
+        "%s — this run measured NOTHING below this line, and that is not a pass."
+        % _HOME_INCOMPLETE92,
+        "    not found on this flow home: %s."
+        % ", ".join("%s (%s)" % (r, w) for r, w in missing),
+        "    A skill install needs `dev-flow/` AND `dev-flow-lessons/` side by side; an "
+        "authoring home needs the directories named above.",
+        "    Install the missing part and run again."))
+
+
+def _home_holds92(rel):
+    """Does this runtime's flow home hold `rel` -- a FILE that reads, or a NON-EMPTY directory?
+
+    The two questions are different and the directory one is the one that matters: a `commands/`
+    that exists and is empty is not a flow home, and treating it as one is what let the run
+    reach a path nothing had probed.
+    """
+    if not rel.endswith("/"):
+        return _self_ships(rel)
+    try:
+        return bool(_self_names(rel))
+    except (_NotShipped, OSError):
+        return False
+
+
+def _home_missing92():
+    """Which declared populations this runtime's own flow home does NOT hold. I/O."""
+    return [(r, w) for r, w in _HOME_POPULATIONS92 if not _home_holds92(r)]
+
+
+def _self_ships(rel):
+    """Does this runtime's own flow home hold `rel` at all? Pure over the two layouts."""
+    try:
+        return os.path.exists(_self_path(rel))
+    except _NotShipped:
+        return False
+
+
+def _self_read(rel):
+    """`_read` of `_self_path`, or None when this bundle does not ship the subject."""
+    try:
+        return _read(_self_path(rel))
+    except _NotShipped:
+        return None
+
+
+def _self_names(reldir):
+    """sorted(os.listdir) of a canon-relative DIRECTORY on this runtime's flow home.
+
+    The trailing slash is added before translating: `_BUNDLE_RULES` are PREFIX rules, so
+    `templates/dev-flow` matches nothing while `templates/dev-flow/` maps to the bundle's
+    `templates/`. A directory the bundle does not ship raises `_NotShipped`, same as a file --
+    this is the exact call that ended the CI run at line 16677 with a `FileNotFoundError`.
+    """
+    home, bundle = _self_home()
+    if not bundle:
+        return sorted(os.listdir(os.path.join(home, *reldir.split("/"))))
+    b = _bundle_rel(reldir.rstrip("/") + "/")
+    if b is None:
+        raise _NotShipped(reldir)
+    d = os.path.join(home, *[p for p in b.split("/") if p])
+    if not os.path.isdir(d):
+        raise _NotShipped(reldir)
+    return sorted(os.listdir(d))
+
+
+def _self_canon():
+    """The manifest table as {canon relpath: sha16}, read off THIS runtime's own home.
+
+    The bundle ships the manifest at its root (`_BUNDLE_EXTRA`), which is why this resolves
+    where `_canon(_flow_home())` returned None from a bundle -- and a None table is what made
+    `V7 BUNDLE-subset` compare 5 against 0 tabled files and report FAIL about a correct copy.
+    """
+    home, bundle = _self_home()
+    return _canon(home, bundle) or {}
 
 
 def _digest(path):
@@ -7704,12 +7908,21 @@ def _cite_key(cite):
 def _v30_derive(home):
     """-> (declared, derived). Every read and every execution lives here, so the decision
     core below is pure and has arms of its own."""
-    declared = _env_declared(_read(os.path.join(home, "docs", "FLOW-VERSION.md")))
-    canon = _canon(home) or {}
-    pys = sorted(r for r in canon if r.endswith(".py"))
+    # rev92: `home` still decides, and only a run whose OWN flow home is a bundle takes the
+    # mirror layout -- the mutation harness stages canon trees and passes them here. In a
+    # bundle the population is the Python files the bundle SHIPS, not every row of the table:
+    # `hooks/*.py` are declared and not shipped, and reading them as "missing from the tree"
+    # would report an intact copy as damaged.
+    _h, _b = _self_home()
+    _mir = bool(_b and home == _h)
+    declared = _env_declared(_read(os.path.join(home, _BUNDLE_MANIFEST)) if _mir
+                             else _read(os.path.join(home, "docs", "FLOW-VERSION.md")))
+    canon = _canon(home, _mir) or {}
+    pys = sorted(r for r in canon
+                 if r.endswith(".py") and (not _mir or _bundle_rel(r)))
     api, gits, errs, tops = [], [], [], set()
     for rel in pys:
-        src = _read(_live_path(home, rel))
+        src = _read(os.path.join(home, _bundle_rel(rel).replace("/", os.sep))) if _mir             else _read(_live_path(home, rel))
         if src is None:
             errs.append((rel, "declared in the manifest table and missing from the tree"))
             continue
@@ -8141,16 +8354,23 @@ def _v39_seeds(home, project, batch_id):
     # validates it, so nothing else would have noticed.
     if not str(project).strip():
         return set(), 0
-    base = os.path.join(home, "templates", "dev-flow")
+    # rev92: resolved through the two-layout resolver rather than joined onto `home`.
+    # `home` is still honoured -- the mutation harness stages a CANON tree and passes it --
+    # and only a run whose own flow home IS a bundle takes the other branch. Joining here
+    # was what made this function return the empty set from a bundle, which it documents
+    # above as failing open.
+    _h39, _b39 = _self_home()
     out, seen = set(), 0
     try:
-        names = sorted(os.listdir(base))
-    except OSError:
+        names = (_self_names("templates/dev-flow") if _b39 and home == _h39
+                 else sorted(os.listdir(os.path.join(home, "templates", "dev-flow"))))
+    except (OSError, _NotShipped):
         return out, seen
     for name in names:
         if not name.endswith(".md"):
             continue
-        text = _read(os.path.join(base, name))
+        text = (_self_read("templates/dev-flow/" + name) if _b39 and home == _h39
+                else _read(os.path.join(home, "templates", "dev-flow", name)))
         if text is None:
             continue
         seen += 1
@@ -8328,7 +8548,7 @@ def v39_station_artifact(root, art):
     nseeds = 0
     if code == "ok" and station in _V39_FAMILY:
         listing = _v39_listing(path)
-        seeds, nseeds = _v39_seeds(_flow_home(), str(doc.get("project", "")), str(batch))
+        seeds, nseeds = _v39_seeds(_self_home()[0], str(doc.get("project", "")), str(batch))
         for rel in listing:
             if any(rel.startswith(m) for m in _V39_FAMILY[station]):
                 # `_read` and NOT `_read(...) or ""` -- an unreadable file is its own state
@@ -11250,7 +11470,19 @@ def selftest():
     # because the child it spawns inherited the other four. With those four skipping, it runs
     # from a bundle and PASSES, which is what `BUN SELFTEST-exits-0` measures. A derived
     # failure silenced as if it were a missing subject would be an exemption, not a repair.
-    _bundle85 = _bundle_home()
+    # rev92: THE THREE `BUN` ARMS ARE ONE LIST. `BUNDLE-ONLY-reds` joined the pair at this
+    # rev and was added to two of the three sites that name them -- so the child, which
+    # takes the third, emitted a census the parent's own registry arm then reported as
+    # claiming a label nobody prints. One list, three call sites (`C-50`).
+    _BUNARMS85 = ("SKIPS-named", "BUNDLE-ONLY-reds", "SELFTEST-exits-0",
+                  "NO-CATALOG-says-so")
+    # ⚠ ONE PREDICATE FOR *AM I A BUNDLE* -- the independent review's `F6`. `_bundle_home()`
+    # can answer the `_ENV_NEITHER` SENTINEL, which is TRUTHY and is not a bundle, so every
+    # gate below read it as one while the resolver (which excludes the sentinel) read the run
+    # as canon: 23 arms printed *this bundle does not ship it* about a run in no bundle at
+    # all, with every read returning nothing. A second inventory of one fact (`C-50`), minted
+    # inside the rev whose argument is that there must be one. `_self_home()` is that one.
+    _bundle85 = _self_home()[0] if _self_home()[1] else None
     _skipped85 = []
 
     def _nosubject85(fam, label, why, width=17):
@@ -11263,6 +11495,69 @@ def selftest():
         _skipped85.append(label)
         print("  %s %s SKIP: %s · ok" % (fam, label.ljust(width), why))
         return True
+
+    # rev92. THE CANON-ONLY SUBJECTS, DECLARED ONCE AND NAMED PER CLASS.
+    #
+    # `C-65`: the axis, not the instances. Twenty-three arms went red on a clean machine and
+    # they were not twenty-three defects -- they were SIX subjects that exist in the AUTHORING
+    # home and in no bundle. Writing a sentence per arm would have been twenty-three chances to
+    # describe one of them wrong, which is the `_not_mirrored_reason` lesson; writing ONE
+    # sentence for all of them would have said something confidently false about five sixths of
+    # the set. One sentence per SUBJECT is the shape that is true of every arm that cites it.
+    #
+    # Every entry names WHAT was not measured and WHY the bundle cannot hold it. None of them
+    # is a relaxation: on the canon home each of these arms runs exactly as before, and the
+    # summary line below counts the skips so a reader cannot mistake a quiet suite for a
+    # thorough one.
+    _NOSUBJ92 = {
+        "corpus":
+            "the live `.dev-flow` corpus, discovered from `DEVFLOW_CORPUS` or the "
+            "`corpus_root` row of `docs/deployment.md` — a per-installation path, outside "
+            "`flow_hash` by construction, that no bundle ships and none can declare",
+        "publication":
+            "the PUBLISHED population the export is built from — the two skill "
+            "directories under the canon home's `skills/`. A bundle IS one of them and cannot "
+            "walk the pair, so what ships to consumers is checked where it is assembled",
+        "pyset":
+            "the canon's whole Python file set. A bundle ships 2 of the 4 tabled `.py` files, "
+            "so a floor derived here would be lower than the whole set's and reporting the "
+            "difference as drift would be a false alarm — `V30`'s own mirror branch says "
+            "the same thing at the gate",
+        "skills":
+            "the authoring home's installed skills and its `CLAUDE.md` — the population "
+            "this cap census reads. A bundle has neither, and a vector measured over what it "
+            "does have would be a different measurement wearing the same name",
+        "diagrams":
+            "`docs/diagrams/**`, which the canon repository holds and the bundle does not "
+            "ship — illustration rather than instruction, and outside what a consumer "
+            "receives",
+        "changelog":
+            "the canon manifest's changelog prose. The bundle's manifest is DERIVED and "
+            "carries the table rather than the narrative, so the id-gap sentences this arm "
+            "reads have no site here",
+    }
+
+    _skipsub92 = []
+
+    def _nosub92(fam, label, key, width=17):
+        """A canon-only subject's named SKIP, from the table above. -> True.
+
+        The subject KEY is recorded beside the label, so the summary line at the end can group
+        by subject without parsing its own sentences back out of the emitted output.
+        """
+        _skipsub92.append((key, label))
+        return _nosubject85(fam, label, _NOSUBJ92[key], width)
+
+    # ⚠ rev92. THE FLOW HOME IS PROBED BEFORE THE FIRST ARM, AND AN INCOMPLETE ONE STOPS THE
+    # RUN WITH A SENTENCE. See `_HOME_POPULATIONS92` for the two defects this closes and why
+    # neither a crash nor a guarded-empty is the answer to either. Column 0, so the mutation
+    # harness's arm regex does not read it as an arm that failed; `MUT REGISTRY-arms-exist`
+    # walks the same emitted list and would otherwise be handed a label nobody registers.
+    _gone92 = _home_missing92()
+    if _gone92:
+        print(_home_incomplete92(_gone92))
+        print(chr(10) + "SELFTEST FAILED")
+        return 1
 
     for cid in ("V1", "V2", "V4", "V5", "V6", "V9"):
         for label, corpus, want_red in (("RED", BROKEN, True), ("GREEN", CLEAN, False)):
@@ -11337,9 +11632,12 @@ def selftest():
         _f5 = _v5_outcome(_t5 is not None, _v5_ledgers(_t5))
         good = len(_f5) == 1 and _f5[0][:2] == (SKIP, "04-validation.md") and \
             _f5[0][2] == "ledger reconciles: " + _want5
-        ok &= good
-        print(f"  V5  {_lab5:<17} expected {_want5:<34} · "
-              f"{'ok' if good else 'FAIL' + _v5_why(_c5)}")
+        if _bundle85:
+            ok &= _nosub92("V5 ", _lab5, "corpus")
+        else:
+            ok &= good
+            print(f"  V5  {_lab5:<17} expected {_want5:<34} · "
+                  f"{'ok' if good else 'FAIL' + _v5_why(_c5)}")
 
     # The sweep. It is the threshold LLR-88.1 states, and it is deliberately NOT the only
     # witness: it is a count, and a count cannot see a substitution that trades one family's
@@ -11356,14 +11654,20 @@ def selftest():
     _dv5 = sum(1 for f in _sw5 if f[0][2].startswith(_V5_DERIVED))
     _rc5, _bk5 = _ck5 + _dv5, sum(1 for f in _sw5 if any(s == BLOCK for s, _, _ in f))
     good = len(_recs5) >= 61 and _rc5 >= 19 and _ck5 >= 14 and _dv5 >= 5
-    ok &= good
-    print(f"  V5  {'CORPUS-reconciled':<17} expected >= 19 of >= 61, split >= 14 "
-          f"checked + >= 5 derived · got {_ck5} + {_dv5} of {len(_recs5)} · "
-          f"{'ok' if good else 'FAIL' + _v5_why(_c5)}")
+    if _bundle85:
+        ok &= _nosub92("V5 ", "CORPUS-reconciled", "corpus")
+    else:
+        ok &= good
+        print(f"  V5  {'CORPUS-reconciled':<17} expected >= 19 of >= 61, split >= 14 "
+              f"checked + >= 5 derived · got {_ck5} + {_dv5} of {len(_recs5)} · "
+              f"{'ok' if good else 'FAIL' + _v5_why(_c5)}")
     good = len(_recs5) >= 61 and _bk5 == 0
-    ok &= good
-    print(f"  V5  {'CORPUS-no-invented':<17} expected 0 blocking records · got {_bk5} · "
-          f"{'ok' if good else 'FAIL' + _v5_why(_c5)}")
+    if _bundle85:
+        ok &= _nosub92("V5 ", "CORPUS-no-invented", "corpus")
+    else:
+        ok &= good
+        print(f"  V5  {'CORPUS-no-invented':<17} expected 0 blocking records · got {_bk5} · "
+              f"{'ok' if good else 'FAIL' + _v5_why(_c5)}")
 
     # The synthetic arms. WORD-unknown is the one the 61-file sweep cannot replace: every
     # word-left ledger in the corpus that uses `post` is reached by an enumeration too, so
@@ -11596,9 +11900,12 @@ def selftest():
     _r2 = _v2_live_root()
     _got2 = [str(f) for f in v2_at_without_node(_r2, _artifacts(_r2))] if _r2 else []
     good = _got2 == ["  [-] V2   01-requirements.md: no AT ids declared"]
-    ok &= good
-    print(f"  V2  {'LIVE-line':<17} expected the real tree's SKIP line, typed · "
-          f"{'ok' if good else 'FAIL' + _v2_why(_r2) + ' — got ' + str(_got2)}")
+    if _bundle85:
+        ok &= _nosub92("V2 ", "LIVE-line", "corpus")
+    else:
+        ok &= good
+        print(f"  V2  {'LIVE-line':<17} expected the real tree's SKIP line, typed · "
+              f"{'ok' if good else 'FAIL' + _v2_why(_r2) + ' — got ' + str(_got2)}")
 
     # THE DISK-SIDE WALK, ON THE REAL TREE. On the SKIP path V2 returns before
     # `_v2_tokens` is ever reached, so with the live document declaring no ids **no arm
@@ -11608,9 +11915,13 @@ def selftest():
     _r2 = _v2_live_root()
     _t2 = _v2_tokens(os.path.join(_r2, "tests")) if _r2 else set()
     good = len(_t2) >= 100 and "AT-043a" in _t2
-    ok &= good
-    print(f"  V2  {'LIVE-corpus':<17} expected >= 100 tokens off the real tests/ tree, one "
-          f"known id among them · got {len(_t2)} · {'ok' if good else 'FAIL' + _v2_why(_r2)}")
+    if _bundle85:
+        ok &= _nosub92("V2 ", "LIVE-corpus", "corpus")
+    else:
+        ok &= good
+        print(f"  V2  {'LIVE-corpus':<17} expected >= 100 tokens off the real tests/ tree, one "
+              f"known id among them · got {len(_t2)} · "
+              f"{'ok' if good else 'FAIL' + _v2_why(_r2)}")
 
     # `_v2_why` is a SENTENCE this file emits, and every other sentence here is pinned by
     # typed equality. Returning "" leaves a bare FAIL with no cause — the shape `_v5_why`
@@ -12159,10 +12470,13 @@ def selftest():
     _m6 = re.match(r"^(\d+) statement block\(s\) scanned, no modal inside any statement$",
                    _f6[0].msg) if len(_f6) == 1 else None
     good = _m6 is not None and int(_m6.group(1)) >= 1 and _f6[0].sev == SKIP
-    ok &= good
-    print(f"  V6  {'LIVE-pass':<17} expected 1 SKIP naming a non-zero block count · got "
-          f"{(_f6[0].msg if _f6 else 'nothing'):<28} · "
-          f"{'ok' if good else 'FAIL' + _v2_why(_r6)}")
+    if _bundle85:
+        ok &= _nosub92("V6 ", "LIVE-pass", "corpus")
+    else:
+        ok &= good
+        print(f"  V6  {'LIVE-pass':<17} expected 1 SKIP naming a non-zero block count · got "
+              f"{(_f6[0].msg if _f6 else 'nothing'):<28} · "
+              f"{'ok' if good else 'FAIL' + _v2_why(_r6)}")
 
     # ---- V8 resolver (LLR-88.10). The CORE takes a listing as DATA. This is not stylistic:
     # the exact-match preference is only observable when one directory holds both casings,
@@ -12645,7 +12959,7 @@ def selftest():
                             .get(_ADAPT76, ())),
         }
 
-    _live76 = _read(_live_path(_flow_home(), _ADAPT76))
+    _live76 = _self_read((_ADAPT76))
     _v76 = _adapt76(_live76 or "")
     _TRIG76 = {"/dev-flow", "/fast-dev-flow", "V-model", "gates", "traceability"}
     _ROUTE76 = {"commands/dev-flow.md", "commands/fast-dev-flow.md", "commands/dev-flow-init.md",
@@ -12724,13 +13038,21 @@ def selftest():
     # (agent-skills is its only home, so nothing derives it) AND declared excluded (or the
     # outward walk reports the flow's own adapter as undeclared content shipping to consumers),
     # tabled in the manifest so it enters `flow_hash`, and NOT in `--sync-bundle`'s write set.
-    _canon76 = _canon(_flow_home()) or {}
-    _, _extra76 = _bundle_index(_flow_home())
+    _canon76 = _self_canon()
+    # rev92. TWO CLAUSES ARE LAYOUT-BOUND AND ARE HANDLED DIFFERENTLY, not both one way.
+    # `lives-in-skills` is a claim about the MAP -- where `_live_path` puts the adapter under a
+    # canon home -- so it is asked of `_live_path` on a synthetic home and is now true under
+    # either layout, which is what it always meant. `not-extra` is a claim about a canon tree
+    # PAIRED with a mirror checkout, which a bundle has neither of: computing it from an empty
+    # index would have made it silently true, so it is DROPPED and the omission is printed.
+    _isb76 = _self_home()[1]
+    _extra76 = set() if _isb76 else _bundle_index(_flow_home())[1]
     _decl76 = {"native": _ADAPT76 in _BUNDLE_NATIVE, "excluded": _ADAPT76 in _BUNDLE_EXCLUDED,
                "unmapped": _bundle_path(_ADAPT76) is None, "tabled": _ADAPT76 in _canon76,
-               "not-extra": _ADAPT76 not in _extra76,
-               "lives-in-skills": _live_path(_flow_home(), _ADAPT76).replace(os.sep, "/")
+               "lives-in-skills": _live_path("canon-home", _ADAPT76).replace(os.sep, "/")
                                   .endswith("/skills/" + _ADAPT76)}
+    if not _isb76:
+        _decl76["not-extra"] = _ADAPT76 not in _extra76
     # The two sentences `--map` prints must DIFFER, or one of the two exclusions is described
     # by the other's reason -- the `_not_mirrored_reason` defect wearing a different set.
     _why76 = {_excluded_reason(e) for e in _BUNDLE_EXCLUDED}
@@ -12741,7 +13063,10 @@ def selftest():
           f"`skills/`, with {len(_BUNDLE_EXCLUDED)} exclusion(s) carrying "
           f"{len(_why76)} DISTINCT printed reason(s) · got "
           f"{_shown({k for k, v in _decl76.items() if not v}) if not all(_decl76.values()) else '{}'}"
-          f" failing, reasons {len(_why76)} · {'ok' if good else 'FAIL'}")
+          f" failing, reasons {len(_why76)}"
+          + (" · `not-extra` NOT checked from a bundle: it pairs a canon tree against a "
+             "mirror checkout and there is neither here" if _isb76 else "")
+          + f" · {'ok' if good else 'FAIL'}")
 
     # ---- rev79 (`codex-adapter-would-ship-the-flow-without-its-gate`). AN ADAPTER THAT SHIPS
     # THE INSTRUCTIONS WITHOUT A TRIPPABLE GATE SHIPS THE FLOW WITHOUT ITS GATE, and rev76's
@@ -12818,7 +13143,7 @@ def selftest():
     # Over the LIVE table rather than over six chosen rows: the set a bundle does not ship is
     # a property of the manifest, so it is read off the manifest and compared by EQUALITY. A
     # row added to the table lands on one side or the other and this arm says which.
-    _canon79 = _canon(_flow_home()) or {}
+    _canon79 = _self_canon()
     _out79 = {r for r in _canon79 if _bundle_rel(r) is None}
     # rev80: FIVE. The catalog became two files and the forensic half is NATIVE to
     # `agent-skills` exactly as the consultable half is -- it is tabled and hashed here
@@ -12960,7 +13285,13 @@ def selftest():
             pass
 
     _home79 = _flow_home()              # BEFORE any override -- rev67's lesson, restored below
-    _src79 = os.path.join(_home79, "skills", "dev-flow")
+    # rev92: THE BUNDLE THESE ARMS STAGE IS RESOLVED THROUGH THE TWO-LAYOUT RESOLVER. From a
+    # canon home it is the mirror checkout beside it, as before. From a BUNDLE it is this
+    # run's own bundle -- which is a better subject than a copy, not a weaker one: it is the
+    # very tree a consumer received. Joining `skills/dev-flow` onto `~/.claude` unconditionally
+    # is what made all five arms FAIL on a clean machine, about a bundle that was intact.
+    _bh79, _isb79 = _self_home()
+    _src79 = _bh79 if _isb79 else os.path.join(_home79, "skills", "dev-flow")
     _cases79 = (("clean", "BUNDLE-E2E-clean", 0), ("byte", "BUNDLE-E2E-byte", 1),
                 ("version", "BUNDLE-E2E-version", 1), ("extra", "BUNDLE-E2E-extra", 1),
                 ("meta", "BUNDLE-E2E-meta", 1))
@@ -12984,7 +13315,16 @@ def selftest():
         _skips79, _canonskips79, _v3079 = None, None, None
         for _case79, _lab79, _wrc79 in _cases79:
             _b79 = os.path.join(_tmp79, _case79, "dev-flow")
-            shutil.copytree(_src79, _b79)
+            # ⚠ rev92, the review's `F5`. THE STAGED COPY IS CLEAN, and the `meta` case PLANTS
+            # what it measures instead of inheriting it. rev92 made this stage from the RUNNING
+            # bundle, and an installed bundle may already hold `scripts/__pycache__` (any
+            # runtime that IMPORTS this file writes one) or its own `.git`: the unguarded
+            # `makedirs` below then died with `FileExistsError` and took the whole suite with
+            # it, no verdict line -- the same unguarded-`os` crash class this rev exists to
+            # close, reintroduced by the repair. Measured on a bundle whose scripts had been
+            # imported once.
+            shutil.copytree(_src79, _b79,
+                            ignore=shutil.ignore_patterns("__pycache__", ".git", "*.pyc"))
             if _case79 == "byte":
                 with open(os.path.join(_b79, "commands", "dev-flow.md"), "ab") as _fh79:
                     _fh79.write(b"x")
@@ -12997,8 +13337,8 @@ def selftest():
                 # dropping -- beside the one dotfile it must NOT, since an undeclared
                 # `.mcp.json` is content a consumer receives. A filter that goes greedy
                 # stops blocking that one and reddens here.
-                os.makedirs(os.path.join(_b79, ".git"))
-                os.makedirs(os.path.join(_b79, "scripts", "__pycache__"))
+                os.makedirs(os.path.join(_b79, ".git"), exist_ok=True)
+                os.makedirs(os.path.join(_b79, "scripts", "__pycache__"), exist_ok=True)
                 for _p79, _t79 in ((os.path.join(_b79, ".git", "config"), "[core]\n"),
                                    (os.path.join(_b79, ".DS_Store"), "x\n"),
                                    (os.path.join(_b79, "scripts", "__pycache__", "x.pyc"),
@@ -13985,8 +14325,12 @@ def selftest():
                         f"{len(_lost)} lost · {len(_misbound)} misbound")
     else:
         _good12 = False
-    ok &= _art_arm("A12-live", _good12,
-                   "the live map == the active dir's own .md, bytes included", _live_detail)
+    if _bundle85:
+        ok &= _nosub92("ART", "A12-live", "corpus", 19)
+    else:
+        ok &= _art_arm("A12-live", _good12,
+                       "the live map == the active dir's own .md, bytes included",
+                       _live_detail)
 
     # A11. UNREADABLE is a THIRD state, and it is the same forgery one level down: `_read`
     # returns None on OSError, and V2/V5/V6 all test `is None`, so binding that None straight
@@ -15708,7 +16052,7 @@ def selftest():
     # that is exactly what failed for eleven revisions while every arm here stayed green,
     # because no arm read the template. Asserted with a planted control, so an expression that
     # finds nothing cannot pass for an expression that finds the right thing.
-    _rt69 = _read(_live_path(_flow_home(), "templates/dev-flow/req-template.md")) or ""
+    _rt69 = _self_read(("templates/dev-flow/req-template.md")) or ""
     _tids69 = sorted({m.group(1) for line in _rt69.split("\n")
                       for m in [_LEAN_ENTRY_HEAD.match(line)] if m})
     # THE PROPERTY IS THE HYPHEN, NEVER THE CARDINALITY -- rev69's review, LOW. The first cut
@@ -16039,7 +16383,7 @@ def selftest():
            ("V54", _V54_LABEL, "close-template.md", True),
            ("V54", _V54_PERIMETER, "close-template.md", True)])
 
-    _tpl60 = _read(_live_path(_flow_home(), "templates/dev-flow/increment-template.md"))
+    _tpl60 = _self_read(("templates/dev-flow/increment-template.md"))
 
     # A RULE MAY KEY ON MORE THAN ONE THING THE TEMPLATE MINTS, and `V41` keys on TWO: the
     # `**Evidence files**` ROW and the `### Evidence files` HEADING its row scan is scoped to.
@@ -16053,7 +16397,7 @@ def selftest():
           f"`_v41_rows` scopes to, which the row guard does not see · "
           f"{'ok' if good else 'FAIL'}")
 
-    _TPLTEXT60 = {_p60: _read(_live_path(_flow_home(), "templates/dev-flow/" + _p60))
+    _TPLTEXT60 = {_p60: _self_read(("templates/dev-flow/" + _p60))
                   for _p60 in {_p for _r, _l, _p, _b in _TEMPLATE_FIELDS}}
     for _rid60, _lab60, _path60, _bul60 in _TEMPLATE_FIELDS:
         _st60 = _v60_field(_TPLTEXT60[_path60] or "", _lab60, bullet=_bul60)[0]
@@ -16469,7 +16813,7 @@ def selftest():
     # `### 2.8 Fork preconditions` and the row guard stays green while every document minted
     # from the template loses the context that tells the author what to write. rev66's second
     # review found the identical hole one anchor over for `V41`'s heading.
-    _rtpl65 = _read(_live_path(_flow_home(), "templates/dev-flow/req-template.md")) or ""
+    _rtpl65 = _self_read(("templates/dev-flow/req-template.md")) or ""
     for _rid65, _head65 in (("V45", "2.7 Premise evaluation"),
                             ("V46", "2.8 Fork preconditions")):
         good = bool(re.search(r"^#{2,4}\s+" + re.escape(_head65), _rtpl65, re.M))
@@ -16674,14 +17018,14 @@ def selftest():
                  "commands/dev-flow-sync.md", "commands/fast-dev-flow.md",
                  "skills/dev-flow-lessons/SKILL.md") + tuple(
         _d72 + "/" + _n for _d72 in ("templates/dev-flow", "templates/fast-dev-flow")
-        for _n in sorted(os.listdir(os.path.join(_flow_home(), *_d72.split("/"))))
+        for _n in _self_names(_d72)
         if _n.endswith(".md"))
 
     def _t69_scan(pats):
         """Every canon document matching ANY of `pats` -> a sorted tuple. The search half."""
         out = []
         for _rel in _T69CANON:
-            _txt = _read(_live_path(_flow_home(), _rel)) or ""
+            _txt = _self_read((_rel)) or ""
             if any(p.search(_txt) for p in pats):
                 out.append(_rel)
         return tuple(sorted(out))
@@ -16694,8 +17038,8 @@ def selftest():
     # deliberate: the citation IS an inline span (`artifact_homes.tests`), so exempting spans
     # there would erase the very thing being asserted.
     _t04 = [(_rel04,
-             "artifact_homes." + _V2_HOME_KEY in (_read(_live_path(_flow_home(), _rel04)) or ""),
-             _t69_live_claim(_read(_live_path(_flow_home(), _rel04)), _T04STALE))
+             "artifact_homes." + _V2_HOME_KEY in (_self_read((_rel04)) or ""),
+             _t69_live_claim(_self_read((_rel04)), _T04STALE))
             for _rel04 in _T04SITES]
     # THE PLANT RUNS THROUGH THE IDENTICAL TRANSFORM, in BOTH spellings the corpus can write --
     # bare, and with the path backticked the way rev68 actually shipped it -- and the quoted
@@ -16761,8 +17105,8 @@ def selftest():
     _T06STALE = re.compile(r"`?Phase-4`?\s+validation matrix MUST include a row")
     _T06OWNER = re.compile(r"(?:MOVED to P3|moved to `?P3|EXECUTED AT P3|Correction population)")
     _t06 = [(_rel06,
-             _t69_live_claim(_read(_live_path(_flow_home(), _rel06)), _T06STALE),
-             bool(_T06OWNER.search(_read(_live_path(_flow_home(), _rel06)) or "")))
+             _t69_live_claim(_self_read((_rel06)), _T06STALE),
+             bool(_T06OWNER.search(_self_read((_rel06)) or "")))
             for _rel06 in _T06SITES]
     _t06plant = (_t69_live_claim("The Phase-4 validation matrix MUST include a row that greps.",
                                  _T06STALE),
@@ -17707,7 +18051,7 @@ def selftest():
     # `close-template.md`'s reserved block are ONE vocabulary with two homes, and either home
     # drifting is the defect. Compared as an ORDERED vector, so a token quietly swapped for
     # another reddens as loudly as one added.
-    _tplc83 = _read(_live_path(_flow_home(), "templates/dev-flow/close-template.md")) or ""
+    _tplc83 = _self_read(("templates/dev-flow/close-template.md")) or ""
 
     def _depths83(text):
         """The DEPTH tokens the template's reserved block declares, in order. PURE."""
@@ -18163,7 +18507,7 @@ def selftest():
     # staying GREEN with the Phase A gate DELETED and with a FOURTH gate ADDED: a proxy, not a
     # derivation. `_v55_fastgates` discovers the sites that carry the guided pointer, so both
     # of those counterfactuals redden -- driven here rather than asserted.
-    _fastcmd55 = _read(_live_path(_flow_home(), "commands/fast-dev-flow.md")) or ""
+    _fastcmd55 = _self_read(("commands/fast-dev-flow.md")) or ""
     _disc55 = _v55_fastgates(_fastcmd55)
     _cut55 = re.sub(r"(?ms)^### Gate$.*?(?=^## Phase B)", "", _fastcmd55)
     _add55 = _fastcmd55.replace(
@@ -18508,7 +18852,7 @@ def selftest():
     # same literal both ways would ship a flow that guides nobody or guides forever, and every
     # arm above would stay green: they all build their own state. The predicate is shown
     # refusing a flipped copy of the very sentence it reads.
-    _init55 = _read(_live_path(_flow_home(), "commands/dev-flow-init.md")) or ""
+    _init55 = _self_read(("commands/dev-flow-init.md")) or ""
     _seeds55 = [_x55 for _x55 in re.findall(r"```json\n(.*?)```", _init55, re.S)
                 if '"guided"' in _x55]
 
@@ -18541,7 +18885,7 @@ def selftest():
     # over, inside the sentence claiming there was no restatement. Each step now owns a
     # literal shown RED when that step ALONE is rewritten, and the anti-restatement half is a
     # CENSUS over every `.md` the manifest declares.
-    _skill55 = _read(_live_path(_flow_home(), "dev-flow/SKILL.md")) or ""
+    _skill55 = _self_read(("dev-flow/SKILL.md")) or ""
     _sec55 = "".join(re.findall(r"(?ms)^## Guided first run$(.*?)(?=^## )", _skill55)[:1])
     _AGAIN55 = "run the gate again now; it reads the batch this time"
     _WORD55 = {1: "one", 2: "two", 3: "three", 4: "four"}[_V55_STREAK]
@@ -18583,15 +18927,15 @@ def selftest():
                 and chr(34) + "decision" + chr(34) + ":" in (text or "")
                 and "No rule flips the key" in (text or ""))
 
-    _fullcmd55 = _read(_live_path(_flow_home(), "commands/dev-flow.md")) or ""
+    _fullcmd55 = _self_read(("commands/dev-flow.md")) or ""
     _points55 = tuple(_c55.count("§*Guided first run*")
                       for _c55 in (_fastcmd55, _fullcmd55))
     # THE POPULATION IS WALKED, never listed beside the loop: every `.md` the manifest
     # declares is a file a reader can open, and a fifth copy of a step in any of them is what
     # this looks for.
-    _stepsites55 = {_rel55 for _rel55 in (_canon(_flow_home()) or {})
+    _stepsites55 = {_rel55 for _rel55 in (_self_canon())
                     if _rel55.endswith(".md")
-                    and any(_ph55.lower() in (_read(_live_path(_flow_home(), _rel55))
+                    and any(_ph55.lower() in (_self_read((_rel55))
                                               or "").lower() for _ph55 in _STEP55)}
     # ⚠ THE FENCE IS PARSED AND DRIVEN, not spelled. `_guided55`'s five substring tests can
     # be satisfied by five sentences in five paragraphs; nothing required them to be one JSON
@@ -18760,7 +19104,7 @@ def selftest():
     # from the SHIPPED template rather than typed here -- `_fast_spec_batch` paid for exactly
     # this on the `Batch` row, where a spec fresh from the template was read as another
     # batch's record and the remedy named was one that loops.
-    _tpl91 = _read(_live_path(_flow_home(),
+    _tpl91 = _self_read((
                               "templates/fast-dev-flow/spec-template.md")) or ""
     _tplstate91, _tplcell91 = _v55_standing_cell(_tpl91)
     _ph91 = _runstd55(_tplcell91 or "<unset>", _STDLOG91)
@@ -18824,9 +19168,9 @@ def selftest():
     # luck of where the wrap fell; moving one word earlier in that blockquote would have
     # reddened this arm as if a rule had been deleted. The guard the docstring below declares
     # was applied to two of the six sites and is now applied to all of them.
-    _fast91 = " ".join((_read(_live_path(_flow_home(),
+    _fast91 = " ".join((_self_read((
                                          "commands/fast-dev-flow.md")) or "").split())
-    _full91 = " ".join((_read(_live_path(_flow_home(),
+    _full91 = " ".join((_self_read((
                                          "commands/dev-flow.md")) or "").split())
     _tplflat91 = " ".join(_tpl91.split())
 
@@ -18863,9 +19207,9 @@ def selftest():
     # THE TEMPLATE'S ROW IS READ, not the file: a legal form named anywhere else on the page
     # is not a legal form the author of that cell can see.
     _row91 = "".join(re.findall(r"(?m)^\|\s*%s\s*\|([^|]*)\|" % _V55_SPECROW, _tpl91)[:1])
-    _sites91 = {_rel91 for _rel91 in (_canon(_flow_home()) or {})
+    _sites91 = {_rel91 for _rel91 in (_self_canon())
                 if _rel91.endswith(".md")
-                and _RULE91 in (_read(_live_path(_flow_home(), _rel91)) or "")}
+                and _RULE91 in (_self_read((_rel91)) or "")}
     _INVERT91 = ("is NOT enough; only a later explicit approval IS that standing "
                  "authorization")
     good = bool(_ruling91(_step591)
@@ -18988,12 +19332,12 @@ def selftest():
     _CLOSE71 = "templates/dev-flow/close-template.md"
     _SYNC71 = "commands/dev-flow-sync.md"
     _MODE71 = "commands/dev-flow.md"
-    _fence71 = {_p: _yamlkeys71(_read(_live_path(_flow_home(), _p)) or "")
+    _fence71 = {_p: _yamlkeys71(_self_read((_p)) or "")
                 for _p in (_CLOSE71, _SYNC71)}
     # ONE FENCE PER SITE, ASSERTED -- the review's LOW. `_yamlkeys71` reads the FIRST yaml
     # fence, which is correct today and silently wrong the day either document grows a second:
     # the count would keep describing the first and nothing would say so.
-    _nfence71 = {_p: len(re.findall(r"```yaml\n", _read(_live_path(_flow_home(), _p)) or ""))
+    _nfence71 = {_p: len(re.findall(r"```yaml\n", _self_read((_p)) or ""))
                  for _p in (_CLOSE71, _SYNC71)}
     # THE EXPECTED VECTOR IS DERIVED FROM THE FENCES, never typed: `close-template.md` names
     # its own block once, `dev-flow.md` names both, and `dev-flow-sync.md` names NEITHER.
@@ -19027,11 +19371,11 @@ def selftest():
     _KEYCORP71 = sorted(
         _rel for _dir in ("commands", "templates/dev-flow")
         for _rel in [(_dir + "/" + _n) for _n in
-                     sorted(os.listdir(os.path.join(_flow_home(), _dir)))]
+                     _self_names(_dir)]
         if _rel.endswith(".md"))
     _got71k, _q71k = {}, {}
     for _p in _KEYCORP71:
-        _c71, _qq71 = _keyclaims71(_read(_live_path(_flow_home(), _p)) or "")
+        _c71, _qq71 = _keyclaims71(_self_read((_p)) or "")
         if _c71:
             _got71k[_p] = _c71
         if _qq71:
@@ -19058,7 +19402,7 @@ def selftest():
     # with extra steps (`C-57`). A planted FOURTEENTH key must change the derived count and
     # break the agreement; a planted `12 keys` at the site this rev just emptied must be
     # DISCOVERED, or the census cannot see a fourth site appear.
-    _plant71 = _read(_live_path(_flow_home(), _CLOSE71)) or ""
+    _plant71 = _self_read((_CLOSE71)) or ""
     _p14 = _yamlkeys71(_plant71.replace("open_items_next: <int>",
                                         "open_items_next: <int>\nzzkey: <int>"))
     _psite = _keyclaims71("| batch metrics | — | 12 keys | 31 keys |")[0]
@@ -19091,7 +19435,7 @@ def selftest():
     # would instead re-adopt the derivation rev60 repaired, and would score an origin story as
     # a control everywhere. So the two are NAMED here with their depth, and the vector is
     # EXACT: a THIRD unresolving tag reddens instead of joining them silently.
-    _cat71 = _read(_live_path(_flow_home(), "skills/dev-flow-lessons/SKILL.md")) or ""
+    _cat71 = _self_read(("skills/dev-flow-lessons/SKILL.md")) or ""
     _heads71 = set(re.findall(r"C-\d+", "\n".join(
         re.findall(r"^#{1,3} .*\bC-\d+\b.*$", _cat71, re.M))))
     _deep71 = set(re.findall(r"C-\d+", "\n".join(
@@ -19151,7 +19495,7 @@ def selftest():
     # fixture reproducing the template's four rows by hand would go on passing after somebody
     # edited the template, which is the second-inventory defect (`C-50`) inside the very arm
     # that exists to hold the template and its reader together.
-    _tpl77 = _read(_live_path(_flow_home(),
+    _tpl77 = _self_read((
                               "templates/dev-flow/design-proposal-template.md")) or ""
     _sec77 = _md_section(_tpl77, _V52_HEADING)
     _rows77 = _v52_rows(_sec77[0]) if _sec77 else None
@@ -19794,7 +20138,7 @@ def selftest():
     # would make the arm measure its own prose. Stated rather than left as a quiet omission.
     _BOUND71 = r"(?<![A-Za-z0-9-])C-1(?![0-9])"
     _NAIVE71 = r"C-1(?![0-9])"
-    _c1src71 = {_p: _read(_live_path(_flow_home(), _p)) or ""
+    _c1src71 = {_p: _self_read((_p)) or ""
                 for _p in ("skills/dev-flow-lessons/SKILL.md", _MODE71, _SYNC71, _CLOSE71,
                            "commands/fast-dev-flow.md", "commands/dev-flow-init.md")}
     _c1b71 = {_p: len(re.findall(_BOUND71, _t)) for _p, _t in _c1src71.items()}
@@ -19822,7 +20166,7 @@ def selftest():
     # `_VERDICT_TOKENS`, so the two readers of the vocabulary cannot disagree by construction —
     # what this census adds is that the three PROSE sites cannot drift from them either.
     _voc70 = tuple((_rel70, tuple(_tok for _tok in _VERDICT_TOKENS
-                                  if _tok in (_read(_live_path(_flow_home(), _rel70)) or "")))
+                                  if _tok in (_self_read((_rel70)) or "")))
                    for _rel70 in _VOCAB_SITES)
     _vocwant70 = tuple((_rel70, _VERDICT_TOKENS) for _rel70 in _VOCAB_SITES)
     # THE SEARCH HALF. `PASS-WITH-NOTES` is the discriminator because it is the one token of
@@ -19853,11 +20197,11 @@ def selftest():
     # stayed green. The agent set is ENUMERATED FROM DISK, on `_T69CANON`'s own discipline for
     # templates, so an agent file added tomorrow is in the population without an edit here.
     _CANON70 = _T69CANON + tuple(
-        "agents/" + _n for _n in sorted(os.listdir(os.path.join(_flow_home(), "agents")))
+        "agents/" + _n for _n in _self_names("agents")
         if _n.endswith(".md"))
     _vocfound70 = tuple(sorted(
         _rel for _rel in _CANON70
-        if "PASS-WITH-NOTES" in (_read(_live_path(_flow_home(), _rel)) or "")))
+        if "PASS-WITH-NOTES" in (_self_read((_rel)) or "")))
     # BOTH READERS DRIVEN, and `FAIL`'s inflection is why `_V39_VERDICT` is not rebuilt from the
     # tuple: it also admits `PASSED`/`FAILED`, which `V39`'s structural detect wants and this
     # field-keyed rule must not. The two are bound by test, not by a shared regex that would
@@ -19869,7 +20213,7 @@ def selftest():
     # THE PLANT: a token that is in no site must come back missing from all three, or the
     # census is reporting the tuple it was handed rather than the files it read.
     _plant70 = tuple(_rel70 for _rel70 in _VOCAB_SITES
-                     if "ZZPASS-INVENTED" in (_read(_live_path(_flow_home(), _rel70)) or ""))
+                     if "ZZPASS-INVENTED" in (_self_read((_rel70)) or ""))
     # THE CORPUS ITSELF IS ASSERTED, not merely used. `agents/qa-reviewer.md` OWNS
     # `04-validation.md`, so it is the likeliest fourth site this vocabulary would ever drift
     # to, and a census that cannot see it is closed only over the files it happens to read.
@@ -19878,8 +20222,8 @@ def selftest():
     # THE EXCLUSION'S OWN SENTENCE, both ways: it must STILL mint `BLOCK` and must NOT have
     # acquired `FAIL` on that line. One direction alone is the membership test again.
     _notvoc70 = tuple(
-        (_rel, bool(_yes.search(_read(_live_path(_flow_home(), _rel)) or "")),
-         bool(_no.search(_read(_live_path(_flow_home(), _rel)) or "")))
+        (_rel, bool(_yes.search(_self_read((_rel)) or "")),
+         bool(_no.search(_self_read((_rel)) or "")))
         for _rel, _yes, _no in _VOCAB_NOT)
     good = (_voc70 == _vocwant70 and _plant70 == ()
             and _vocfound70 == tuple(sorted(_VOCAB_SITES
@@ -19936,16 +20280,16 @@ def selftest():
 
     _lab70vec = tuple(
         (_rel, tuple(_l for _r, _l, _i in _V70_RULES
-                     if _lab70pat(_l).search(_read(_live_path(_flow_home(), _rel)) or "")))
+                     if _lab70pat(_l).search(_self_read((_rel)) or "")))
         for _rel in _LABEL_SITES)
     _labwant70 = tuple((_rel, tuple(_l for _r, _l, _i in _V70_RULES)) for _rel in _LABEL_SITES)
     _labfound70 = tuple(sorted(
         _rel for _rel in _CANON70
-        if any(_lab70pat(_l).search(_read(_live_path(_flow_home(), _rel)) or "")
+        if any(_lab70pat(_l).search(_self_read((_rel)) or "")
                for _r, _l, _i in _V70_RULES)))
     _notvec70 = tuple((_rel, tuple(_l for _r, _l, _i in _V70_RULES
                                    if _lab70pat(_l).search(
-                                       _read(_live_path(_flow_home(), _rel)) or "")))
+                                       _self_read((_rel)) or "")))
                       for _rel, _want in _LABEL_NOT)
     # THE PLANT, so the pattern is shown DISCRIMINATING before its count is believed: the two
     # near-misses the loose test swallowed must come back unmatched, and the real spelling
@@ -19986,9 +20330,9 @@ def selftest():
     # block -- a note that reserves nothing by name is a paragraph, which is the control this
     # whole rev applies.
     _RESERVED70 = "field names and block keywords below are language-independent"
-    _vt70 = _read(_live_path(_flow_home(),
+    _vt70 = _self_read((
                              "templates/dev-flow/validation-template.md")) or ""
-    _ifc70 = _read(_live_path(_flow_home(), "templates/dev-flow/ifc-template.md")) or ""
+    _ifc70 = _self_read(("templates/dev-flow/ifc-template.md")) or ""
     # `_md_section` ANCHORS ITS HEADING WITH a `\b`, so the full heading `✅ Verdict (read
     # first)` -- which ends in `)` -- matches NOTHING and returns an empty list. The first cut
     # of this arm used it and read an EMPTY block, which fails loudly; the same slip on a
@@ -20045,8 +20389,8 @@ def selftest():
     # `r70-M12` depends on it) and the false-fail is gone.
     _T08STATE = re.compile(r"not applicable \u2014 no trigger-D surface")
     _t08 = tuple((_rel08,
-                  _t69_live_claim(_read(_live_path(_flow_home(), _rel08)), _T08STALE),
-                  bool(_T08STATE.search(_read(_live_path(_flow_home(), _rel08)) or "")))
+                  _t69_live_claim(_self_read((_rel08)), _T08STALE),
+                  bool(_T08STATE.search(_self_read((_rel08)) or "")))
                  for _rel08 in _T08SITES)
     # DISCOVERED, NOT DECLARED. The same scan that found the three must now find no site still
     # mandating it — and it must NOT flag `close-template.md`, whose correct form carries the
@@ -20059,7 +20403,7 @@ def selftest():
     _T08CANON = _CANON70
     _found08 = tuple(sorted(
         _rel for _rel in _T08CANON
-        if _t69_live_claim(_read(_live_path(_flow_home(), _rel)), _T08STALE)))
+        if _t69_live_claim(_self_read((_rel)), _T08STALE)))
     _plant08 = (_t69_live_claim("\u26a0 **Evaluation with real users was NOT performed** "
                                 "\u2014 state it here explicitly (ISO 9241-210).", _T08STALE),
                 _t69_live_claim("\u26a0 **evaluation with real users: state explicitly "
@@ -20073,7 +20417,7 @@ def selftest():
                                 "with real users (ISO 9241-210).", _T08STALE))
     _state08 = tuple(sorted(
         _rel for _rel in _T08CANON
-        if _T08STATE.search(_read(_live_path(_flow_home(), _rel)) or "")))
+        if _T08STATE.search(_self_read((_rel)) or "")))
     # THE STATE PATTERN IS SHOWN DISCRIMINATING BEFORE ITS COUNT IS BELIEVED, and this plant is
     # the one the review's M3 is about: `close-template.md` is cited three times in this rev as
     # the CORRECT form the other sites should copy, and the first cut's `not performed — `
@@ -20285,7 +20629,7 @@ def selftest():
     for _p72 in _RESERVED_TPL72:                      # the flow-wide tier, in every block
         _expect72[_p72] |= set(_FLOWWIDE72)
 
-    _blocks72 = {_p: _reserved_block(_read(_live_path(_flow_home(), _tplpath72(_p))))
+    _blocks72 = {_p: _reserved_block(_self_read((_tplpath72(_p))))
                  for _p in _RESERVED_TPL72}
 
     # AND THE POPULATION IS CLOSED AGAINST THE WHOLE TEMPLATE SET, with a REASON per
@@ -20350,7 +20694,7 @@ def selftest():
     for _base72, _pfx72 in (("templates/dev-flow", ""),
                             ("templates/fast-dev-flow", "templates/fast-dev-flow/")):
         _alltpl72 |= {_pfx72 + _n72 for _n72 in
-                      os.listdir(os.path.join(_flow_home(), *_base72.split("/")))
+                      _self_names(_base72)
                       if _n72.endswith(".md")}
     # ⚠ AND THE PUBLISHED ENUMERATION IS COMPARED TO THIS SET -- round 3's `F3-R3`, and the
     # finding is that it had ALREADY DRIFTED: `/dev-flow` §*Language of artifacts* names the
@@ -20360,7 +20704,7 @@ def selftest():
     # own packet was not one of the templates whose labels are machine-plane -- and a
     # translated label is exactly what that section exists to prevent. A hand-kept list beside
     # the list it describes is `C-50`, so it is now read rather than trusted.
-    _langsrc72 = _read(_live_path(_flow_home(), "commands/dev-flow.md")) or ""
+    _langsrc72 = _self_read(("commands/dev-flow.md")) or ""
     _langlist72 = set()
     for _m72 in re.finditer(r"reserved-field block naming the labels read from THAT "
                             r"template\*\* \(([^)]*)\)", _langsrc72):
@@ -20377,7 +20721,7 @@ def selftest():
     # AND AN EXEMPT TEMPLATE MUST NOT CARRY A BLOCK EITHER -- two inventories cannot be right.
     _exemptblock72 = sorted(
         _n72 for _n72 in _RESERVED_NOBLOCK72
-        if _RESERVED_MARK in (_read(_live_path(_flow_home(), _tplpath72(_n72))) or ""))
+        if _RESERVED_MARK in (_self_read((_tplpath72(_n72))) or ""))
     good = (not _part72 and not _overlap72 and not _exemptkeyed72 and not _exemptblock72
             and bool(_langlist72) and not _langgap72)
     ok &= good
@@ -20427,7 +20771,7 @@ def selftest():
             and _FLOWWIDE72 == (_V42_MARK,)
             and all(("`%s`" % _tok) in _blocks72[_p72][0] or _tok in _blocks72[_p72][0]
                     for _tok in _FLOWWIDE72 for _p72 in _RESERVED_TPL72)
-            and _V42_MARK in (_read(_live_path(_flow_home(), "commands/dev-flow.md")) or "")
+            and _V42_MARK in (_self_read(("commands/dev-flow.md")) or "")
             and all(_seen for _lab, _seen in _reqreaders72))
     ok &= good
     print(f"  LANG {'RESERVED-ifc-derived':<31} expected the {len(_IFC_LABELS72)} IFC keyword(s) "
@@ -20565,7 +20909,7 @@ def selftest():
     # here while the plants ran through the helper would be two readers with one name.
     _found09 = tuple(sorted(
         _rel09 for _rel09 in _T69CANON
-        if _t09_orders(_read(_live_path(_flow_home(), _rel09)))))
+        if _t09_orders(_self_read((_rel09)))))
     _plant09 = tuple(bool(_t09_orders(_s09)) for _s09 in (
         # THE LIVE ORDERS. Five the plural-only first cut let through (`rh5`), the EM-DASH form
         # the first tempering then excluded (`rj6`), the PARTICIPLE-WITH-AN-AGENT form that
@@ -20701,7 +21045,7 @@ def selftest():
         # The seed is read out of the COMMAND, never typed here -- the same subject
         # `DFI FAST-declaration` reads, picked by the field that identifies it. A local
         # parse because `_statedoc62` is defined further down this same function.
-        _init84 = _read(_live_path(_flow_home(), "commands/dev-flow-init.md")) or ""
+        _init84 = _self_read(("commands/dev-flow-init.md")) or ""
         _fence84 = [_x84 for _x84 in
                     re.findall(r"```json" + chr(10) + r"(.*?)```", _init84, re.S)
                     if '"mode": "fast"' in _x84]
@@ -20733,7 +21077,7 @@ def selftest():
     _moved84 = set(_before84) - set(_after84)
     # THE COMMAND PUBLISHES THE IDS, so the comparison is a SET and not two counts: a census
     # that agrees only in cardinality is the hand-kept figure with an extra step.
-    _cmd84 = _read(_live_path(_flow_home(), "commands/fast-dev-flow.md")) or ""
+    _cmd84 = _self_read(("commands/fast-dev-flow.md")) or ""
     # rev85: TWELVE -> THIRTEEN, and the member that joined is the one this rev repaired.
     # `V28` called the `<YYYY-MM-DD>-fast-NN` id `/dev-flow-init` MANDATES *not a batch-shaped
     # directory ... this is not a pass* while `V18` accepted the same directory, so the census
@@ -20786,7 +21130,7 @@ def selftest():
     _OWED_LINE72 = re.compile(
         r"^> \*\*Owed in\.\*\* `fast` ([\u2014\u2713]|by trigger) \u00b7 "
         r"`core` ([\u2014\u2713]|by trigger) \u00b7 `full` ([\u2014\u2713]|by trigger)\s*$", re.M)
-    _initsrc72 = _read(_live_path(_flow_home(), "commands/dev-flow-init.md")) or ""
+    _initsrc72 = _self_read(("commands/dev-flow-init.md")) or ""
     _table72 = {}
     for _n72, _f72, _c72, _u72 in _OWED_ROW72.findall(_initsrc72):
         _table72.setdefault(_n72, set()).add((_f72, _c72, _u72))
@@ -20810,12 +21154,11 @@ def selftest():
     _files72 = []
     for _base72, _pfx72 in (("templates/dev-flow", ""),
                             ("templates/fast-dev-flow", "templates/fast-dev-flow/")):
-        _d72 = os.path.join(_flow_home(), *_base72.split("/"))
         _files72 += [(_base72 + "/" + _n72, _pfx72 + _n72)
-                     for _n72 in sorted(os.listdir(_d72)) if _n72.endswith(".md")]
+                     for _n72 in _self_names(_base72) if _n72.endswith(".md")]
     _owedbad72, _owedseen72 = [], 0
     for _rel72, _n72 in _files72:
-        _m72 = _OWED_LINE72.search(_read(_live_path(_flow_home(), _rel72)) or "")
+        _m72 = _OWED_LINE72.search(_self_read((_rel72)) or "")
         if _m72 is None:
             _owedbad72.append("%s: no `Owed in` line" % _n72)
             continue
@@ -20882,7 +21225,7 @@ def selftest():
 
     _langbad72 = []
     for _rel72, _n72 in _files72:
-        _full72 = _read(_live_path(_flow_home(), _rel72)) or ""
+        _full72 = _self_read((_rel72)) or ""
         _lm72 = _OWED_LINE72.search(_full72)
         if not _lm72 or not _langblock72(_full72):
             continue
@@ -20947,8 +21290,8 @@ def selftest():
     # this is it. A POINTER and not a regenerated copy, because NO RULE READS EITHER TABLE --
     # `00-checklists.md` is in no rule's artifact family -- so a generated copy would need a
     # generator AND a guard to protect a document with no reader.
-    _pc72 = _read(_live_path(_flow_home(), "templates/dev-flow/phase-checklists.md")) or ""
-    _inc72 = _read(_live_path(_flow_home(), "templates/dev-flow/increment-template.md")) or ""
+    _pc72 = _self_read(("templates/dev-flow/phase-checklists.md")) or ""
+    _inc72 = _self_read(("templates/dev-flow/increment-template.md")) or ""
     _pcsec72 = "".join(_md_section(_pc72, "5 \u00b7 INCREMENT"))
     _pcrows72 = _v39_table_rows(_pcsec72)
     good = (bool(_pcsec72) and not _pcrows72
@@ -20982,7 +21325,7 @@ def selftest():
     _owed72 = re.findall(
         r"^\| *(\d+) *\|(.*?)\| *(all|`core` \u00b7 `full`(?: \u2039[^\u203a\n]+\u203a)?) *\|",
         _gate72, re.M)
-    _dv72 = _read(_live_path(_flow_home(), "commands/dev-flow.md")) or ""
+    _dv72 = _self_read(("commands/dev-flow.md")) or ""
     _modetbl72 = {_h72.strip(): (_f72.strip(), _c72.strip(), _u72.strip())
                   for _h72, _f72, _c72, _u72 in re.findall(
                       r"^\| ([^|\n]+) \| *([^|\n]*?) *\| *([^|\n]*?) *\| *([^|\n]*?) *\|$",
@@ -21100,7 +21443,7 @@ def selftest():
     # the DECLARATION (`V11`), the CONSUMER GREP (`V13`/`V14`) and the EXECUTED SURFACE PROOF
     # (no rule), and the arm below drives `V11` over the audit's own reproduction so the rule is
     # shown FIRING on what it really reads before its silence is believed.
-    _ifctpl72 = _read(_live_path(_flow_home(), "templates/dev-flow/ifc-template.md")) or ""
+    _ifctpl72 = _self_read(("templates/dev-flow/ifc-template.md")) or ""
     _IFCSTALE72 = re.compile(
         r"(?:the address moved; the validator sees it|it never degrades the detection)")
     _ifcstale72 = _t69_live_claim(_ifctpl72, _IFCSTALE72)
@@ -21150,8 +21493,8 @@ def selftest():
     # ---- rev72 (`T07`). ONE RETURN EDGE PER STATION, and the census found the defect at TWO
     # sites and not one: `review-template.md` \u00a7Verdict AND `/dev-flow` \u00a7Phase 2's gate both sent
     # every iteration to Phase 1 while naming an implementation defect.
-    _rt72 = _read(_live_path(_flow_home(), "templates/dev-flow/review-template.md")) or ""
-    _vt72 = _read(_live_path(_flow_home(), "templates/dev-flow/validation-template.md")) or ""
+    _rt72 = _self_read(("templates/dev-flow/review-template.md")) or ""
+    _vt72 = _self_read(("templates/dev-flow/validation-template.md")) or ""
     # THE P2 SITES MUST NOT MINT THE P3 TOKEN AS THEIR OWN GATE TOKEN, and the P4 sites MUST
     # mint both -- the asymmetry IS the ruling, so an arm that only checked absence would pass
     # on a flow that had deleted the token everywhere.
@@ -21263,7 +21606,7 @@ def selftest():
         r"|HIGH[^\n.]{0,60}(?:does not (?:apply|reach)|can be (?:cleared|approved|waived)))",
         re.I)
     _bad21 = tuple(sorted(_r for _r in _found21
-                          if _Q21BAD.search(_read(_live_path(_flow_home(), _r)) or "")))
+                          if _Q21BAD.search(_self_read((_r)) or "")))
     _plant21 = (bool(_Q21BAD.search("A standing_authorization with autonomous:true waives the "
                                     "HIGH block for this batch."))
                 and bool(_Q21BAD.search("A HIGH finding blocks **unless the operator granted "
@@ -21291,9 +21634,9 @@ def selftest():
     # and `/dev-flow-init` seeded the local file while its own \u00a7Restrictions forbade touching
     # the vault. Two homes, no writer, and `C-50`'s defect committed against the very section
     # that forbids it.
-    _init72 = _read(_live_path(_flow_home(), "commands/dev-flow-init.md")) or ""
-    _sync72 = _read(_live_path(_flow_home(), "commands/dev-flow-sync.md")) or ""
-    _cl72 = _read(_live_path(_flow_home(), "templates/dev-flow/close-template.md")) or ""
+    _init72 = _self_read(("commands/dev-flow-init.md")) or ""
+    _sync72 = _self_read(("commands/dev-flow-sync.md")) or ""
+    _cl72 = _self_read(("templates/dev-flow/close-template.md")) or ""
     # ⚠ THE FIRST CUT OF THIS PATTERN WAS KEYED ON `artifact_homes.*` ALONE AND MISSED A
     # FIFTH SITE. `phase-checklists.md`'s *Home follows the station* row ASSIGNS homes --
     # *PDR · DDR → vault + Drive. Close → both* -- while naming no key, so a key-keyed scan
@@ -21392,7 +21735,7 @@ def selftest():
         return out
 
     _bad22 = tuple(sorted(_r for _r in _found22
-                          if _q22_licences(_read(_live_path(_flow_home(), _r)) or "")))
+                          if _q22_licences(_self_read((_r)) or "")))
     # FOURTEEN PLANTS, NOT FIVE. The first cut planted the three shapes it already caught,
     # which proves the pattern compiles and nothing else. These are the ten the second review
     # MEASURED as escaping -- the home-key destination, the semicolon, the far negation, the
@@ -21550,7 +21893,7 @@ def selftest():
         return (len(_u22),
                 hashlib.sha256("\n".join(_u22).encode("utf-8")).hexdigest()[:16])
 
-    _cen22 = {_r22: _q22_fingerprint(_read(_live_path(_flow_home(), _r22)))
+    _cen22 = {_r22: _q22_fingerprint(_self_read((_r22)))
               for _r22 in _Q22_CENSUS}
     _cendrift22 = sorted("%s: %s != declared %s" % (_r22, _cen22[_r22], _Q22_CENSUS[_r22])
                          for _r22 in _Q22_CENSUS if _cen22[_r22] != _Q22_CENSUS[_r22])
@@ -21558,13 +21901,13 @@ def selftest():
     # cannot join the axis unnoticed.
     _cenfiles22 = tuple(sorted(
         _r22 for _r22 in _T69CANON
-        if _q22_units(_read(_live_path(_flow_home(), _r22)))))
+        if _q22_units(_self_read((_r22)))))
     _cengap22 = sorted(set(_cenfiles22) ^ (set(_Q22_CENSUS) | set(_Q22_NOCONTRACT)))
     # AND THE CENSUS IS SHOWN DISCRIMINATING: each of the third review's three surviving
     # licences, injected into the document it targeted, must move that document's fingerprint.
     # This is the half that makes the census a control rather than a checksum.
     _cenplant22 = tuple(
-        _q22_fingerprint((_read(_live_path(_flow_home(), _rel22)) or "") + _extra22)
+        _q22_fingerprint((_self_read((_rel22)) or "") + _extra22)
         != _Q22_CENSUS[_rel22]
         for _rel22, _extra22 in (
             ("commands/dev-flow-init.md",
@@ -21649,12 +21992,12 @@ def selftest():
     # here -- a census over AGENT text that scanned `_T69CANON` (which holds no agent file) was
     # structurally blind to the files it claimed to close.
     _CANON73 = _CANON70
-    _dv73 = _read(_live_path(_flow_home(), "commands/dev-flow.md")) or ""
-    _fdf73 = _read(_live_path(_flow_home(), "commands/fast-dev-flow.md")) or ""
+    _dv73 = _self_read(("commands/dev-flow.md")) or ""
+    _fdf73 = _self_read(("commands/fast-dev-flow.md")) or ""
     _ROW73 = "| Field | Value |\n|---|---|\n| **%s** | %s |\n"
 
     def _txt73(rel):
-        return _read(_live_path(_flow_home(), rel)) or ""
+        return _self_read((rel)) or ""
 
     def _live73(pat, canon=None):
         """Canon documents carrying `pat` as LIVE PROSE -> sorted tuple.
@@ -22386,8 +22729,7 @@ def selftest():
     # names it in an inline span. That set is compared BOTH WAYS against the \u00a7Delegation
     # inventory table and against the manifest's `agents/` rows -- three inventories of one
     # fact, and the search reads none of them.
-    _AGENTFILES73 = tuple(sorted(_n for _n in os.listdir(os.path.join(_flow_home(), "agents"))
-                                 if _n.endswith(".md")))
+    _AGENTFILES73 = tuple(_n for _n in _self_names("agents") if _n.endswith(".md"))
     _dispatched73 = tuple(sorted(
         _n[:-3] for _n in _AGENTFILES73
         if ("`%s`" % _n[:-3]) in _dv73 or ("`%s`" % _n[:-3]) in _fdf73))
@@ -22400,7 +22742,7 @@ def selftest():
     _MANIFEST73 = "docs/FLOW-VERSION.md"
     _manrows73 = tuple(sorted(
         _m.group(1) for _m in re.finditer(r"^\| `agents/([^`]+)\.md`",
-                                          _read(_live_path(_flow_home(), _MANIFEST73)) or "",
+                                          _self_read((_MANIFEST73)) or "",
                                           re.M)))
     # AND THE TWO THAT MUST STAY OUT, asserted rather than assumed: neither command names them,
     # so they are not dispatched, so they are in no inventory. Measured, not argued.
@@ -22447,7 +22789,7 @@ def selftest():
     # that grows a `tools:` or `model:` key moves this vector, whichever file it is, and the
     # new file's format is proven identical to the ten that already work rather than asserted.
     _fmkeys73 = {}
-    for _fn73 in sorted(os.listdir(os.path.join(_flow_home(), "agents"))):
+    for _fn73 in _self_names("agents"):
         if not _fn73.endswith(".md"):
             continue
         _m73 = re.match(r"---\n(.*?)\n---\n", _txt73("agents/" + _fn73), re.S)
@@ -22542,12 +22884,30 @@ def selftest():
                                         "captured at `main`"), _V36_LABEL,
                               identity=_V36_IDENTITY)[0] == "declared"
                and "tester" in _v60_identity_sentence(_V36_IDENTITY))
+    # rev92: the floor is DERIVED from the manifest's own `agents/` rows instead of typed at
+    # 11. The canon home holds agents this flow does not table (11 on disk, 9 tabled) while a
+    # bundle ships exactly the tabled ones, so a typed 11 was a fact about one layout and made
+    # an intact bundle read as a shrunken population.
+    # ⚠ CONTAINMENT, NOT A COUNT -- the review's `F7`. The first cut compared a DISK-derived
+    # number against a MANIFEST-derived one (11 files on the canon disk, 9 tabled rows), so the
+    # effective floor fell from the typed 11 to 9 and a canon home that had lost two agent
+    # files -- tabled ones included -- still satisfied the arm whose stated subject is that the
+    # population is what makes *invent no tools* checkable. The set is compared instead, and
+    # the missing file is NAMED. True under both layouts, and strictly stronger than the 11.
+    _agtabled73 = {_r73[len("agents/"):] for _r73 in _self_canon()
+                   if _r73.startswith("agents/")}
+    _agmissing73 = sorted(_agtabled73 - {_k73[len("agents/"):] for _k73 in _fmkeys73
+                                         if _k73.startswith("agents/")})
     good = bool(bool(_TS73) and not _fmbad73 and not _routebad73 and _bounds73
-                and _delplant73 == (True, True, True) and _tsid73 and len(_fmkeys73) >= 11
+                and _delplant73 == (True, True, True) and _tsid73
+                and _agtabled73 and not _agmissing73
                 and _tsbad73 == () and _tsplant73 == (True, True, True, True))
     ok &= good
-    print(f"  REV  {'TESTER-role-bounded':<31} expected `agents/tester.md` to exist, all "
-          f"{len(_fmkeys73)} agent file(s) to carry EXACTLY the frontmatter keys this runtime "
+    print(f"  REV  {'TESTER-role-bounded':<31} expected `agents/tester.md` to exist, every "
+          f"one of the {len(_agtabled73)} agent file(s) the manifest TABLES to be among the "
+          f"{len(_fmkeys73)} read here (missing "
+          f"{_shown(set(_agmissing73)) if _agmissing73 else '{}'}), all of them to carry "
+          f"EXACTLY the frontmatter keys this runtime "
           f"has (`name`, `description` \u2014 the population is what makes *invent no tools* "
           f"checkable), the {len(_WANTROUTE73)} handoff route(s) to resolve to the spec's "
           f"destinations AS PARSED ROWS, the role bounded at the agent AND in `/dev-flow` "
@@ -23215,7 +23575,7 @@ def selftest():
     # is the only one that reads the row THROUGH THE IDENTITY TABLE, which is `V36`'s own
     # grammar and no other rule's. Two arms, two subjects: that the row exists and is unfilled
     # (the census), and that an unfilled row does not accidentally NAME somebody (here).
-    _itpl63 = _read(_live_path(_flow_home(), "templates/dev-flow/increment-template.md"))
+    _itpl63 = _self_read(("templates/dev-flow/increment-template.md"))
     _st63 = _v60_field(_itpl63 or "", _V36_LABEL, identity=_V36_IDENTITY)[0]
     good = _st63 == "empty"
     ok &= good
@@ -23252,7 +23612,7 @@ def selftest():
         and len(_pub63) == len(_V36_IDENTITY) \
         and "ABSENT` IS NOT AN ACCEPTED VALUE" in _itpl63 \
         and "Independent review" in (
-            _read(_live_path(_flow_home(), "commands/dev-flow.md")) or "")
+            _self_read(("commands/dev-flow.md")) or "")
     ok &= good
     print(f"  V36 {'TEMPLATE-names-every-form':<32} expected the template to publish "
           f"EXACTLY {len(_V36_IDENTITY)} accepted forms \u2014 counted from the TEMPLATE, so "
@@ -23293,7 +23653,7 @@ def selftest():
         with tempfile.TemporaryDirectory() as _d84:
             _mk84(_d84, _mode84, _cell84)
             _fast84[_tag84] = sorted({_f84.sev for _f84 in reg["V36"](_d84, _artifacts(_d84))})
-    _itpl84 = _read(_live_path(_flow_home(), "templates/dev-flow/increment-template.md")) or ""
+    _itpl84 = _self_read(("templates/dev-flow/increment-template.md")) or ""
     good = (_fast84 == {"fast": [SKIP], "core": [NOTICE], "nomode": [NOTICE],
                         "waiver-fast": [SKIP], "waiver-core": [SKIP]}
             and len(_V36_FAST) == 1
@@ -23387,7 +23747,7 @@ def selftest():
     # separate them, and that was not enough on this filesystem. The arm below is what would
     # have said so in one line instead of an hour. `PYTHONDONTWRITEBYTECODE` does not help:
     # it stops Python WRITING a cache, never reading one.
-    _mutpath64 = _live_path(_flow_home(), "docs/tools/devflow-mutate.py")
+    _mutpath64 = _self_path("docs/tools/devflow-mutate.py")
     _mutsrc64 = _read(_mutpath64) or ""
     _mut64 = type(sys)("devflow_mutate")
     _mut64.__file__ = _mutpath64
@@ -23603,16 +23963,32 @@ def selftest():
     # the reason, rather than drifting silently and leaving the registry claiming a coverage
     # it no longer has. That is `R-88-12`'s defect one level out, and this arm is where a
     # future revision is told about it -- by name, so the repair is mechanical.
-    _reg64 = json.loads(_read(_live_path(_flow_home(),
+    _reg64 = json.loads(_self_read((
                                          "docs/tools/devflow-mutants.json")) or "{}")
-    _drift64, _live64 = [], 0
+    # rev92: A TARGET THIS LAYOUT DOES NOT HOLD IS SUBTRACTED AND NAMED, NEVER SCORED AS DRIFT.
+    # Two mutants aim at a skill the AUTHORING home installs beside the flow and which a bundle
+    # has no counterpart for; reporting them as anchors that moved says the registry is stale
+    # when it is intact -- the false alarm this rev exists to stop. The subtraction applies only
+    # from a bundle, so on the canon home an unreachable target is drift exactly as before, and
+    # the count is PRINTED so the arm cannot quietly shrink the population it scores.
+    _drift64, _live64, _nohere64 = [], 0, []
+    _isb64 = _self_home()[1]
     for _m64 in _reg64.get("mutants", []):
         _tgt64 = _m64.get("file") or _reg64["subjects"][_m64["subject"]]["path"]
-        _body64 = _read(_live_path(_flow_home(), _tgt64)) or ""
+        _raw64 = _self_read((_tgt64))
+        _body64 = _raw64 or ""
         _n64 = _body64.replace("\r\n", "\n").count(_m64["old"])
         if _m64.get("retired"):
             continue
         _live64 += 1
+        # `_self_ships`, never `is None` -- the review's `F8`. `_self_read` answers None for
+        # BOTH *this layout does not ship it* and *the file is there and would not read*, and
+        # only the first is what this subtraction claims. Reporting a decoding or permission
+        # failure as *canon-only on this layout* is a sentence confidently wrong about the
+        # flow's own structure, which is `_not_mirrored_reason`'s lesson.
+        if _raw64 is None and _isb64 and not _self_ships(_tgt64):
+            _nohere64.append(_tgt64)
+            continue
         if _n64 != 1 or _m64["old"] == _m64["new"]:
             _drift64.append("%s(%d)" % (_m64["id"], _n64))
     # THE REASON IS CHECKED FOR SHAPE, NOT FOR PRESENCE. The first cut of this arm read
@@ -23637,7 +24013,9 @@ def selftest():
           f"match their anchor exactly once (floor {_floor64}, declared in the registry), ids "
           f"unique, and each of the {len(_reasons64)} retired one(s) to carry a WORDED reason "
           f"\u00b7 "
-          f"{'ok' if good else 'FAIL: ' + ', '.join(_drift64[:6])}")
+          + (f"{len(_nohere64)} anchor(s) NOT checked here \u2014 their target is canon-only on "
+             f"this layout: {_shown(set(_nohere64))} \u00b7 " if _nohere64 else "")
+          + f"{'ok' if good else 'FAIL: ' + ', '.join(_drift64[:6])}")
 
     # THE DERIVED-ARM CENSUS, ARMED ON THE FIXTURE -- because a census is itself an
     # instrument and `C-57` does not exempt it. The list of derived arms was hand-written
@@ -23671,7 +24049,7 @@ def selftest():
     # author runs and pastes -- what is asserted here is that the declaration is present, is
     # a superset of what the mode last reported, and that the probes are still declared, so a
     # subject can never silently lose its census.
-    _dc64 = json.loads(_read(_live_path(_flow_home(),
+    _dc64 = json.loads(_self_read((
                                         "docs/tools/devflow-mutants.json")) or "{}")
     _ds64 = _dc64.get("subjects", {}).get("devflow-validate", {})
     _want64 = {"ENC VERDICT-live", "MUT REGISTRY-anchors-live", "V30 E2E-live",
@@ -24617,7 +24995,10 @@ def selftest():
     # answer rots the next time a batch opens. What is asserted is AGREEMENT between two
     # independent readers -- the same instrument `V25`'s two-remote fixture reached for.
     _c27 = _v5_corpus()
-    if not _c27:
+    if not _c27 and _bundle85:
+        for _fam27 in ("V27", "V28", "V29"):
+            ok &= _nosub92(_fam27, "LIVE-agree", "corpus", 22)
+    elif not _c27:
         ok = False
         print(f"  V27 {'LIVE-agree':<22} FAIL: {_v5_why(_c27)}")
         print(f"  V28 {'LIVE-agree':<22} FAIL: {_v5_why(_c27)}")
@@ -24697,7 +25078,7 @@ def selftest():
     # waiting for a seventh reviewer. `_ATLAS_READS` carries a reason per entry because an
     # ungated read that is deliberate and one nobody has looked at are indistinguishable
     # from the outside.
-    _src65 = _read(os.path.join(_flow_home(), "docs", "tools", "devflow-validate.py")) or ""
+    _src65 = _self_read("docs/tools/devflow-validate.py") or ""
     _cen65 = _atlas_read_census(_src65)
     _want65 = {(f, k): c for (f, k, c) in _ATLAS_READS}
     _extra65 = sorted("%s/%s" % k for k in set(_cen65) - set(_want65))
@@ -25188,18 +25569,16 @@ def selftest():
 
     # THE EMPTINESS DETECT. Four criteria, each fired ALONE, and the seeded template is the
     # one none of the other three can see -- which is the measurement that set the design.
-    _seed39, _nseed39 = _v39_seeds(_flow_home(), "seedproj", _F39)
+    _seed39, _nseed39 = _v39_seeds(_self_home()[0], "seedproj", _F39)
     # THE SEEDED LEDGER, built from the SAME fence `/dev-flow-init` step 4 copies -- not a
     # modelled one. `_v39_seeds` reads that fence into its corpus, so this is byte-for-byte
     # what a fresh project holds at `P1`.
-    _reqt39 = _read(os.path.join(_flow_home(), "templates", "dev-flow",
-                                 "req-template.md")) or ""
+    _reqt39 = _self_read("templates/dev-flow/req-template.md") or ""
     _fence39 = "```markdown\n(.*?)```"
     _split39 = "\n## 7."
     _ledger39 = (re.findall(_fence39, "## 7." + _reqt39.split(_split39, 1)[1], re.S)
                  or [""])[0].replace("<PROJECT>", "seedproj").replace("<BATCH_ID>", _F39)
-    _tplsrc = _read(os.path.join(_flow_home(), "templates", "dev-flow",
-                                 "validation-template.md")) or ""
+    _tplsrc = _self_read("templates/dev-flow/validation-template.md") or ""
     _seeded39 = _tplsrc.replace("<PROJECT>", "seedproj").replace("<BATCH_ID>", _F39)
     for _l39, _rel39, _txt39, _want39 in (
             ("EMPTY-seed-identity", "04-validation.md", _seeded39, "byte-identical to a"),
@@ -25260,11 +25639,10 @@ def selftest():
 
     # THE SEEDED TEMPLATE IS INVISIBLE TO THE OTHER THREE, stated as an arm rather than in
     # prose: strip the identity criterion and every template this flow ships passes.
-    _blind39 = [n for n in sorted(os.listdir(os.path.join(_flow_home(), "templates",
-                                                          "dev-flow")))
+    _blind39 = [n for n in _self_names("templates/dev-flow")
                 if n.endswith(".md")
                 and not [r for r in _v39_untouched(
-                    "x-" + n, (_read(os.path.join(_flow_home(), "templates", "dev-flow", n))
+                    "x-" + n, (_self_read("templates/dev-flow/" + n)
                                or "").replace("<PROJECT>", "seedproj")
                     .replace("<BATCH_ID>", _F39), set())]]
     good = len(_blind39) >= 12
@@ -25272,14 +25650,16 @@ def selftest():
     print(f"  V39 {'EMPTY-identity-earns-it':<22} expected the three STRUCTURAL criteria "
           f"alone to miss (nearly) every seeded template -- the measurement that added the "
           f"fourth · got {len(_blind39)} of "
-          f"{len([n for n in os.listdir(os.path.join(_flow_home(), 'templates', 'dev-flow')) if n.endswith('.md')])} "
+          f"{len([n for n in _self_names('templates/dev-flow') if n.endswith('.md')])} "
           f"missed · {'ok' if good else 'FAIL'}")
 
     # C-53, MEASURED ON THE REAL RECORD RATHER THAN ASSERTED. A BLOCK rule that false-fails
     # correct work is more corrosive than one that passes wrong work, so the detect is run
     # over every artifact in the owed families across the WHOLE project record.
     _c39 = _v5_corpus()
-    if not _c39:
+    if not _c39 and _bundle85:
+        ok &= _nosub92("V39", "LIVE-no-false-block", "corpus", 22)
+    elif not _c39:
         print(f"  V39 {'LIVE-no-false-block':<22} FAIL: {_v5_why(_c39)}")
         ok = False
     else:
@@ -25299,7 +25679,7 @@ def selftest():
             if not _V39_BATCHDIR.match(_d39):
                 _skip39.append(_d39)
                 continue
-            _s39 = _v39_seeds(_flow_home(), "example_app", _d39)[0]
+            _s39 = _v39_seeds(_self_home()[0], "example_app", _d39)[0]
             for _rel39 in _v39_listing(_p39d):
                 if not _rel39.endswith(".md") or not any(
                         _rel39.startswith(m) for fam in _V39_FAMILY.values() for m in fam):
@@ -25339,8 +25719,7 @@ def selftest():
 
     # END TO END, THROUGH THE REGISTERED RULE, on trees these arms build -- including the
     # SENTINEL, because a BLOCK rule that can only be shown to SKIP is the vacuous form.
-    _tplv39 = _read(os.path.join(_flow_home(), "templates", "dev-flow",
-                                 "validation-template.md")) or ""
+    _tplv39 = _self_read("templates/dev-flow/validation-template.md") or ""
     for _l39, _st39, _files39, _sv39, _sub39 in (
             ("E2E-missing", {"current_station": "P4", "phase_status": "approved",
                              "mode": "core"},
@@ -25415,9 +25794,9 @@ def selftest():
     # one produces bodies no artifact can equal -- the identity criterion silently stops
     # matching while the count still says 14. `state.json.project` is read at exactly ONE
     # site in this whole validator and no rule validates it.
-    good = (_v39_seeds(_flow_home(), "", _F39) == (set(), 0)
-            and _v39_seeds(_flow_home(), "   ", _F39) == (set(), 0)
-            and _v39_seeds(_flow_home(), "seedproj", _F39)[1] == _nseed39 > 0)
+    good = (_v39_seeds(_self_home()[0], "", _F39) == (set(), 0)
+            and _v39_seeds(_self_home()[0], "   ", _F39) == (set(), 0)
+            and _v39_seeds(_self_home()[0], "seedproj", _F39)[1] == _nseed39 > 0)
     ok &= good
     print(f"  V39 {'SEEDS-blank-project':<22} expected a blank `project` to REFUSE the "
           f"corpus (count 0, so the zero-templates sentence fires) rather than substitute an "
@@ -25705,7 +26084,20 @@ def selftest():
     _sib40 = (os.path.join(os.path.dirname(_main40),
                            os.path.basename(_main40) + "-wt-batch90")
               if _main40 else None)
-    if not (_sib40 and os.path.isfile(os.path.join(_sib40, ".dev-flow", "state.json"))):
+    # rev92: THE BUNDLE BRANCH IS ASKED FIRST, and the order is the whole of it. Both the
+    # absence branch below and the bundle SKIP further down describe a missing exhibit, but
+    # only one of them is TRUE from a bundle -- there the pair was never going to be there,
+    # for a structural reason, and reporting it as an absent worktree sends the reader looking
+    # for a `git worktree` they were never expected to have. It also made the label appear in
+    # the published SKIP census from a canon home and vanish from it in a bundle, which is
+    # exactly the drift `BUN SKIPS-named` compares both ways to catch.
+    if _bundle85:
+        ok &= _nosubject85(
+            "V40", "LIVE-two-checkouts",
+            "the exhibit is TWO live checkouts of the canonical repository beside each other; "
+            "a bundle is one installed copy of the published files and has neither checkout",
+            22)
+    elif not (_sib40 and os.path.isfile(os.path.join(_sib40, ".dev-flow", "state.json"))):
         # THE EXHIBIT MAY LEGITIMATELY BE GONE -- rev65's FIFTH review, MEDIUM, and the
         # ambient-fact class a FOURTH time. `git worktree remove` is the normal end of the
         # parallel work the convention prescribes, and it made `--selftest` exit 1 on an
@@ -25772,22 +26164,15 @@ def selftest():
             "untyped": _pair40(_rp40, [[F("V40", BLOCK, "elsewhere", "x")], _f40[1]]),
         }
         good = bool(_pair40(_rp40, _f40) and not any(_neg40.values()))
-        if _bundle85:
-            ok &= _nosubject85(
-                "V40", "LIVE-two-checkouts",
-                "the exhibit is TWO live checkouts of the canonical repository beside each "
-                "other; a bundle is one installed copy of the published files and has "
-                "neither checkout", 22)
-        else:
-            ok &= good
-            print(f"  V40 {'LIVE-two-checkouts':<22} expected the two live trees to share ONE git "
-              f"common dir (measured: {_one40}) and each to yield exactly ONE typed `V40` "
-              f"finding from a declared branch, with all {len(_neg40)} negative(s) REFUSED by "
-              f"the same core — the batch pair is PRINTED and never required, two checkouts of "
-              f"one repository being free to sit on the same batch ({_b40[0]} · {_b40[1]}, "
-              f"{'differ' if _b40[0] != _b40[1] else 'COINCIDE'}) · got "
-              f"{_shown(set(_br40))}, accepted "
-              f"{_shown({k for k, v in _neg40.items() if v})} · {'ok' if good else 'FAIL'}")
+        ok &= good
+        print(f"  V40 {'LIVE-two-checkouts':<22} expected the two live trees to share ONE git "
+          f"common dir (measured: {_one40}) and each to yield exactly ONE typed `V40` "
+          f"finding from a declared branch, with all {len(_neg40)} negative(s) REFUSED by "
+          f"the same core — the batch pair is PRINTED and never required, two checkouts of "
+          f"one repository being free to sit on the same batch ({_b40[0]} · {_b40[1]}, "
+          f"{'differ' if _b40[0] != _b40[1] else 'COINCIDE'}) · got "
+          f"{_shown(set(_br40))}, accepted "
+          f"{_shown({k for k, v in _neg40.items() if v})} · {'ok' if good else 'FAIL'}")
 
     # THE INVARIANT, ON A PAIR THIS ARM BUILDS -- rev65's FIFTH review, MEDIUM. The live
     # exhibit above depends on a worktree that the convention itself tells the operator to
@@ -26629,8 +27014,8 @@ def selftest():
     # and a SPACE, so an origin-story heading (`#### C-40 - ...`) is provenance and not a
     # control. The three planted cases the manifest publishes beside it are driven here, so
     # the count is only believed once the derivation has been shown to discriminate.
-    _fvm66 = _read(_live_path(_flow_home(), "docs/FLOW-VERSION.md")) or ""
-    _cat66 = _read(os.path.join(_flow_home(), "skills", "dev-flow-lessons", "SKILL.md")) or ""
+    _fvm66 = _self_read(("docs/FLOW-VERSION.md")) or ""
+    _cat66 = _self_read("skills/dev-flow-lessons/SKILL.md") or ""
     _HEAD66 = re.compile(r"^#{1,3} .*\bC-[0-9]+\b", re.M)
 
     def _ids66(text):
@@ -26670,8 +27055,8 @@ def selftest():
     # reader found it in an hour; it had stood for five revisions, which is what a hand-kept
     # figure beside a table does. Both numbers now come off the table, and the sentence is
     # parsed out of the manifest rather than recited here.
-    _man84 = _read(_manifest_path(_flow_home())) or ""
-    _rows84 = sorted(_canon(_flow_home()) or {})
+    _man84 = _self_read("docs/FLOW-VERSION.md") or ""
+    _rows84 = sorted(_self_canon())
     # NOT MIRRORED means one of three DECLARED things -- see `_not_mirrored_reason`, which
     # gives each its own sentence: the Claude Code hooks, the canon repository's CI, and the
     # sibling catalog, which ships BESIDE the bundle as its own skill folder and not in it.
@@ -26833,11 +27218,14 @@ def selftest():
     _gcaught75 = [_w for _c, _m, _w in _gpl75 if not _catgap75(_c, _m)]
     _gprose75 = [len(re.findall(r"`C-6[34]`", _s)) for _s in (_cat66, _fvm66)]
     good = bool(_catgap75(_cat66, _fvm66) and len(_gcaught75) == 3)
-    ok &= good
-    print(f"  CAT {'ID-GAP-63-64':<28} expected `C-63`/`C-64` to be SPENT AS PROSE and never as "
-          f"headings — `C-50`'s defect in the id space is one id with two destinations · prose "
-          f"sites catalog {_gprose75[0]} + manifest {_gprose75[1]} · 3 plants caught "
-          f"{len(_gcaught75)}/3 · {'ok' if good else 'FAIL'}")
+    if _bundle85:
+        ok &= _nosub92("CAT", "ID-GAP-63-64", "changelog", 28)
+    else:
+        ok &= good
+        print(f"  CAT {'ID-GAP-63-64':<28} expected `C-63`/`C-64` to be SPENT AS PROSE and never as "
+              f"headings — `C-50`'s defect in the id space is one id with two destinations · prose "
+              f"sites catalog {_gprose75[0]} + manifest {_gprose75[1]} · 3 plants caught "
+              f"{len(_gcaught75)}/3 · {'ok' if good else 'FAIL'}")
 
     # ======================= rev80. THE CATALOG BECOMES TWO FILES ============================
     #
@@ -26871,7 +27259,7 @@ def selftest():
     _CENSUS80 = (2772, '032c1476eacfcdde')   # rev86: the `Modes` column + its key
     _LOCATOR80 = 53
     _RULINGS80 = (53, (('DISCHARGED', 39), ('RETURNED', 11), ('SUBJECT-MOVED', 3)))
-    _ref80 = _read(_live_path(_flow_home(), "skills/dev-flow-lessons/REFERENCE.md")) or ""
+    _ref80 = _self_read(("skills/dev-flow-lessons/REFERENCE.md")) or ""
 
     _HEAD80 = re.compile(r"^#{1,6} ")
     _STRUCT80 = re.compile(r"^[-|: ]+$")
@@ -27058,10 +27446,14 @@ def selftest():
     # member silently absent from an axis population is the shape the review caught in the
     # CONTENT censuses; this is the same shape one level out, and it is closed by declaration
     # rather than by the join that `V32` measured as a false block.
-    _catdir80 = os.path.join(_flow_home(), "skills", "dev-flow-lessons")
+    # rev92: the catalog is a SIBLING skill folder under both layouts, so its directory is
+    # resolved the same way its files are rather than joined onto a canon home.
+    _CATSKILL80 = "skills/dev-flow-lessons/SKILL.md"
+    _catdir80 = (os.path.dirname(_self_path(_CATSKILL80))
+                 if _self_ships(_CATSKILL80) else "")
     _catmd80 = {"skills/dev-flow-lessons/" + _f
                 for _f in (sorted(os.listdir(_catdir80))
-                           if os.path.isdir(_catdir80) else [])
+                           if _catdir80 and os.path.isdir(_catdir80) else [])
                 if _f.endswith(".md")}
     _exgap80 = sorted(_catmd80 ^ ((set(_T69CANON) & _catmd80) | set(_T69EXCLUDED)))
     # AND THE PLANTS, through the same expression: a third file in the directory belongs to
@@ -27143,7 +27535,7 @@ def selftest():
     # §Modes, parsed: leading text of each row -> its `fast` column. The table is read, never
     # copied; a row renamed there breaks every citation to it, which is the point.
     _MODETAB86 = {}
-    for _l86 in (_md_section(_read(_live_path(_flow_home(), "commands/dev-flow.md")) or "",
+    for _l86 in (_md_section(_self_read(("commands/dev-flow.md")) or "",
                              "Modes") or [""])[0].split(chr(10)):
         _cells86 = [_x86.strip() for _x86 in _l86.split("|")[1:-1]]
         # the separator AND the header are skipped: `Control | `fast` | `core` | `full`` parsed
@@ -27193,7 +27585,7 @@ def selftest():
         # demanded a `>` that a trailing alternative outside the `<\u2026>` placeholder does not
         # have, and neither carried the lead branch. The comment claimed ONE grammar while
         # three were running. Every backticked span of a reserved row is a candidate here.
-        for _l86 in (_read(_live_path(_flow_home(), _p86)) or "").split(chr(10)):
+        for _l86 in (_self_read((_p86)) or "").split(chr(10)):
             if not re.match(r"\| \*\*[^|]+\*\* \|", _l86):
                 continue
             _modemints86 |= {_x86.strip(" <>") for _x86 in re.findall(r"``(.+?)``", _l86)
@@ -27209,11 +27601,11 @@ def selftest():
         # declared empties; a blob is not one, and a catalog cell spelling the real empty
         # would have been refused (`C-53`, unexercised only because none used it yet).
         for _c86 in re.findall("`([^`]*\u2014 or: [^`]*)`",
-                               _read(_live_path(_flow_home(), _p86)) or ""):
+                               _self_read((_p86)) or ""):
             _modemints86 |= {_x86.strip(" <>`") for _x86 in re.split("\u2014 or: ", _c86)
                              if _x86.strip(" <>`")}
         _modemints86 |= {_x86.strip() for _x86 in re.findall(
-            "[\u2014\u00b7] or: (.+?)>", _read(_live_path(_flow_home(), _p86)) or "")}
+            "[\u2014\u00b7] or: (.+?)>", _self_read((_p86)) or "")}
     _modes86 = _modecells86(_cat66)
     _modebad86 = sorted({"%s: %r \u2014 %s" % (_c86, _m86, _why86)
                          for _c86, _m86 in _modes86
@@ -27527,20 +27919,23 @@ def selftest():
     good = bool(_hits82 == {} and _stale82 == () and len(_pub82) == _PUBFILES82
                 and set(_plant82) == {_n82 for _n82, _r82 in _BAN82}
                 and all(_plant82.values()) and _spare82)
-    ok &= good
-    print(f"  PUB {'no-leaked-shapes':<28} expected 0 hit for the {len(_BAN82)} GENERIC "
-          f"pattern(s) — user-directory and drive-rooted paths, addresses, key-shaped "
-          f"strings, commit trailers and foreign environment variables — over the "
-          f"{len(_pub82)} PUBLISHED file(s) DISCOVERED under the two shipped skill "
-          f"directories, the validator's own prose INCLUDED, with the {len(_ALLOW82)} "
-          f"allowance(s) compared BOTH ways so a stale one reddens too, {len(_plant82)} "
-          f"SYNTHETIC plant(s) — ONE PER PATTERN, matched BY ID so a tenth pattern without a "
-          f"plant reddens — CAUGHT, and a kept batch citation SPARED ({_spare82}) · "
-          f"uncaught {_shown({_k82 for _k82, _v82 in _plant82.items() if not _v82}) if not all(_plant82.values()) else '{}'}"
-          f" · hits "
-          f"{_shown({'%s:%s' % (_k82, _v82[0][0]) for _k82, _v82 in _hits82.items()}) if _hits82 else '{}'}"
-          f" · stale {_shown(set(_stale82)) if _stale82 else '{}'} · "
-          f"{'ok' if good else 'FAIL'}")
+    if _bundle85:
+        ok &= _nosub92("PUB", "no-leaked-shapes", "publication", 28)
+    else:
+        ok &= good
+        print(f"  PUB {'no-leaked-shapes':<28} expected 0 hit for the {len(_BAN82)} GENERIC "
+              f"pattern(s) — user-directory and drive-rooted paths, addresses, key-shaped "
+              f"strings, commit trailers and foreign environment variables — over the "
+              f"{len(_pub82)} PUBLISHED file(s) DISCOVERED under the two shipped skill "
+              f"directories, the validator's own prose INCLUDED, with the {len(_ALLOW82)} "
+              f"allowance(s) compared BOTH ways so a stale one reddens too, {len(_plant82)} "
+              f"SYNTHETIC plant(s) — ONE PER PATTERN, matched BY ID so a tenth pattern without a "
+              f"plant reddens — CAUGHT, and a kept batch citation SPARED ({_spare82}) · "
+              f"uncaught {_shown({_k82 for _k82, _v82 in _plant82.items() if not _v82}) if not all(_plant82.values()) else '{}'}"
+              f" · hits "
+              f"{_shown({'%s:%s' % (_k82, _v82[0][0]) for _k82, _v82 in _hits82.items()}) if _hits82 else '{}'}"
+              f" · stale {_shown(set(_stale82)) if _stale82 else '{}'} · "
+              f"{'ok' if good else 'FAIL'}")
 
     # ---- rev84, `H1`. A CITATION THAT NAMES NO FILE IN THE BUNDLE IS THE SAME DEFECT AS A
     # CANON PATH, ONE SPELLING FURTHER IN -- and the first cut committed it at the exact
@@ -27568,17 +27963,18 @@ def selftest():
     # catches H1's spelling exactly -- a naive widening to all relative paths floods with 15
     # legitimate project paths and was measured wrong. (2) The seed row is pinned PER COMMAND,
     # at `dev-flow-init.md`, which is the site the defect was at.
-    _bund84 = os.path.join(_flow_home(), "skills", "dev-flow")
+    _bh84, _isb84 = _self_home()
+    _bund84 = _bh84 if _isb84 else os.path.join(_bh84, "skills", "dev-flow")
     _cited84, _missing84 = {}, []
     _percmd84 = {}
     _CITE84 = re.compile(r"`((?:\.\./)?[A-Za-z0-9_./-]*"
                          r"(?:templates|scripts)/[A-Za-z0-9_./-]+"
                          r"\.(?:md|py|json))`"
                          r"|`(\.\./[A-Za-z0-9_./-]+\.(?:md|py|json))`")
-    for _c84 in sorted(os.listdir(os.path.join(_flow_home(), "commands"))):
+    for _c84 in _self_names("commands"):
         if not _c84.endswith(".md"):
             continue
-        _txt84 = _read(_live_path(_flow_home(), "commands/" + _c84)) or ""
+        _txt84 = _self_read(("commands/" + _c84)) or ""
         for _m84 in _CITE84.finditer(_txt84):
             _rel84 = _m84.group(1) or _m84.group(2)
             _cited84.setdefault(_rel84, []).append(_c84)
@@ -27628,7 +28024,7 @@ def selftest():
     # either invents one or leaves the cell blank, and the 2026-09-18 re-run did the first and
     # said so. THE PREDICATE IS PURE AND THE PLANT GOES THROUGH IT: an arm that only asserted
     # `"in \`fast\`:" in text` would pass on a file that says it once, anywhere.
-    _pk85 = _read(_live_path(_flow_home(),
+    _pk85 = _self_read((
                              "templates/dev-flow/increment-template.md")) or ""
     _FULLID85 = re.compile(r"<(?:R-NNN|LLR-NNN\.n|AT-NNN|TC-NNN|lane name)")
 
@@ -27760,8 +28156,7 @@ def selftest():
     # own surface and not an outside citation. What the vocabulary cannot see is what this
     # machine does not have installed, and that is stated in the arm's own sentence.
     _SELFSKILLS85 = {_p85.split("/")[0] for _p85 in _BUNDLE_NATIVE}
-    _selfcmd85 = {_c85[:-3] for _c85 in os.listdir(os.path.join(_flow_home(), "commands"))
-                  if _c85.endswith(".md")}
+    _selfcmd85 = {_c85[:-3] for _c85 in _self_names("commands") if _c85.endswith(".md")}
     _selfdir85 = os.path.join(_flow_home(), "skills")
     _SELFVOCAB85 = tuple(sorted(
         _n85 for _n85 in (os.listdir(_selfdir85) if os.path.isdir(_selfdir85) else [])
@@ -27825,7 +28220,7 @@ def selftest():
     # derivation over installed skills can reach it, and writing an allowance for a name the
     # vocabulary cannot produce would be an exemption aimed at nothing. The review's LOW-3
     # stands as a printed bound, not as a closed hole.
-    _selfship85 = {_b85 for _b85 in (_bundle_rel(_r85) for _r85 in (_canon(_flow_home()) or {}))
+    _selfship85 = {_b85 for _b85 in (_bundle_rel(_r85) for _r85 in (_self_canon()))
                    if _b85} | {"README.md"}
     # the BASENAMES the bundle ships, for the bare-filename census -- derived from the same set
     # the manifest is `_BUNDLE_EXTRA`'s row and is not in the file table it carries, so its
@@ -27834,13 +28229,13 @@ def selftest():
     _selfbase85 = ({_b85.rsplit("/", 1)[-1] for _b85 in _selfship85}
                    | {_v85.rsplit("/", 1)[-1] for _v85 in _BUNDLE_EXTRA.values()})
     _selfpop85 = {}
-    for _rel85 in sorted(_canon(_flow_home()) or {}):
+    for _rel85 in sorted(_self_canon()):
         _b85 = _bundle_rel(_rel85)
         if not _b85 or not _b85.endswith(".md"):
             continue
         if _b85 != "SKILL.md" and _b85.split("/")[0] not in ("commands", "templates", "agents"):
             continue
-        _txt85 = _read(_live_path(_flow_home(), _rel85))
+        _txt85 = _self_read((_rel85))
         if _txt85 is not None:
             _selfpop85[_b85] = _txt85
 
@@ -27933,7 +28328,15 @@ def selftest():
                 and _selfplant85[0] == {"commands/fast-dev-flow.md"}
                 and _selfplant85[1] == {"commands/dev-flow.md"}
                 and _selfplant85[2] == set()
-                and _selfplant85[3] == {"templates/validation-template.md"}
+                # ⚠ rev92, the review's `F4`. THE BARE-MENTION PLANT NEEDS THE VOCABULARY,
+                # and that vocabulary is the one canon-only ingredient of this census: it is
+                # DERIVED from the skill directories installed BESIDE the flow, and a bundle
+                # has none. The non-measurement was already declared one line above; the plant
+                # was not, so the whole arm was briefly exempted from a bundle over one plant
+                # -- switching off the publication's own self-containment census on the only
+                # layout a consumer runs. It is CONDITIONED instead, and the condition prints.
+                and (_selfplant85[3] == {"templates/validation-template.md"}
+                     if _SELFVOCAB85 else _selfplant85[3] == set())
                 and _selfplant85[4] == {"commands/fast-dev-flow.md"})
     ok &= good
     print(f"  PUB {'SELF-CONTAINED-citations':<28} expected the {len(_selfpop85)} INSTRUCTION "
@@ -27946,7 +28349,10 @@ def selftest():
           f"machine has not installed, and a BUILT-IN, which is not a directory at all, are "
           f"outside it, and that is a printed bound and not a closed hole \u00b7 plants "
           f"(cross-skill, unshipped file, legitimate citation SPARED, the review's BARE "
-          f"mention in a template cell, a bare FILENAME outside the publication) "
+          f"mention in a template cell"
+          + ("" if _SELFVOCAB85 else " — NOT ASKED here: it needs a skill vocabulary "
+             "and this layout has none")
+          + f", a bare FILENAME outside the publication) "
           f"{tuple(bool(_x85) for _x85 in _selfplant85)} \u00b7 outside "
           f"{_shown({'%s:%s' % (_k85, _v85[0][1]) for _k85, _v85 in _selfbad85.items()}) if _selfbad85 else '{}'}"
           f" \u00b7 stale {_shown(set(_selfstale85)) if _selfstale85 else '{}'} \u00b7 "
@@ -28043,9 +28449,9 @@ def selftest():
     # THE POINTER IS PARSED OUT OF THE COMMAND, not typed here, so moving the section in the
     # template without moving the command's pointer reddens, and moving the pointer without
     # the section reddens. Four sections, each named for the obligation it holds.
-    _spec85 = _read(_live_path(_flow_home(),
+    _spec85 = _self_read((
                                "templates/fast-dev-flow/spec-template.md")) or ""
-    _fastc85 = _read(_live_path(_flow_home(), "commands/fast-dev-flow.md")) or ""
+    _fastc85 = _self_read(("commands/fast-dev-flow.md")) or ""
     _heads85 = tuple(_h85.strip() for _h85 in re.findall(r"^## +(.+)$", _spec85, re.M))
     # THE NUMBER LOCATES THE SECTION AND THE TITLE IDENTIFIES IT, and both are required.
     # `r85-M03` is why it is both: renaming `## 3c. Information Flow Contract -- Part A` to
@@ -28086,7 +28492,7 @@ def selftest():
             if _m85:
                 out.append((len(_m85.group(1)), bool(_m85.group(2)), _m85.group(3)))
         return tuple(out)
-    _ifctpl85 = _read(_live_path(_flow_home(), "templates/dev-flow/ifc-template.md")) or ""
+    _ifctpl85 = _self_read(("templates/dev-flow/ifc-template.md")) or ""
     _f1_85 = [_x85 for _x85 in re.findall(r"```" + chr(10) + r"(.*?)```", _ifctpl85, re.S)
               if "FLOW:" in _x85 and "SINK" in _x85][:1]
     # the spec's §3c slice, computed HERE because the arm's own `_ifc85` is bound further down
@@ -28191,7 +28597,7 @@ def selftest():
     # running the registered rule over a synthetic fast batch holding one empty packet.
     _fastseed86 = {}
     _fence86 = [_x86 for _x86 in re.findall(r"```json" + chr(10) + r"(.*?)```",
-                                            _read(_live_path(_flow_home(),
+                                            _self_read((
                                                              "commands/dev-flow-init.md")) or "",
                                             re.S) if '"mode": "fast"' in _x86]
     _FB86 = "2026-09-19-fast-01"
@@ -28224,7 +28630,7 @@ def selftest():
         finally:
             shutil.rmtree(_root86, ignore_errors=True)
 
-    _fastpkt86 = _read(_live_path(_flow_home(),
+    _fastpkt86 = _self_read((
                                   "templates/fast-dev-flow/increment-template.md")) or ""
     _ROWRX86 = re.compile(r"^\| \*\*([^*|]+)\*\* \|", re.M)
     _rows86 = []
@@ -28494,7 +28900,7 @@ def selftest():
     _evbad86, _evseen86 = [], []
     for _p86 in ("templates/fast-dev-flow/increment-template.md",
                  "templates/dev-flow/increment-template.md"):
-        _txt86 = _read(_live_path(_flow_home(), _p86)) or ""
+        _txt86 = _self_read((_p86)) or ""
         for _sec86 in _md_section(_txt86, _V41_HEADING) or []:
             for _ex86 in _EVEX86.findall(_sec86):
                 if "<" in _ex86 and "batch_id" not in _ex86:
@@ -28507,7 +28913,7 @@ def selftest():
     # AND THE PAGE MUST REFUSE THE SHAPE THE READER ACTUALLY WROTE, by name: a bare filename
     # relative to the home is the mistake the prose invited, so the prose has to say it is one.
     _evwarn86 = bool(re.search(r"NOT `transcript-001\.txt`|not `transcript-001\.txt`",
-                               _read(_live_path(_flow_home(),
+                               _self_read((
                                                 "templates/fast-dev-flow/increment-template.md"))
                                or ""))
     # SHOWN DISCRIMINATING: the shape the fresh reader was told to write must be REFUSED by the
@@ -28576,7 +28982,7 @@ def selftest():
                 _seen89.setdefault(_n89, set()).add(_name89)
         return tuple(sorted(_k89 for _k89, _v89 in _seen89.items() if len(_v89) > 1))
 
-    _dupsrc89 = {_rel89: _read(_live_path(_flow_home(), _rel89)) or ""
+    _dupsrc89 = {_rel89: _self_read((_rel89)) or ""
                  for _rel89 in _DUP89FILES}
     _duplive89 = _dup89(_dupsrc89)
     # SHOWN DISCRIMINATING BEFORE ITS ZERO IS BELIEVED (`C-40`), over the four cases that
@@ -28632,7 +29038,7 @@ def selftest():
     #   construction. The repair is an ORDER, not a fact: record, THEN run. So the arm asserts
     #   the order and not merely the presence, because a page carrying both sentences in the
     #   wrong sequence reproduces the finding while every literal is still there.
-    _fast89 = _read(_live_path(_flow_home(), "commands/fast-dev-flow.md")) or ""
+    _fast89 = _self_read(("commands/fast-dev-flow.md")) or ""
     _F189 = "is FLOW-RELATIVE: written from the flow's own root"
     _F189SCOPE = "Every path this file names outside your project"
     _F189HOME = "§*Where the flow's own files live*"
@@ -28717,7 +29123,7 @@ def selftest():
         "Independent review": None,
     }
     _GATEBIND86 = re.compile(r"\u2039([^~\u203a]+?)\s*~\s*([^\u203a]+?)\u203a")
-    _longpkt86 = _read(_live_path(_flow_home(),
+    _longpkt86 = _self_read((
                                   "templates/dev-flow/increment-template.md")) or ""
     _bindbad86, _bindseen86 = [], []
     # BOTH WAYS FIRST: the declared join and the minted rows are the same set.
@@ -29314,11 +29720,11 @@ def selftest():
     # and the vocabulary mask apply unchanged. No second vocabulary, no second population
     # list -- `_bundle_path` is the one that already decides what ships.
     _srcpop84 = {}
-    for _rel84 in sorted(_canon(_flow_home()) or {}):
+    for _rel84 in sorted(_self_canon()):
         _b84 = _bundle_path(_rel84)
         if not _b84:
             continue
-        _txt84 = _read(_live_path(_flow_home(), _rel84))
+        _txt84 = _self_read((_rel84))
         if _txt84 is not None:
             _srcpop84[_b84] = _txt84
     _srchits84 = _publish_hits(_srcpop84, _BAN82, _ALLOW82)
@@ -29393,16 +29799,19 @@ def selftest():
                       if _got84 != _probe84[_k84][1])
     good = (not _unpublished84 and not _leaked84 and not _wrong84
             and len(_allowfiles84) >= 5 and len(_canononly84) == 4)
-    ok &= good
-    print(f"  PUB {'canon-home-path-population':<28} expected each of the "
-          f"{len(_allowfiles84)} allowed file(s) to BE in the {len(_popkeys84)} published "
-          f"file(s) this arm walks, each of the {len(_canononly84)} canon-only file(s) to be "
-          f"OUT of it and therefore to need no allowance, and all {len(_probe84)} probe(s) to "
-          f"land as declared \u00b7 the three canon shapes CAUGHT, the two project paths and the "
-          f"bundle-relative citation SPARED \u00b7 unpublished allowance "
-          f"{_shown(set(_unpublished84))} \u00b7 canon-only in the population "
-          f"{_shown(set(_leaked84))} \u00b7 misread probe {_shown(set(_wrong84))} \u00b7 "
-          f"{'ok' if good else 'FAIL'}")
+    if _bundle85:
+        ok &= _nosub92("PUB", "canon-home-path-population", "publication", 28)
+    else:
+        ok &= good
+        print(f"  PUB {'canon-home-path-population':<28} expected each of the "
+              f"{len(_allowfiles84)} allowed file(s) to BE in the {len(_popkeys84)} published "
+              f"file(s) this arm walks, each of the {len(_canononly84)} canon-only file(s) to be "
+              f"OUT of it and therefore to need no allowance, and all {len(_probe84)} probe(s) to "
+              f"land as declared \u00b7 the three canon shapes CAUGHT, the two project paths and the "
+              f"bundle-relative citation SPARED \u00b7 unpublished allowance "
+              f"{_shown(set(_unpublished84))} \u00b7 canon-only in the population "
+              f"{_shown(set(_leaked84))} \u00b7 misread probe {_shown(set(_wrong84))} \u00b7 "
+              f"{'ok' if good else 'FAIL'}")
 
     # ---- rev82 (a2). THE NAMES ARE READ, NEVER WRITTEN, AND THEIR ABSENCE IS LOUD.
     #
@@ -29478,7 +29887,7 @@ def selftest():
     # population -- rather than trusted because nobody put them in the table.
     _scan82 = "docs/analysis/scan-publication.py"
     _reg82files = (_scan82, "docs/deployment.md")
-    _canon82 = _canon(_flow_home()) or {}
+    _canon82 = _self_canon()
     _priv_excl82 = {
         "unmapped": all(_bundle_path(_f82) is None for _f82 in _reg82files),
         "not-native": all(_f82 not in _BUNDLE_NATIVE for _f82 in _reg82files),
@@ -29506,7 +29915,7 @@ def selftest():
     # growing into a file-level exemption. That exemption would have been
     # the easy answer at rev81 and the wrong one: this same file held 79 of the 172 real
     # mentions, so exempting it would have exempted the subject.
-    _self82 = _read(_live_path(_flow_home(), "docs/tools/devflow-validate.py")) or ""
+    _self82 = _self_read(("docs/tools/devflow-validate.py")) or ""
     _masked82 = _publish_unmask(_self82)
     _maskchars82 = sum(1 for _a82, _b82 in zip(_self82, _masked82) if _a82 != _b82)
     # PUBLISH-PLANTS-BEGIN
@@ -29568,12 +29977,15 @@ def selftest():
                 and "corpus_root" in _why81 and "deployment.md" in _why81
                 and "not a pass" in _why81
                 and _parse_corpus("") is None)
-    ok &= good
-    print(f"  LIVE {'CORPUS-seed-declared':<27} expected the corpus seed to come from the "
-          f"`corpus_root` row of `docs/deployment.md` and NOT from a project name compiled "
-          f"into this file, an undeclared row to read None rather than fall back, and the "
-          f"skip sentence to NAME the row and say it is not a pass · declared "
-          f"{'yes' if _seedrow81 else 'NO'} · {'ok' if good else 'FAIL'}")
+    if _bundle85:
+        ok &= _nosub92("LIVE", "CORPUS-seed-declared", "corpus", 27)
+    else:
+        ok &= good
+        print(f"  LIVE {'CORPUS-seed-declared':<27} expected the corpus seed to come from "
+              f"the `corpus_root` row of `docs/deployment.md` and NOT from a project name "
+              f"compiled into this file, an undeclared row to read None rather than fall "
+              f"back, and the skip sentence to NAME the row and say it is not a pass · "
+              f"declared {'yes' if _seedrow81 else 'NO'} · {'ok' if good else 'FAIL'}")
 
     # ---- rev74. `commands/dev-flow.md §Severity` STOPS BEING HAND-KEPT. It is the fourth
     # hand-kept figure this file's history converts and the one that was named as owed at
@@ -29585,7 +29997,7 @@ def selftest():
     _src74 = _read(os.path.abspath(__file__)) or ""
     _cen74 = _sev_census(_src74, _reg74)
     _par74 = _sev_partition(_cen74)
-    _doc74 = _read(_live_path(_flow_home(), _SEV_DOC)) or ""
+    _doc74 = _self_read((_SEV_DOC)) or ""
     _pub74 = _sev_published(_doc74)
 
     # The two rules the ruling names as known-BOTH, asserted through the census rather than
@@ -29788,7 +30200,7 @@ def selftest():
     # the source and reports that they match, having computed one FROM the other, agrees with
     # itself unconditionally. `ROW-*-BLOCKS` each doctor ONE CELL of the row, leave the source
     # untouched, and require a BLOCK naming both numbers.
-    _home30 = _flow_home()
+    _home30 = _self_home()[0]
     _decl30, _d30 = _v30_derive(_home30)
     _api30, _cite30 = _v30_floor(_d30["api"])
     _git30, _gcite30 = _v30_floor(_d30["git"])
@@ -29819,12 +30231,15 @@ def selftest():
             # construct, so the floor is now measured somewhere else while staying 3.7. A
             # citation that drifts without anyone noticing is a floor nobody can re-check.
             and _cite30[0].endswith("devflow-evidence.py:18"))
-    ok &= good
-    print(f"  V30 {'LIVE-derived':<24} expected the real canon's 7 Python file(s) to bind API "
-          f"3.7 by exactly 2 construct kinds and git 2.28.0 at 8 sites · got API "
-          f"{_vs(_api30) if _api30 else 'undetermined'} at {_cite30[0] if _cite30 else '-'}, "
-          f"git {_vs(_git30) if _git30 else 'undetermined'} at "
-          f"{len(_d30['git'])} site(s) · {'ok' if good else 'FAIL: ' + repr(_labs30)}")
+    if _bundle85:
+        ok &= _nosub92("V30", "LIVE-derived", "pyset", 24)
+    else:
+        ok &= good
+        print(f"  V30 {'LIVE-derived':<24} expected the real canon's 7 Python file(s) to bind API "
+              f"3.7 by exactly 2 construct kinds and git 2.28.0 at 8 sites · got API "
+              f"{_vs(_api30) if _api30 else 'undetermined'} at {_cite30[0] if _cite30 else '-'}, "
+              f"git {_vs(_git30) if _git30 else 'undetermined'} at "
+              f"{len(_d30['git'])} site(s) · {'ok' if good else 'FAIL: ' + repr(_labs30)}")
 
     # The catalog is ENUMERATED, so every entry gets its own fixture. A catalog armed at ONE
     # construct cannot tell a six-branch detector from a one-branch one that happens to fire.
@@ -30299,10 +30714,9 @@ def selftest():
     # `V18` on a batch_id with no directory (the command created a FLAT `.dev-flow/`), and
     # `V23` twice on the template's own example citation. The command told you to seed a
     # ledger that blocked the gate the same command tells you to run.
-    _fh62 = _flow_home()
-    _init62 = _read(os.path.join(_fh62, "commands", "dev-flow-init.md")) or ""
-    _dfmd62 = _read(os.path.join(_fh62, "commands", "dev-flow.md")) or ""
-    _req62 = _read(os.path.join(_fh62, "templates", "dev-flow", "req-template.md")) or ""
+    _init62 = _self_read("commands/dev-flow-init.md") or ""
+    _dfmd62 = _self_read("commands/dev-flow.md") or ""
+    _req62 = _self_read("templates/dev-flow/req-template.md") or ""
     _BATCH62 = "2026-09-07-batch-01"
     # The `owner` seed literal, read OUT OF the command rather than typed here: a second copy
     # of it would be the drift `HOMES-one-home` exists to refuse, one field further in. A
@@ -30359,10 +30773,10 @@ def selftest():
         the arm reads must change what the arm SEEDS, or the seeding proves nothing."""
         if src == "req-template.md":
             return _req62
-        base = os.path.join(_fh62, "templates", "dev-flow")
+        _b62 = "templates/dev-flow/" + src
         if src.startswith("../"):
-            base = os.path.join(_fh62, "templates")
-        return _read(os.path.join(base, *src.split("/"))) or ""
+            _b62 = "templates/" + src[len("../"):]
+        return _self_read(_b62) or ""
 
     def _agree62(a, b):
         """Set EQUALITY, both directions. One comparator, called by both arms below, so the
@@ -30430,7 +30844,7 @@ def selftest():
     # ONE HOME FOR THE BLOCK: `/fast-dev-flow` points at this section and does NOT restate the
     # keys. A second copy of a seed is the drift `HOMES-one-home` was written for, one command
     # over -- and it is the shape that had already drifted once, `<batch>` against `<batch_id>`.
-    _fastcmd62 = _read(os.path.join(_fh62, "commands", "fast-dev-flow.md")) or ""
+    _fastcmd62 = _self_read("commands/fast-dev-flow.md") or ""
     _fastfence62 = [x for x in _fence62(_fastcmd62, "json") if '"batch_id"' in x]
     good = bool(_nf62 == 1 and isinstance(_fastseed62, dict)
             and _agree62(_fk62, _FASTKEYS62)
@@ -30464,11 +30878,10 @@ def selftest():
     # in BOTH commands until rev62 and the two had drifted. Which command holds it is derived
     # from the files, not asserted: a `design_pdr` key inside a json fence is the block's
     # fingerprint.
-    _cmds62 = sorted(f for f in os.listdir(os.path.join(_fh62, "commands"))
-                     if f.endswith(".md"))
+    _cmds62 = [f for f in _self_names("commands") if f.endswith(".md")]
     _homes62 = sorted(f for f in _cmds62
                       if any('"design_pdr"' in b and '"postmortem"' in b
-                             for b in _fence62(_read(os.path.join(_fh62, "commands", f)) or "",
+                             for b in _fence62(_self_read("commands/" + f) or "",
                                                "json")))
     good = _homes62 == ["dev-flow-init.md"] and len(_cmds62) >= 4
     ok &= good
@@ -30774,11 +31187,14 @@ def selftest():
     # files `V7` hashes -- "agents/ is not flow surface" was never available as a defence.
     _pop67 = []
     for _sub67 in ("commands", "templates/dev-flow", "templates/fast-dev-flow"):
-        _d67 = os.path.join(_fh67, *_sub67.split("/"))
-        for _fn67 in sorted(os.listdir(_d67) if os.path.isdir(_d67) else []):
+        try:
+            _n67s = _self_names(_sub67)
+        except _NotShipped:
+            _n67s = []
+        for _fn67 in _n67s:
             if _fn67.endswith(".md"):
                 _pop67.append((_sub67 + "/" + _fn67,
-                               _read(os.path.join(_d67, _fn67)) or ""))
+                               _self_read(_sub67 + "/" + _fn67) or ""))
 
     # ---- rev67 (a). THE INVOCATION READS THE DETECTED PAIR -- over EVERY command, and with
     # the two legitimate survivors named for their reasons rather than excluded by silence.
@@ -30877,15 +31293,18 @@ def selftest():
                     if _fn67.endswith(".excalidraw"))
     good = bool(not _flat67 and _caughtA67 and _caughtB67 and len(_pop67) >= 19
                 and _dgflat67 == 14)
-    ok &= good
-    print(f"  CMD {'PATHS-batch-scoped':<28} expected 0 flat artifact paths in instruction "
-          f"or example position over {len(_pop67)} command/template file(s), a planted "
-          f"`.dev-flow/07-*.md` CAUGHT, a literal-batch-id citation NOT counted, and the "
-          f"14 that remain in `docs/diagrams/**` COUNTED-and-excused (illustration, not "
-          f"instruction; owed work, named) · got "
-          f"{_shown({'%s:%d' % p for p in _flat67}) if _flat67 else '{}'}, "
-          f"plants={_caughtA67}/{_caughtB67}, diagrams={_dgflat67} · "
-          f"{'ok' if good else 'FAIL'}")
+    if _bundle85:
+        ok &= _nosub92("CMD", "PATHS-batch-scoped", "diagrams", 28)
+    else:
+        ok &= good
+        print(f"  CMD {'PATHS-batch-scoped':<28} expected 0 flat artifact paths in instruction "
+              f"or example position over {len(_pop67)} command/template file(s), a planted "
+              f"`.dev-flow/07-*.md` CAUGHT, a literal-batch-id citation NOT counted, and the "
+              f"14 that remain in `docs/diagrams/**` COUNTED-and-excused (illustration, not "
+              f"instruction; owed work, named) · got "
+              f"{_shown({'%s:%d' % p for p in _flat67}) if _flat67 else '{}'}, "
+              f"plants={_caughtA67}/{_caughtB67}, diagrams={_dgflat67} · "
+              f"{'ok' if good else 'FAIL'}")
 
     # ---- rev67 (c). ONE VARIABLE FOR THE FILE BUDGET, wherever it is stated.
     #
@@ -30949,12 +31368,20 @@ def selftest():
     # and the fix for a second inventory is never a longer one.
     _capsrc67 = list(_pop67)
     _capsrc67.append(("CLAUDE.md", _read(os.path.join(_fh67, "CLAUDE.md")) or ""))
-    _ag67 = os.path.join(_fh67, "agents")
-    for _fn67 in sorted(os.listdir(_ag67) if os.path.isdir(_ag67) else []):
+    for _fn67 in (_self_names("agents") if _self_ships("agents/") else []):
         if _fn67.endswith(".md"):
             _capsrc67.append(("agents/" + _fn67,
-                              _read(os.path.join(_ag67, _fn67)) or ""))
+                              _self_read("agents/" + _fn67) or ""))
+    # rev92: a bundle has no `skills/` directory of its own -- the population below is the
+    # AUTHORING home's whole installed skill set, which is canon-only by construction. What a
+    # bundle DOES have beside it is the catalog, so that much is read through the resolver and
+    # the arms that need the rest of the population SKIP by name.
     _sk67 = os.path.join(_fh67, "skills")
+    if _self_home()[1]:
+        for _cf67 in ("SKILL.md", "REFERENCE.md"):
+            _cr67 = "skills/dev-flow-lessons/" + _cf67
+            if _self_ships(_cr67):
+                _capsrc67.append((_cr67, _self_read(_cr67) or ""))
     for _dn67 in sorted(os.listdir(_sk67) if os.path.isdir(_sk67) else []):
         # rev80's review, HIGH-1: this walk was keyed on the FILENAME `SKILL.md`, so the
         # forensic half of the catalog -- tabled, hashed, and full of the cap's own
@@ -31177,7 +31604,10 @@ def selftest():
                       and _precdir67 == () and _precplant67 == (True,) * 6
                       and _capnumbad67 == () and set(_capnum67) == set(_CAPNUMSET67)
                       and _capnumplant67 == (True, True, True, True))
-    ok &= _capgood67
+    # rev92: the verdict is carried to the arm BELOW, which prints it -- and from a bundle
+    # that arm prints a named SKIP instead, because its population (the authoring home's
+    # installed skills and `CLAUDE.md`) has no counterpart here.
+    ok &= _capgood67 or bool(_bundle85)
     # ---- rev84. THE SENSITIVE-PATTERN SCAN IS EXECUTED HERE, NOT RECITED.
     #
     # `/fast-dev-flow` Phase A step 6 is the one control of that flow with no reader, and it was
@@ -31190,7 +31620,7 @@ def selftest():
     # THE ARM BUILDS THE MATCHER FROM THE COMMAND'S OWN PATTERN LIST and runs it over the two
     # controls the command publishes. A prose check would assert that the words `word
     # boundaries` appear; this asserts that the rule they describe RETURNS THE TWO ANSWERS.
-    _fastsrc84 = _read(_live_path(_flow_home(), "commands/fast-dev-flow.md")) or ""
+    _fastsrc84 = _self_read(("commands/fast-dev-flow.md")) or ""
     _scan84 = "".join(_md_section(_fastsrc84, "Patterns that trigger"))
     # ⚠ THE HARVEST IS THE LIST, NOT THE SECTION -- rev84's independent review, HIGH (`H2`),
     # and it is `C-56` one level further in than the mask: the first cut harvested every
@@ -31224,7 +31654,7 @@ def selftest():
     # from the shipped template rather than typed, and anything else between brackets is read.
     # READ HERE rather than forty lines down, because the placeholder SET is derived
     # from it and the matcher below closes over that set.
-    _tpl84 = _read(_live_path(_flow_home(),
+    _tpl84 = _self_read((
                               "templates/fast-dev-flow/spec-template.md")) or ""
     _PLHRX84 = re.compile(r"<([^<>" + chr(10) + r"]*)>")
     _PLHSET84 = frozenset(_m84.group(1) for _m84 in _PLHRX84.finditer(_tpl84))
@@ -31313,23 +31743,26 @@ def selftest():
           f"from the shipped template, so a bracket an author typed into is not a skip \u00b7 "
           f"{'ok' if good else 'FAIL'}")
 
-    print(f"  CMD {'BUDGET-one-variable':<28} expected the per-file cap vector over "
-          f"{len(_capsrc67)} files to be exactly the {len(_CAPVEC67)} declared row(s) "
-          f"(seen/non-source/quoted), the non-source set EXACTLY the "
-          f"{len(_CAPEXEMPT67)} declared exclusion(s) {_shown(set(_CAPEXEMPT67))}, the "
-          f"precedence clause in exactly the {len(_PREC67)} declared budget document(s) "
-          f"and in the {len(_prec67)} DISCOVERED by searching for it (compared both "
-          f"ways, so deleting a member reddens instead of shortening the expectation) with "
-          f"its DIRECTION read at each (a reversed clause keeps the word and was green) "
-          f"{_precplant67}, every live SOURCE cap across {len(_capnum67)} file(s) to read "
-          f"exactly 4 \u2014 the member set, not a floor, and the `Max` form READ (the "
-          f"first cut could not see `software-dev`'s cap at all) with planted 9s CAUGHT "
-          f"{_capnumplant67} \u2014 2 planted caps "
-          f"REFUSED, a quoted one SEEN-and-excused and the Spanish `archivos fuente` form "
-          f"ACCEPTED · got {len(_capvec67)} row(s), non-source "
-          f"{_shown(set(_bad67)) if _bad67 else '{}'}"
-          f"{'' if _capvec67 == _CAPVEC67 else ', vector delta ' + _shown({k for k in set(_capvec67) | set(_CAPVEC67) if _capvec67.get(k) != _CAPVEC67.get(k)})} · "
-          f"{'ok' if _capgood67 else 'FAIL'}")
+    if _bundle85:
+        ok &= _nosub92("CMD", "BUDGET-one-variable", "skills", 28)
+    else:
+        print(f"  CMD {'BUDGET-one-variable':<28} expected the per-file cap vector over "
+              f"{len(_capsrc67)} files to be exactly the {len(_CAPVEC67)} declared row(s) "
+              f"(seen/non-source/quoted), the non-source set EXACTLY the "
+              f"{len(_CAPEXEMPT67)} declared exclusion(s) {_shown(set(_CAPEXEMPT67))}, the "
+              f"precedence clause in exactly the {len(_PREC67)} declared budget document(s) "
+              f"and in the {len(_prec67)} DISCOVERED by searching for it (compared both "
+              f"ways, so deleting a member reddens instead of shortening the expectation) with "
+              f"its DIRECTION read at each (a reversed clause keeps the word and was green) "
+              f"{_precplant67}, every live SOURCE cap across {len(_capnum67)} file(s) to read "
+              f"exactly 4 \u2014 the member set, not a floor, and the `Max` form READ (the "
+              f"first cut could not see `software-dev`'s cap at all) with planted 9s CAUGHT "
+              f"{_capnumplant67} \u2014 2 planted caps "
+              f"REFUSED, a quoted one SEEN-and-excused and the Spanish `archivos fuente` form "
+              f"ACCEPTED · got {len(_capvec67)} row(s), non-source "
+              f"{_shown(set(_bad67)) if _bad67 else '{}'}"
+              f"{'' if _capvec67 == _CAPVEC67 else ', vector delta ' + _shown({k for k in set(_capvec67) | set(_CAPVEC67) if _capvec67.get(k) != _CAPVEC67.get(k)})} · "
+              f"{'ok' if _capgood67 else 'FAIL'}")
 
     # ---- rev67 (d). THE DERIVATION CANNOT CONTRADICT ITSELF -- in EITHER of its two homes.
     #
@@ -31433,7 +31866,7 @@ def selftest():
                 if _v is False:
                     _incons67.append((_rel67, _p, _s))
     _deriv67 = ""
-    for _blk67 in _blocks67(_read(os.path.join(_fh67, "commands", "dev-flow.md")) or ""):
+    for _blk67 in _blocks67(_self_read("commands/dev-flow.md") or ""):
         if "the derivation, which is part of the rule" in _blk67:
             _deriv67 = _blk67
     # THE RED CONTROL: rev66's published sentence, unquoted and unlabelled, through the same
@@ -31660,8 +32093,8 @@ def selftest():
     # EXISTS and carries exactly the three ids, and `_V55_FAST_SPELLING` is compared against it
     # BOTH WAYS, because the rule spells them in Python and the page spells them in markdown
     # and a pairing is the only thing that can hold two machineries to one fact.
-    _fast88 = _read(_live_path(_flow_home(), "commands/fast-dev-flow.md")) or ""
-    _skill88 = _read(_live_path(_flow_home(), "dev-flow/SKILL.md")) or ""
+    _fast88 = _self_read(("commands/fast-dev-flow.md")) or ""
+    _skill88 = _self_read(("dev-flow/SKILL.md")) or ""
     _MAPHEAD88 = "## The reader's map"
 
     def _mapcells88(text, col=3):
@@ -31857,7 +32290,7 @@ def selftest():
     # lands in `unidentified`. Both are NOTICE, so nothing behaved differently; the
     # arm's CLAIM was wrong, and an arm that says it drove the shipped artifact has to
     # have opened it.
-    _tplsrc88 = _read(_live_path(_flow_home(),
+    _tplsrc88 = _self_read((
                                  "templates/fast-dev-flow/spec-template.md")) or ""
     _TPLROLL88 = "".join(re.findall(r"(?m)^- \*\*Premise evaluation:\*\*.*$",
                                     _tplsrc88)[:1]) + "\n"
@@ -32052,14 +32485,14 @@ def selftest():
     # at every run, so there is no second inventory and a pattern deleted from the page stops
     # being scanned, which is what lets a reader audit the page and trust the tool.
     _SCAN88 = "docs/tools/devflow-scan-spec.py"
-    _scanpath88 = _live_path(_flow_home(), _SCAN88)
+    _scanpath88 = _self_path(_SCAN88)
     if not os.path.isfile(_scanpath88):
         ok &= _nosubject85("SCN", "SHIPS-and-reads-the-command",
                            "no `%s` on this tree" % _SCAN88, 28)
     else:
         _scanmod88 = {}
         exec(compile(_read(_scanpath88), _scanpath88, "exec"), _scanmod88)
-        _tpl88 = _read(_live_path(_flow_home(),
+        _tpl88 = _self_read((
                                   "templates/fast-dev-flow/spec-template.md")) or ""
         _pats88 = _scanmod88["patterns"](_fast88)
         # BOTH WAYS AGAINST THE PAGE'S OWN LIST, derived here by a SECOND expression: the
@@ -32114,7 +32547,7 @@ def selftest():
                                        env=dict(os.environ, PYTHONIOENCODING="utf-8"))
                 _rc88[_name88] = (_cp88.returncode,
                                   _cp88.stdout.decode("utf-8", "replace"))
-        _tabled88 = _SCAN88 in (_canon(_flow_home()) or {})
+        _tabled88 = _SCAN88 in (_self_canon())
         # rev88 review `H1`: THE SCAN MUST BE SHOWN TO HAVE READ ITS SUBJECT. `in_scope` keys
         # on the heading token the template ships, and five spellings a real author can write
         # yield an EMPTY body -- on which all five controls still passed, because they run on
@@ -32196,7 +32629,7 @@ def selftest():
     # ---- rev88 (7). `/dev-flow-init` STEP 3 SAYS WHICH MODE ITS SCHEMA IS FOR. The reader had
     # to cross-read the fast command's pre-checks to learn that the thirty-key block and the
     # six-key block below it are one block per MODE and not two candidates.
-    _init88 = _read(_live_path(_flow_home(), "commands/dev-flow-init.md")) or ""
+    _init88 = _self_read(("commands/dev-flow-init.md")) or ""
     _step388 = "".join(re.findall(r"(?ms)^3\. Generate the initial `state\.json`\.(.*?)(?=^4\. )",
                                   _init88)[:1])
     good = ("THE SCHEMA BELOW IS `core` AND `full`'s" in _step388
@@ -32258,8 +32691,8 @@ def selftest():
     # resolved ABSOLUTE root is the first line of output, and a flow installation is REFUSED.
     _INIT90 = "docs/tools/devflow-init-fast.py"
     _EVID90 = "docs/tools/devflow-evidence.py"
-    _initp90 = _live_path(_flow_home(), _INIT90)
-    _evidp90 = _live_path(_flow_home(), _EVID90)
+    _initp90 = _self_path(_INIT90)
+    _evidp90 = _self_path(_EVID90)
     _SCRLAB90 = ("INIT-declares-and-refuses", "EVIDENCE-rows-and-check",
                  "GATE-reads-what-init-writes")
     if not (os.path.isfile(_initp90) and os.path.isfile(_evidp90)):
@@ -32341,11 +32774,11 @@ def selftest():
             _flowcopy90 = os.path.join(_d90, "flowcopy")
             shutil.copytree(os.path.dirname(_initp90), os.path.join(_flowcopy90, "scripts"))
             os.makedirs(os.path.join(_flowcopy90, "commands"))
-            shutil.copyfile(_live_path(_flow_home(), "commands/fast-dev-flow.md"),
+            shutil.copyfile(_self_path("commands/fast-dev-flow.md"),
                             os.path.join(_flowcopy90, "commands", "fast-dev-flow.md"))
             os.makedirs(os.path.join(_flowcopy90, "templates", "fast-dev-flow"))
             shutil.copyfile(
-                _live_path(_flow_home(), "templates/fast-dev-flow/spec-template.md"),
+                _self_path("templates/fast-dev-flow/spec-template.md"),
                 os.path.join(_flowcopy90, "templates", "fast-dev-flow", "spec-template.md"))
             for _n90, _t90 in (("FLOW-VERSION.md", "flow_version : x\n"),
                                ("README.md", "# not a project\n")):
@@ -32649,8 +33082,8 @@ def selftest():
     # page that owns the step -- and so is the invocation the fold turned round. The reader
     # who scaffolded the FLOW'S OWN TREE did it because the page said "from the flow root"
     # and never said which absolute path to hand it; both halves of that repair are here.
-    _fast90 = _read(_live_path(_flow_home(), "commands/fast-dev-flow.md")) or ""
-    _pkt90 = _read(_live_path(_flow_home(),
+    _fast90 = _self_read(("commands/fast-dev-flow.md")) or ""
+    _pkt90 = _self_read((
                               "templates/fast-dev-flow/increment-template.md")) or ""
     _pre390 = "".join(re.findall(r"(?m)^3\. \*\*Declare the batch.*$", _fast90)[:1])
     _pre690 = "".join(re.findall(r"(?m)^6\. \*\*Run the gate now.*$", _fast90)[:1])
@@ -32680,9 +33113,9 @@ def selftest():
     # census also catches ONE literal spelling -- a reflow of the same false claim evades it,
     # the same bound `TPL FAST-one-home`'s line-identical scope already declares.
     _STALE90 = "tree with no batch declared"
-    _stale90 = sorted(_r90 for _r90 in (_canon(_flow_home()) or {})
+    _stale90 = sorted(_r90 for _r90 in (_self_canon())
                       if _r90.endswith(".md")
-                      and _STALE90 in (_read(_live_path(_flow_home(), _r90)) or ""))
+                      and _STALE90 in (_self_read((_r90)) or ""))
     good = bool(
         # pre-check 3: the script, the working directory, and the refusal.
         "devflow-init-fast.py" in _pre390
@@ -32765,7 +33198,7 @@ def selftest():
         _sig90 = re.findall(r'"([^"]+)"|\'([^\']+)\'',
                             _const90(_isrc90, "_ROOT_SIGNALS"))
         _sig90 = [a or b for a, b in _sig90]
-        _initmd90 = _read(_live_path(_flow_home(), "commands/dev-flow-init.md")) or ""
+        _initmd90 = _self_read(("commands/dev-flow-init.md")) or ""
         _unpub90 = sorted(_s90 for _s90 in _sig90
                           if _s90.rstrip("/") not in _initmd90.replace("`", ""))
         good = bool(_lay_i90 and _lay_i90 == _lay_e90
@@ -32803,7 +33236,7 @@ def selftest():
     # The child is told it is a child, for the reason `ENC VERDICT-live`'s is: otherwise it
     # spawns its own, and this arm spawns it, and three runs become seven.
     if _bundle85:
-        for _l85 in ("SKIPS-named", "SELFTEST-exits-0"):
+        for _l85 in _BUNARMS85:
             ok &= _nosubject85(
                 "BUN", _l85,
                 "this pair STAGES a bundle out of a canon home and runs it; a bundle has no "
@@ -32818,7 +33251,7 @@ def selftest():
             # non-measurement -- the canon repository gitignores the mirror, which is a
             # separate checkout -- and rendering that as a failure is what the four skips exist
             # to stop. It is still not silent: the line names what was not measured.
-            for _l85 in ("SKIPS-named", "SELFTEST-exits-0"):
+            for _l85 in _BUNARMS85:
                 ok &= _nosubject85(
                     "BUN", _l85,
                     "no mirror checkout beside this canon home to stage a bundle from, so the "
@@ -32828,6 +33261,18 @@ def selftest():
             try:
                 _bdst85 = os.path.join(_btmp85, "dev-flow")
                 shutil.copytree(_bsrc85, _bdst85)
+                # rev92: THE CATALOG IS STAGED BESIDE IT, because that is the shape a consumer
+                # receives -- the publication ships `dev-flow/` and `dev-flow-lessons/` side by
+                # side, and both flow repos install them that way. Staging the bundle alone
+                # made twenty catalog arms red in the child and green here, which is a true
+                # reading of the staged tree and a false one about a bundle: the sibling is
+                # not missing, it was never copied. Its ABSENCE stays expressible -- the
+                # resolver still raises `_NotShipped` for a runtime that installed one skill
+                # and not the other, and the arms that read it own that branch.
+                _bcat85 = os.path.join(_FH0, "skills", "dev-flow-lessons")
+                if os.path.isdir(_bcat85):
+                    shutil.copytree(_bcat85,
+                                    os.path.join(_btmp85, "dev-flow-lessons"))
                 # THE CHILD RUNS *THIS* FILE, copied over the staged bundle's own copy of it.
                 # Two reasons, and the second is what makes the arm mutable: a bundle laid out
                 # by `--sync-bundle` carries a DERIVED copy, so before a sync this arm would
@@ -32842,6 +33287,38 @@ def selftest():
                                PYTHONDONTWRITEBYTECODE="1")
                 _benv85[_SELFTEST_CHILD] = "1"
                 _benv85.pop(_FLOW_HOME_ENV, None)
+                # ⚠ rev92. THE CHILD IS GIVEN AN EMPTY HOME, AND THIS ONE LINE IS THE WHOLE
+                # REPAIR THIS REVISION EXISTS FOR.
+                #
+                # rev85 staged a real bundle and ran it, and called the rc 0 it got proof that
+                # a skill-only reader gets rc 0. It was not. The child inherited the author's
+                # `HOME`, so every arm that resolved a template, a command or an agent through
+                # `~/.claude` found the CANON tree sitting beside the bundle and passed on it.
+                # Instrument and subject shared a fixture (`C-60`), and the first run on a
+                # machine that had never held a canon home -- GitHub Actions, ubuntu-latest,
+                # 2026-09-24, run 36063178717 -- printed 50 FAILs and then died of a
+                # `FileNotFoundError` on `~/.claude/templates/dev-flow`. The green was false for
+                # seven revisions because nothing ever asked the question without the canon
+                # answer in reach.
+                #
+                # `HOMEDRIVE`/`HOMEPATH` go too: `ntpath.expanduser` falls back to them when
+                # `USERPROFILE` is unset, so removing one of the three leaves the canon home
+                # reachable on Windows and the arm proves nothing there. Every `DEVFLOW_*` is
+                # cleared except the child marker, because `DEVFLOW_CORPUS` in a shell profile
+                # would hand the child a corpus a consumer does not have.
+                _bhome85 = os.path.join(_btmp85, "empty-home")
+                os.makedirs(_bhome85)
+                for _v85 in ("HOME", "USERPROFILE", "HOMEDRIVE", "HOMEPATH"):
+                    _benv85.pop(_v85, None)
+                _benv85["HOME"] = _benv85["USERPROFILE"] = _bhome85
+                for _v85 in [_k85 for _k85 in _benv85
+                             if _k85.startswith("DEVFLOW_") and _k85 != _SELFTEST_CHILD]:
+                    _benv85.pop(_v85, None)
+                # `PYTHONPATH` too -- the review's `F9`. Nothing imports by name out of the
+                # flow tree today, so this is a latent hole and not a live one; but the claim
+                # this arm makes is that the child CANNOT reach the tree this process stands
+                # in, and one `sys.path` entry would make that claim false.
+                _benv85.pop("PYTHONPATH", None)
                 _bcp85 = subprocess.run(
                     [sys.executable, os.path.join(_bdst85, "scripts",
                                                   "devflow-validate.py"), "--selftest"],
@@ -32864,16 +33341,51 @@ def selftest():
                 # variable does not see that line -- they see the six below. Subtracting it
                 # here is what makes the comparison describe THEIR run and not this one.
                 _CHILDONLY85 = ("VERDICT-live",)
-                _bskip85 = tuple(sorted(
-                    _m85.group(1) for _m85 in
-                    re.finditer(r"^ {2}\S+ +(\S+) +SKIP: ", _btext85, re.M)
-                    if _m85.group(1) not in _CHILDONLY85))
-                _adapt85 = _read(_live_path(_flow_home(), "dev-flow/SKILL.md")) or ""
+                # DISTINCT NAMES, with the LINE COUNT carried beside them. rev92 made three
+                # rules share one label (`LIVE-agree`, one per rule), so a positional tuple
+                # would have compared three copies of a name against a list that can only
+                # state it once. The count is printed so "distinct" cannot become a way to
+                # lose lines: it is the number of SKIP lines the child actually emitted.
+                _bskiplines85 = [_m85.group(1) for _m85 in
+                                 re.finditer(r"^ {2}\S+ +(\S+) +SKIP: ", _btext85, re.M)
+                                 if _m85.group(1) not in _CHILDONLY85]
+                _bskip85 = tuple(sorted(set(_bskiplines85)))
+                _adapt85 = _self_read(("dev-flow/SKILL.md")) or ""
                 _sent85 = "".join(re.findall(
-                    r"SIX of its arms have no subject in a bundle.*?real bundle run",
+                    r"TWENTY-EIGHT of its arms have no subject in a bundle.*?real bundle run",
                     _adapt85, re.S)[:1])
                 _WANT85 = tuple(sorted(set(re.findall(r"`([A-Za-z0-9-]+)`", _sent85))))
+                _WANTLINES85 = int((re.findall(r"(\d+) SKIP line\(s\)", _sent85) or [0])[0])
                 _bhere85 = sum(1 for l in _emitted if re.match(r"^ {2}\S", l))
+                # ⚠ rev92, the review's `F1`. THE OTHER INSTALL SHAPE, RUN. A bundle with no
+                # sibling catalog beside it is the one layout the resolver has an explicit
+                # branch for and the one nothing had ever executed: measured, it printed
+                # TWENTY arms reporting the catalog as empty and not one skip -- twenty
+                # accusations against an intact bundle. The repair is the home probe, and this
+                # is the arm that drives it, on the shape a reader can actually produce by
+                # copying one folder and forgetting the other. Nothing else in this file runs
+                # a flow home that is missing a population.
+                # TWO SHAPES, because the probe makes two different claims and only one of
+                # them was armed by the first: a MISSING sibling folder, and a population that
+                # is present and EMPTY. The second is the re-review's `N2` -- an empty
+                # `commands/` satisfied `os.path.exists`, the probe stood down, and the run
+                # died in a raw `shutil.copyfile` 56 arms later with no verdict line. A clause
+                # no arm drives is a claim.
+                _nocases85 = []
+                for _nolab85, _norm85 in (("no-catalog", "dev-flow-lessons"),
+                                          ("empty-commands", "dev-flow/commands")):
+                    _bno85 = os.path.join(_btmp85, _nolab85, "dev-flow")
+                    shutil.copytree(_bdst85, _bno85)
+                    if _norm85 != "dev-flow-lessons":   # the sibling is simply never staged
+                        for _f85 in os.listdir(os.path.join(_bno85, "commands")):
+                            os.remove(os.path.join(_bno85, "commands", _f85))
+                    _nocp85 = subprocess.run(
+                        [sys.executable, os.path.join(_bno85, "scripts",
+                                                      "devflow-validate.py"), "--selftest"],
+                        capture_output=True, env=_benv85, cwd=_bno85, timeout=1800)
+                    _nocases85.append((_nolab85, _nocp85,
+                                       _nocp85.stdout.decode("utf-8", "replace")
+                                       + _nocp85.stderr.decode("utf-8", "replace")))
             finally:
                 shutil.rmtree(_btmp85, ignore_errors=True)
             # TWO ARMS OVER ONE CHILD RUN, AND THE SPLIT IS THE WHOLE POINT OF IT. An exit
@@ -32884,16 +33396,115 @@ def selftest():
             # unrelated failure elsewhere does not remove a line that names `E2E-live`. So
             # the question *did the subjectless arms skip?* gets its own arm and can be
             # killed on its own, and the registry declares the other half DERIVED.
-            good = bool(_WANT85 and _bskip85 == _WANT85 and len(_WANT85) == 6)
+            # ⚠ THE MULTISET, NOT THE SET WITH A FLOOR -- the review's `F2`, and it is the
+            # floor-vs-vector shape `_CAPVEC67`'s own comment lectures about, committed two
+            # thousand lines below it. Three rules share the label `LIVE-agree` (one line
+            # each), so distinct-names-plus-`>=` stayed GREEN with one and with two of those
+            # three lines deleted: measured 30 lines / 28 names, then 29/28 green, 28/28
+            # green, red only at 27/27. A partial form of `r92-M02` walked straight through
+            # the arm nominated as this rev's oracle. The adapter publishes BOTH numbers now
+            # and both are compared.
+            _bcount85 = {}
+            for _n85 in _bskiplines85:
+                _bcount85[_n85] = _bcount85.get(_n85, 0) + 1
+            good = bool(_WANT85 and _bskip85 == _WANT85 and len(_WANT85) == 28
+                        and _WANTLINES85 and len(_bskiplines85) == _WANTLINES85)
             ok &= good
             print(f"  BUN {'SKIPS-named':<17} expected the arm(s) with no subject in a mirror "
-                  f"to SKIP BY NAME in a CHILD --selftest run FROM a staged bundle — printed "
-                  f"and counted, never dropped — and the census the child EMITS to equal the "
-                  f"{len(_WANT85)} name(s) the adapter PUBLISHES, compared both ways so a "
-                  f"sentence that goes stale reddens here instead of being counted by a reader "
-                  f"· child {_shown(set(_bskip85)) if _bskip85 else '{}'} · published "
+                  f"to SKIP BY NAME in a CHILD --selftest run FROM a staged bundle, started "
+                  f"with an EMPTY HOME and no `DEVFLOW_*` so it cannot reach the canon tree "
+                  f"this process is standing in — printed and counted, never dropped — and the "
+                  f"census the child EMITS to equal the {len(_WANT85)} name(s) the adapter "
+                  f"PUBLISHES, compared both ways so a sentence that goes stale reddens here "
+                  f"instead of being counted by a reader "
+                  f"· child {_shown(set(_bskip85)) if _bskip85 else '{}'} in "
+                  f"{len(_bskiplines85)} line(s) · published {len(_WANT85)} name(s) / "
+                  f"{_WANTLINES85} line(s) "
                   f"{_shown(set(_WANT85)) if _WANT85 else '{} — SENTENCE NOT FOUND'} · "
                   f"{'ok' if good else 'FAIL'}")
+            # ---- rev92. THE DIFFERENTIAL: WHICH ARMS ARE RED IN THE CHILD AND NOT HERE.
+            #
+            # The exit code below is a DERIVED verdict and the registry says so -- it reddens
+            # whenever anything reddens, so it cannot tell a bundle-mode regression from any
+            # other. SUBTRACTING THIS RUN'S OWN RED ARMS MAKES IT A MEASUREMENT AGAIN: a
+            # defect that breaks both layouts appears on both sides and cancels; a defect that
+            # breaks only the layout a consumer runs appears HERE AND NOWHERE ELSE. That set
+            # is what the 2026-09-24 CI run printed fifty of, with nothing in this suite able
+            # to see them, because the only arm that ran the child read its exit code.
+            #
+            # The parent's side is derived from `_emitted`, which is nearly the whole run by
+            # the time this arm executes -- the placement rev85 argued for, now load-bearing
+            # for a second reason.
+            def _redarms85(lines):
+                """{'FAM LABEL'} for every arm in this transcript that reports FAIL.
+
+                Continuation-aware: an arm's verdict can wrap onto the next line, and a
+                line-at-a-time read would miss those and call the difference empty.
+                """
+                _cur, _out = None, set()
+                for _l85 in lines:
+                    _m = re.match(r"^ {2}(\S+)\s+(\S+)\s", _l85)
+                    if _m:
+                        _cur = "%s %s" % (_m.group(1), _m.group(2))
+                    elif not _l85.startswith("  "):
+                        _cur = None
+                    if _cur and re.search(r"(?:·\s*FAIL|FAIL:\s|FAIL$)", _l85):
+                        _out.add(_cur)
+                return _out
+
+            # ⚠ AND THE COMPARISON IS SCOPED TO THE ARMS THIS RUN HAS REACHED -- the
+            # review's `F3`. The child runs to completion; this parent has not, and exactly
+            # one arm prints after this block. A defect reddening THAT arm in BOTH layouts is
+            # absent from the parent's transcript here and present in the child's, and would
+            # have been scored bundle-only -- a narrowing that would have cost `r92-M01` its
+            # only declared killer. The not-yet-reached set is PRINTED rather than assumed
+            # empty, because a silent exclusion is the thing this arm exists to refuse.
+            _credm85 = _redarms85(_btext85.splitlines())
+            _predm85 = _redarms85(_emitted)
+            _seen85 = {"%s %s" % (_m.group(1), _m.group(2))
+                       for _m in (re.match(r"^ {2}(\S+)\s+(\S+)\s", _l85)
+                                  for _l85 in _emitted) if _m}
+            _later85 = sorted(_credm85 - _predm85 - _seen85)
+            _onlyb85 = sorted((_credm85 - _predm85) & _seen85)
+            good = not _onlyb85
+            ok &= good
+            print(f"  BUN {'BUNDLE-ONLY-reds':<17} expected NO arm to be red in the child and "
+                  f"green here — the child's {len(_credm85)} red arm(s) minus this run's "
+                  f"{len(_predm85)} — so a defect that only a consumer's layout can reach has "
+                  f"an arm of its own instead of hiding behind a derived exit code · "
+                  f"{_shown(set(_onlyb85)) if _onlyb85 else '{}'} · "
+                  f"{len(_later85)} red arm(s) this run has NOT reached yet and therefore did "
+                  f"not compare: {_shown(set(_later85)) if _later85 else '{}'} · "
+                  f"{'ok' if good else 'FAIL'}")
+
+            _WANTNAMED85 = {"no-catalog": "skills/dev-flow-lessons/",
+                            "empty-commands": "commands/"}
+            _nobad85, _noarms85 = [], 0
+            for _nolab85, _nocp85, _notext85 in _nocases85:
+                _n85 = sum(1 for _l85 in _notext85.splitlines()
+                           if re.match(r"^ {2}\S", _l85))
+                _noarms85 += _n85
+                if not (_nocp85.returncode == 1
+                        and _HOME_INCOMPLETE92 in _notext85
+                        and _WANTNAMED85[_nolab85] in _notext85
+                        and "Traceback" not in _notext85
+                        and _VERDICT not in _notext85
+                        and _n85 == 0):
+                    _nobad85.append("%s(rc=%s, %d arm line(s))"
+                                    % (_nolab85, _nocp85.returncode, _n85))
+            _nogood85 = not _nobad85 and len(_nocases85) == 2
+            ok &= _nogood85
+            print(f"  BUN {'NO-CATALOG-says-so':<17} expected the SAME bundle, once with its "
+                  f"sibling catalog NOT installed and once with an EMPTY `commands/`, to refuse "
+                  f"ONCE by name — rc 1, the "
+                  f"`{_HOME_INCOMPLETE92}` sentence naming the missing folder, NO traceback, "
+                  f"NO verdict line and NOT ONE arm run over a population that is not there — "
+                  f"because the measured alternative was 20 arms accusing an intact bundle of "
+                  f"an empty catalog and, for the second shape, a crash 56 arms in with no "
+                  f"verdict at all · {len(_nocases85)} shape(s), {_noarms85} arm line(s) in "
+                  f"total · {_shown(set(_nobad85)) if _nobad85 else '{}'} · "
+                  f"{'ok' if _nogood85 else 'FAIL'}")
+
             good = (_bcp85.returncode == 0 and _bverd85 == [_VERDICT]
                     and _barms85 >= _bhere85)
             ok &= good
@@ -32904,7 +33515,7 @@ def selftest():
                   f"{_bhere85}) · "
                   f"{'ok' if good else 'FAIL'}")
     else:
-        for _l85 in ("SKIPS-named", "SELFTEST-exits-0"):
+        for _l85 in _BUNARMS85:
             print(f"  BUN {_l85:<17} SKIP: this IS a child run, which is how the "
                   f"recursion terminates · ok")
 
@@ -32930,7 +33541,7 @@ def selftest():
     # report the plant is blind however empty its real result.
     _armlab68 = re.compile(r"^\s{2}(\S+)\s+(\S+)\s")
     _emit68 = {"%s %s" % m.groups() for _l68 in _emitted for m in [_armlab68.match(_l68)] if m}
-    _reg68 = json.loads(_read(_live_path(_flow_home(),
+    _reg68 = json.loads(_self_read((
                                          "docs/tools/devflow-mutants.json")) or "{}")
     _claim68, _livem68 = set(), 0
     for _m68 in _reg68.get("mutants", []):
@@ -32976,6 +33587,25 @@ def selftest():
           "so V30's `python-api` floor of 3.7 is DOCUMENTARY — asserted by analysis over an "
           "enumerated construct catalog, blind outside it, and never executed. Only 3.11.15 "
           "and 3.12.7 run these arms, and two points are not a range.")
+    # rev92. ONE SUMMARY LINE FOR EVERY SUBJECT THIS RUN COULD NOT REACH.
+    #
+    # Each of those arms already printed its own named SKIP, so nothing here is new
+    # information -- and that is the point. Twenty-odd `SKIP:` lines scattered through sixteen
+    # hundred are read as noise, and a reader who does not count them takes a bundle run for
+    # as thorough as a canon one. This line makes the size of the non-measurement a single
+    # number a reader cannot walk past, grouped by the SUBJECT that was missing rather than by
+    # arm, because the subject is what they would have to install to close it.
+    if _skipped85:
+        _bysub92 = {}
+        for _k92, _l92 in _skipsub92:
+            _bysub92.setdefault(_k92, []).append(_l92)
+        print("\n%d arm(s) SKIPPED for want of a subject on this runtime%s — %d of them for a "
+              "canon-only subject, by class: %s. Every one printed its own line above naming "
+              "what was NOT measured, and none of them is a pass."
+              % (len(_skipped85), " (running from a bundle)" if _bundle85 else "",
+                 len(_skipsub92),
+                 "; ".join("%s %d" % (_k92, len(_v92))
+                           for _k92, _v92 in sorted(_bysub92.items())) or "none"))
     print("\nSELFTEST", "PASSED" if ok else "FAILED")
     return 0 if ok else 1
 

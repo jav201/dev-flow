@@ -2,6 +2,14 @@
 
 One entry per flow revision shipped to this repository. The flow's full revision log stays in the private canonical repository; this file records what a user of the published skill receives.
 
+## 2026-09-24-rev92 — the selftest passes on a machine that has never held a canon home
+- `scripts/devflow-validate.py --selftest` now exits 0 from a clean checkout of this repository. It did not before: on GitHub Actions, ubuntu-latest, Python 3.11, it printed 50 failing arms and then died with `FileNotFoundError` on a path under `~/.claude`. Every one of those arms passed on the author's machine, because that machine has the private authoring tree the arms were silently reading.
+- One resolver now answers "where does this flow live" for both layouts. Templates, commands, agent roles, the manifest and the control catalog are read from the bundle you installed. A subject that only the authoring tree can hold — a live project record, a second checkout, the whole Python file set, the diagram directory — makes the arm print a named SKIP saying what was not measured and why, and a closing line counts those skips by subject. None of them is scored as a pass.
+- The adapter publishes the full list of arms that skip in a bundle (28 names over 30 lines, grouped by the missing subject), and an arm compares both numbers against a real bundle run in both directions.
+- The selftest checks its own flow home before its first arm. A skill install is `dev-flow/` and `dev-flow-lessons/` side by side; if something is missing, the run says which folder, says it measured nothing, and exits non-zero — instead of running every check against a population that is not there.
+- The selftest's own bundle run is now started with an empty `HOME` and no `DEVFLOW_*` variables, so the authoring tree cannot stand in for the tree being measured, and a new arm requires that no arm be red in that run and green in the parent's.
+- Continuous integration on this repository runs the selftest in bundle mode and the gate on an empty tree on every push.
+
 ## 2026-09-21-rev91 — authorization on runtimes that cannot prompt
 - On a runtime with no prompts, the operator's initial commission is the batch's standing authorization, declared in the spec header at Phase A; the guided gate records its decision instead of waiting for one, and a gate that was actually asked writes `asked at the gate`. On runtimes with prompts nothing changes.
 - The validator's guided-ledger rule gains a fourth obligation: the spec header and the decisions ledger must agree on which authorization model the batch ran under.
