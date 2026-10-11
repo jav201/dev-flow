@@ -7,7 +7,7 @@
 
 <h1 align="center">dev-flow</h1>
 
-<p align="center"><a href="https://github.com/jav201/dev-flow/actions/workflows/flow-selftest.yml"><img src="https://github.com/jav201/dev-flow/actions/workflows/flow-selftest.yml/badge.svg" alt="flow selftest"></a></p>
+<p align="center"><a href="https://github.com/<owner>/dev-flow/actions/workflows/flow-selftest.yml"><img src="https://github.com/<owner>/dev-flow/actions/workflows/flow-selftest.yml/badge.svg" alt="flow selftest"></a></p>
 
 **A supervised engineering flow for AI coding agents whose record a tool can check.**
 
@@ -21,7 +21,7 @@ It works from **Claude Code, Codex, Kimi Code CLI or any runtime that can read a
 
 ## Authorship and AI assistance
 
-Copyright 2026 José Javier Granados Hernández. Licensed under the Apache License, Version 2.0 (see `LICENSE` and `NOTICE`).
+Copyright 2026 username_subject. Licensed under the Apache License, Version 2.0 (see `LICENSE` and `NOTICE`).
 
 This flow was developed with AI assistance (Claude), under the author's direction and review: the controls were distilled from the author's own project post-mortems, every design decision is the author's ruling, and every revision passed an independent review and a self-test before landing. The record of that process is the author's; the assistance is disclosed here because a flow whose thesis is an honest record should say how it was made.
 
