@@ -7,9 +7,9 @@ labels: reader-report
 
 **Runtime and model** (Claude Code / Codex CLI / Kimi Code CLI / other; which model):
 
-**Flow revision** (the `flow_version` line of `dev-flow/FLOW-VERSION.md`):
+**Version** (the top entry of `CHANGELOG.md`):
 
-**What you were doing** (which flow — `/fast-dev-flow` or `/dev-flow` — and which step):
+**What you were doing** (which stage: E0 to E5, or the batch end):
 
 **Where you were reading** (file and section):
 
