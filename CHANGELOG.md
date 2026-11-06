@@ -2,6 +2,14 @@
 
 One entry per flow revision shipped to this repository. The flow's full revision log stays in the private canonical repository; this file records what a user of the published skill receives.
 
+## v0.2.0 — dev-flow v3: design-first, one skill file
+
+- **The flow is now one skill file of about 85 lines and one checker script.** It replaces the rev94 bundle (stations, validator, templates, agent files). That bundle stays at tag `v0.1.1`.
+- **Each increment is designed before it is built.** E1 writes strict EARS requirements, E2 a Code-Wire graph prototype, and E3 reviews the design with no code. Then come parallel build and test design, then validation of the change only. The full test suite runs once, at the batch end.
+- **Test cases follow ISO/IEC/IEEE 29119-3.** There is one case per alternative of each requirement, with a coverage status and a result from the test run.
+- **`trace_check.py` replaces the validator.** It checks that user stories, requirements, test cases, tests, changed files, evidence and the requirements canon stay linked.
+- **Removed:** `dev-flow-lessons`, the catalog of the old flow's controls. It also stays at `v0.1.1`.
+
 ## 2026-09-25-rev94 — the record is checked against the transcript, the count and the tree
 
 - **A packet that reports a test run now has to cite that run's transcript, and the number it reports is read back out of those bytes.** Before this revision you could write `4 passed` in an increment packet, cite no evidence at all, and the gate would agree with you — `none — this increment cites no evidence file` was a legal answer whatever the packet claimed above it, so the rule that re-hashes evidence had nothing to hash. It is now a refusal: wherever a packet reports `N passed` / `N failed`, or ticks the evidence-checklist row that says the tests pass, the run's own output belongs under the batch's declared evidence home, cited with its SHA-256. The declared empty stays legal exactly while the packet reports no run. And the figure is compared: a packet claiming more passes than its own cited transcript holds is refused, with both numbers printed. Claiming fewer failures than the evidence shows is reported, not refused — the evidence you are asked to keep includes captures that fail on purpose.
