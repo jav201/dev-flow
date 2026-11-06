@@ -16,7 +16,7 @@
 A batch opens with user stories and splits into small increments (**E0**). Each increment then goes through five stages:
 
 1. **E1 Requirements.** Strict EARS sentences that meet ISO/IEC/IEEE 29148, each with a numeric pass threshold and a negative control.
-2. **E2 Prototype.** The design as a Code-Wire graph of contracts and examples, before any code. Code-Wire is published as a separate repository, `code-wire`, by the same owner.
+2. **E2 Prototype.** The design as a [Code-Wire](https://github.com/jav201/code-wire) graph of contracts and examples, before any code.
 3. **E3 Design review.** An architect and a security reviewer review the graph; no code exists yet.
 4. **E4 Build ∥ test design.** Implementers work by file ownership. Independent testers write the test cases (ISO/IEC/IEEE 29119-3) and the tests, and prove them RED on the base.
 5. **E5 Validate the change.** The targeted tests, the project's law guards, mutants of the new code, and a code and a security review.
@@ -41,7 +41,7 @@ Four records define the software: user stories, requirements, test cases and evi
 
 Copy `dev-flow/` into your agent's skills folder; for Claude Code that is `~/.claude/skills/dev-flow/`. Then ask for `/dev-flow` or for a design-first increment.
 
-You need git, Python 3.11 or later for `trace_check.py`, and Code-Wire for E2.
+You need git, Python 3.11 or later for `trace_check.py`, and [Code-Wire](https://github.com/jav201/code-wire) for E2.
 
 ## Check an increment
 

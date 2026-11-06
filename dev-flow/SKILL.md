@@ -38,7 +38,7 @@ The trace holds both ways: every US reaches a requirement and every requirement 
 - Before a requirement depends on an input — a key, a terminal feature, a system call — check that it reaches the app on the target platform.
 - Done when: the scope list is written, defects in existing requirements are fixed in place (a split keeps the parent id with `.1`, `.2`), the rulings file records each change and its reason, and the slice of functions to change is named, counted and mapped to its requirements.
 
-**E2 — Prototype as a Code-Wire graph.** Goal: the functional design exists as contracts and examples taken from the requirements, before any code. Method, extractor and lint: the Code-Wire repository (start at its README).
+**E2 — Prototype as a Code-Wire graph.** Goal: the functional design exists as contracts and examples taken from the requirements, before any code. Method, extractor and lint: the Code-Wire repository, https://github.com/jav201/code-wire (start at its README).
 - The prototype is the graph only: no stubs, marks or declarations in the source. Extractor marks go only in a throwaway worktree.
 - Build a baseline graph of the current code in scope, in parallel with E1. The prototype then writes only the differences.
 - If the slice is larger than about 8 nodes, split it by file ownership, one agent per group. The orchestrator pins the shared interfaces in one file first. An agent proposes changes there and never changes an interface alone.
