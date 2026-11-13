@@ -122,7 +122,44 @@ def test_a_requirement_with_no_test_case_is_a_gap(repo, capsys):
     assert rc == 1 and "CASE   LLR-1.2 has no test case" in out
     os.remove(repo / INC / "02-test-cases.md")
     rc, out = check(capsys)
-    assert rc == 1 and "CASE   no 02-test-cases.md beside" in out
+    assert rc == 1 and "CASE   no 02-test-cases*.md beside" in out
+
+
+def split_cases(repo, second):
+    """Testers split the cases by file group, in the tester card's row format; the checker must read the group
+    files as one record. G1 has no final newline, so its last row must not run into the next file's first id."""
+    os.remove(repo / INC / "02-test-cases.md")
+    write(repo, INC + "02-test-cases-G1.md", "HLR-1/1 | EX-1 | test_at_1 | full\nLLR-1.1/1 | EX-2 | test_shows_b | full")
+    write(repo, INC + "02-test-cases-G2.md", second)
+
+
+def test_test_cases_split_by_group_are_read_together(repo, capsys):
+    split_cases(repo, "LLR-1.2/1 | EX-3 | test_tc_12_says_why | full\n")
+    rc, out = check(capsys)
+    assert rc == 0, out
+
+
+def test_a_case_missing_from_every_group_file_is_a_gap(repo, capsys):
+    split_cases(repo, "LLR-1.20/1 | EX-3 | test_tc_12_says_why | full\n")
+    rc, out = check(capsys)
+    assert rc == 1 and "CASE   LLR-1.2 has no test case" in out
+
+
+def test_ids_checks_only_the_testers_own_requirements(repo, capsys):
+    """A tester runs it before the other groups' tests exist: another group's gap must not show, its own must."""
+    write(repo, INC + "02-test-cases.md", CASES.replace("| LLR-1.1/1 |", "| LLR-1.10/1 |"))  # other group's gap
+    write(repo, "tests/test_core.py", TESTS.replace("test_tc_12_says_why", "test_says_why")  # own gap
+          .replace('"""TC-11 (LLR-1.1)."""', "pass"))  # the other group's test is not written yet
+    os.remove(repo / INC / "04-validation.md")  # EVID is not the tester's check
+    rc, out = check(capsys, ARGS + ["--ids", "LLR-1.2*"])
+    assert rc == 1 and "TEST   LLR-1.2 is named by no file" in out, out
+    assert "LLR-1.1 " not in out and "EVID" not in out
+    assert out.splitlines()[-1] == "trace_check: 1 active requirements match --ids, checks run: CASE, TEST, 1 gap(s)"
+
+
+def test_ids_that_match_no_requirement_is_nothing_to_check(repo, capsys):
+    rc, out = check(capsys, ARGS + ["--ids", "LLR-9.*"])
+    assert rc == 2 and "no active requirement matches --ids LLR-9.*" in out
 
 
 def test_the_rewrite_ids_are_traced_like_hlr_and_llr(repo, capsys):

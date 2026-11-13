@@ -1,7 +1,8 @@
 """trace_check.py: checks the Records section of dev-flow v3 (SKILL.md). Run it from the repository root.
 
   US     every user story is named by an active requirement
-  CASE   a 02-test-cases.md sits beside each requirement file, with a case `<id>/<n>` for every active requirement
+  CASE   one or more 02-test-cases*.md (one per group allowed) sit beside each requirement file, and together hold a
+         case `<id>/<n>` for every active requirement
   TEST   every active requirement, or a TC/AT id it lists, is named by a file under --tests
   SLICE  every source file changed since --base is named in a requirement file or a --fixes record
   EVID   a 04-validation.md sits beside each requirement file, and every evidence path it cites is committed
@@ -10,7 +11,11 @@
 Requirement ids are HLR-, LLR- or R-<AREA>-NNN. A requirement file defines an id where a heading, a bold lead or a table row starts with it; a definition that
 says "— Withdrawn" makes the id inactive. Exit 0: no gap. 1: gaps, one line each. 2: nothing to check.
 
-  E5:        trace_check.py --req .dev-flow/<inc>/01-requirements.md --base <inc base> --src <pkg>
+With --ids PATTERN ..., only CASE and TEST run, and only for the active requirements whose id matches a pattern
+(fnmatch); no match exits 2. The summary line names the checks that ran.
+
+  tester:    trace_check.py --req .dev-flow/<inc>/01-requirements.md --ids "LLR-3.*" "R-LOAD-*"
+  increment: trace_check.py --req .dev-flow/<inc>/01-requirements.md --base <inc base> --src <pkg>
   batch end: trace_check.py --req <the 01-requirements.md of each increment of THIS batch> --base <batch base> --src <pkg>
                  --fixes <batch-end correction record> --canon REQUIREMENTS.md
 """
@@ -100,12 +105,13 @@ def slice_gaps(base, src, tests, req_text):
 def case_gaps(paths, active):
     gaps, text = [], ""
     for p in paths:
-        cases = posixpath.join(posixpath.dirname(p), "02-test-cases.md")
-        if not os.path.isfile(cases):
-            gaps.append(("CASE", f"no 02-test-cases.md beside {p}"))
+        files = sorted(glob.glob(posixpath.join(glob.escape(posixpath.dirname(p) or "."), "02-test-cases*.md")))
+        if not files:
+            gaps.append(("CASE", f"no 02-test-cases*.md beside {p}"))
             continue
-        with open(cases, encoding="utf-8") as f:
-            text += f.read()
+        for cases in files:
+            with open(cases, encoding="utf-8") as f:
+                text += f.read() + "\n"
     if text:
         gaps += [("CASE", f"{r} has no test case {r}/<n>") for r in active
                  if not re.search(r"(?<![A-Za-z0-9.-])" + re.escape(r) + r"/\d", text)]
@@ -140,13 +146,16 @@ def evid_gaps(paths, tracked):
 def main(argv=None):
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8", errors="replace")
-    ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
+    head, rest = __doc__.split("\n", 1)
+    ap = argparse.ArgumentParser(description=head, epilog=rest, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--req", nargs="+", required=True, help="the requirement files (globs allowed)")
     ap.add_argument("--tests", default="tests", help="the tests folder (default: tests)")
     ap.add_argument("--base", help="the commit the change started from; turns SLICE on")
     ap.add_argument("--src", nargs="+", default=[], help="the source folders SLICE looks at")
     ap.add_argument("--fixes", nargs="+", default=[], help="batch-end correction records; the files they name count for SLICE")
     ap.add_argument("--canon", help="the requirements canon; turns CANON on")
+    ap.add_argument("--ids", nargs="+", metavar="PATTERN",
+                    help="requirement id patterns (fnmatch); run only CASE and TEST, only for the matching requirements")
     a = ap.parse_args(argv)
     paths = sorted({os.path.relpath(p).replace("\\", "/") for g in a.req for p in (glob.glob(g) or [g])})
     if a.base and not a.src:
@@ -161,31 +170,45 @@ def main(argv=None):
         return 2
     active = [r for r in reqs if r not in gone]
     stories = sorted(i for i in blocks if i.startswith("US-"))
+    gaps, ran = [], ["CASE", "TEST"]
+    if a.ids:
+        active = [r for r in active if any(fnmatch.fnmatchcase(r, p) for p in a.ids)]
+        if not active:
+            print("trace_check: no active requirement matches --ids " + " ".join(a.ids))
+            return 2
+    else:
+        ran = ["US"] + ran
+        for us in stories:
+            if not any(us in blocks[r] for r in active):
+                gaps.append(("US", f"{us} is named by no active requirement"))
     found = named_tokens(a.tests)
-    gaps = []
-    for us in stories:
-        if not any(us in blocks[r] for r in active):
-            gaps.append(("US", f"{us} is named by no active requirement"))
     gaps += case_gaps(paths, active)
     for r in active:
         ids = {r} | {i for i in blocks[r]
                      if i.startswith(("TC-", "AT-")) or (r.startswith("HLR-") and i.startswith("LLR-"))}
         if not any(norm(i) in found for i in ids):
             gaps.append(("TEST", f"{r} is named by no file under {a.tests}, and neither is a TC/AT id it lists"))
-    if a.base:
+    if a.base and not a.ids:
+        ran.append("SLICE")
         for fix in a.fixes:
             with open(fix, encoding="utf-8") as f:
                 text += f.read()
         gaps += slice_gaps(a.base, a.src, a.tests, text)
-    gaps += evid_gaps(paths, set(git("ls-files")))
-    if a.canon:
+    if not a.ids:
+        ran.append("EVID")
+        gaps += evid_gaps(paths, set(git("ls-files")))
+    if a.canon and not a.ids:
+        ran.append("CANON")
         with open(a.canon, encoding="utf-8") as f:
             have = set(ID_RE.findall(f.read()))
         gaps += [("CANON", f"{r} is not in {a.canon}") for r in active if r not in have]
     for check, msg in gaps:
         print(f"{check:<6} {msg}")
-    print(f"trace_check: {len(stories)} US, {len(active)} active requirements ({len(reqs) - len(active)} withdrawn), "
-          f"{len(gaps)} gap(s)")
+    if a.ids:
+        scope = f"{len(active)} active requirements match --ids"
+    else:
+        scope = f"{len(stories)} US, {len(active)} active requirements ({len(reqs) - len(active)} withdrawn)"
+    print(f"trace_check: {scope}, checks run: {', '.join(ran)}, {len(gaps)} gap(s)")
     return 1 if gaps else 0
 
 
