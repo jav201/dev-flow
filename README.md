@@ -9,7 +9,7 @@
 
 **A design-first engineering flow for AI coding agents: requirements, a graph prototype reviewed before any code, independent tests, and a record a script can check.**
 
-**Status: beta (v0.3.0, dev-flow v3).** One skill file of about 70 lines for the orchestrator, four role cards for the workers, and one checker script. It replaces the rev94 flow, which stays available at tag `v0.1.1`.
+**Status: beta (v0.3.0, dev-flow v3).** One skill file of about 75 lines for the orchestrator, four role cards for the workers, and one checker script. It replaces the rev94 flow, which stays available at tag `v0.1.1`.
 
 ## What it does
 
