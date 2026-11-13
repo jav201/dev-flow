@@ -18,7 +18,7 @@ A batch opens with user stories and splits into small increments (**E0**). Each 
 1. **E1 Requirements.** Strict EARS sentences that meet ISO/IEC/IEEE 29148, each with a numeric pass threshold and a negative control.
 2. **E2 Prototype.** The design as a [Code-Wire](https://github.com/jav201/code-wire) graph of contracts and examples, before any code.
 3. **E3 Design review.** When the increment pins an interface that another increment will use, or reads or writes outside the program, one reviewer with the design and security lens reviews the graph in one round; no code exists yet.
-4. **E4 Build ∥ test design.** Implementers work by file ownership. Independent testers write the test cases (one row per alternative of a requirement) and the tests, and prove them RED on the base where the behaviour exists there. An integrator brings the work to GREEN and runs the mutants of the new code.
+4. **E4 Build ∥ test design.** Implementers work by file ownership. Independent testers write the test cases (one row per alternative of a requirement) and the tests, and prove them RED on the base where the behaviour exists there. An integrator brings the work to GREEN; then a mechanical worker runs the mutants of the new code.
 5. **E5 Validate the change.** The targeted tests, the project's law guards, and one code and security review in one pass.
 
 The batch end runs the full test suite once, folds the requirements into the project's canon, and checks the trace.
@@ -49,7 +49,7 @@ You need git, Python 3.11 or later for `trace_check.py`, and [Code-Wire](https:/
 python dev-flow/trace_check.py --req .dev-flow/<increment>/01-requirements.md --base <base commit> --src <package>
 ```
 
-Exit 0 means no gap; each gap is one line. `--help` lists the checks and the batch-end form.
+Exit 0 means no gap; each gap is one line. `--help` lists the checks and the batch-end form. Before E5 the EVID line is expected; a tester adds `--ids <patterns>` to check its own requirements.
 
 ## Limits
 

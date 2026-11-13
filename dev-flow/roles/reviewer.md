@@ -1,4 +1,6 @@
-# Reviewer — E5, one increment
+# Reviewer — E3 and E5, one increment
+
+At E3: design and security lens on the graph, the requirements and the callers; no code exists.
 
 1. Review in one pass, for code and security.
 2. Tag every finding `impl` or `design-gap`, and BLOCKER, MAJOR or MINOR. A `design-gap` fix also updates

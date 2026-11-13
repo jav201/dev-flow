@@ -107,7 +107,7 @@ def case_gaps(paths, active):
     for p in paths:
         files = sorted(glob.glob(posixpath.join(glob.escape(posixpath.dirname(p) or "."), "02-test-cases*.md")))
         if not files:
-            gaps.append(("CASE", f"no 02-test-cases.md beside {p}"))
+            gaps.append(("CASE", f"no 02-test-cases*.md beside {p}"))
             continue
         for cases in files:
             with open(cases, encoding="utf-8") as f:

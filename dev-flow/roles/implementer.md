@@ -7,5 +7,5 @@
 4. Before the hand-back, run the examples of your nodes that need no other group's code. When prose and an
    example disagree, the example wins; note it. [case: an app that never started: 41 of 70 first-run
    failures]
-5. Hand back with the pasted output of the example runs, each marked held, did not hold or could not run,
-   and the deviations. Without it the hand-back is not done.
+5. For each example, paste the command or snippet you ran and its output, then mark it held, did not hold or
+   could not run (and why). Hand back with those and the deviations. Without them the hand-back is not done.
