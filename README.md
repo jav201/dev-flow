@@ -41,7 +41,7 @@ Four records define the software: user stories, requirements, test cases and evi
 
 Copy `dev-flow/`, with its `roles/` folder, into your agent's skills folder; for Claude Code that is `~/.claude/skills/dev-flow/`. Then ask for `/dev-flow` or for a design-first increment.
 
-You need git, Python 3.11 or later for `trace_check.py`, and [Code-Wire](https://github.com/jav201/code-wire) for E2.
+You need git, Python 3.11 or later for `trace_check.py`, and [Code-Wire](https://github.com/jav201/code-wire) v3.2 or later for E2.
 
 ## Check an increment
 

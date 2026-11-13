@@ -14,8 +14,8 @@ The AT tester writes `02-test-cases-AT.md`, and its id patterns are the HLRs its
    an entry point no product route calls make it partial.
 4. Patch the operator's real state (clipboard, home folder, recent files); never touch it.
    [case: three tests wrote the real clipboard]
-5. For each requirement, check that its E1 negative control turns your test RED. When the behaviour exists
-   on base, show the test RED there too; when the module does not, skip RED: an import error proves nothing.
+5. When the behaviour exists on base, show the test RED there; when the module does not, skip RED: an import
+   error proves nothing.
 6. With an editable install, `python -m pytest` imports from the cwd first. Run RED with the base tree as cwd
    and GREEN with the worktree, and print the package's `__file__` at the top of every transcript.
 7. Hand back with the pasted output of this command, run from the repository root,
