@@ -2,6 +2,15 @@
 
 One entry per flow revision shipped to this repository. The flow's full revision log stays in the private canonical repository; this file records what a user of the published skill receives.
 
+## v0.3.0 (2026-11-12) — checks travel in the hand-back
+
+- **Removed:** hand-typed stage times (a stage's time is now its commit's), RED on base for a module that does not exist there, the nine-field test case with its typed `result` column, the 40-node graph cap, records of the Code-Wire lint, and multi-round E3 and E5 reviews.
+- **`SKILL.md` speaks to the orchestrator only.** Worker rules live in four cards, `roles/implementer.md`, `roles/tester.md`, `roles/integrator.md` and `roles/reviewer.md`, which travel verbatim in each worker's brief. `SKILL.md` and the cards together are no longer than `SKILL.md` was.
+- **Every check is a command whose output the worker pastes in its hand-back.** A hand-back without that output is not done. The tester runs `trace_check.py` on its own requirements; the integrator runs it on the increment, together with the mutant table, after GREEN.
+- **`trace_check.py` reads test cases split by group** (`02-test-cases-<group>.md`) and gains `--ids PATTERN`, which runs only CASE and TEST for the matching requirements.
+- **E3 runs only when it pays:** when the increment pins an interface that a later increment will use, or reads or writes outside the program. One reviewer, one round. E5 has one code and security reviewer, one pass.
+- **New rules, each from a measured case:** hostile-input requirements for every input from outside, example data committed with its script, implementers run their examples before the hand-back, one owner group per requirement and per shared edit, and the graph is checked against the code when an increment starts from an earlier graph.
+
 ## v0.2.0 — dev-flow v3: design-first, one skill file
 
 - **The flow is now one skill file of about 85 lines and one checker script.** It replaces the rev94 bundle (stations, validator, templates, agent files). That bundle stays at tag `v0.1.1`.
